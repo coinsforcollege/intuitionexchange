@@ -1,5 +1,14 @@
 import { LeftOutlined } from "@ant-design/icons";
-import { Button, Card, Result, Space, theme, Typography } from "antd";
+import {
+  Alert,
+  Button,
+  Card,
+  Result,
+  Space,
+  Spin,
+  theme,
+  Typography,
+} from "antd";
 import Footer from "components/footer";
 import Header from "components/header";
 import Head from "next/head";
@@ -7,6 +16,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import Script from "next/script";
 import React, { ReactElement } from "react";
+import { useEffectOnce } from "util/effect-once";
 
 declare global {
   interface Window {
@@ -24,81 +34,77 @@ function Page() {
     name: string;
   }>();
 
-  const launch = (hash: string) => {
-    window.pt.launchCreditCard({
-      target: document.getElementById("verification"),
-      resourceTokenHash: hash,
-      theme: {
-        //theme attributes
-        background: "inherit",
-        foreground: ThemeToken.colorTextBase.replaceAll(
-          /#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])(.+)?/g,
-          "#$1$1$2$2$3$3"
-        ),
-      },
-      events: {
-        onContribution: function (
-          contributionId: string,
-          fundsTransferMethodId: string
-        ) {
-          //contribution was successful
-          console.log(
-            "[primetrust] Contribution created with ID:",
-            contributionId
-          );
-          console.log(
-            "[primetrust] Contribution using FTM ID:",
-            fundsTransferMethodId
-          );
-          setCompleted(true);
-        },
-        onContributionError: function (error: Error) {
-          //contribution failed
-          console.log("[primetrust] Error:", error.name);
-          console.log("[primetrust] Error:", error.message);
-          setError({
-            name: error.name,
-            message: error.message,
-          });
-        },
-      },
-    });
-  };
+  useEffectOnce(() => {
+    init();
+  });
 
-  React.useEffect(() => {
-    if (window.pt && typeof token === "string") {
-      launch(token);
+  const init = () => {
+    if (typeof window.pt !== "undefined") {
+      window.pt.launchCreditCard({
+        hideAmount: false,
+        target: document.getElementById("verification-widget"),
+        resourceTokenHash: token,
+        theme: {
+          //theme attributes
+          background: "inherit",
+          foreground: ThemeToken.colorTextBase.replaceAll(
+            /#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])(.+)?/g,
+            "#$1$1$2$2$3$3"
+          ),
+        },
+        events: {
+          onContribution: function (
+            contributionId: string,
+            fundsTransferMethodId: string
+          ) {
+            //contribution was successful
+            console.log(
+              "[primetrust] Contribution created with ID:",
+              contributionId
+            );
+            console.log(
+              "[primetrust] Contribution using FTM ID:",
+              fundsTransferMethodId
+            );
+            setCompleted(true);
+          },
+          onContributionError: function (error: Error) {
+            //contribution failed
+            console.log("[primetrust] Error:", error.name);
+            console.log("[primetrust] Error:", error.message);
+            setError({
+              name: error.name,
+              message: error.message,
+            });
+          },
+        },
+      });
     }
-  }, []);
+  };
 
   if (typeof token !== "string") {
     return (
       <div style={{ textAlign: "center" }}>
-        <Result
-          status="error"
-          title="Something went wrong!"
-          extra={
-            <Link href="/fiat/deposit/credit-card">
-              <Button>Go back</Button>
-            </Link>
-          }
-        />
+        <Spin />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ textAlign: "center" }}>
-        <Result
-          status="success"
-          title={error.name}
-          subTitle={error.message}
-          extra={
-            <Link href="/fiat/deposit/credit-card">
-              <Button>Make Deposit</Button>
-            </Link>
+      <div style={{ maxWidth: "600px", margin: "auto" }}>
+        <Alert
+          showIcon
+          message="Verification Failed"
+          description={
+            <Space direction="vertical">
+              <Typography>{error.message}</Typography>
+              <Link href="/fiat/deposit/credit-card">
+                <Button type="primary">Retry</Button>
+              </Link>
+            </Space>
           }
+          type="error"
         />
       </div>
     );
@@ -107,7 +113,15 @@ function Page() {
   if (completed) {
     return (
       <div style={{ textAlign: "center" }}>
-        <Result status="success" title="Transaction Verified!" />
+        <Result
+          status="success"
+          title="Transaction Verified!"
+          extra={
+            <Link href="/fiat">
+              <Button>View Balance</Button>
+            </Link>
+          }
+        />
       </div>
     );
   }
@@ -115,12 +129,13 @@ function Page() {
   return (
     <>
       <Script
-        onLoad={() => launch(token)}
+        onLoad={() => {
+          init();
+        }}
         id="primetrust"
         async={true}
         type="text/javascript"
         src="https://sandbox.bootstrapper.primetrust-cdn.com/bootstrap.js"
-        defer
       />
       <div className="container">
         <Space style={{ paddingBottom: "20px" }}>
@@ -132,7 +147,7 @@ function Page() {
           <Typography>Add Credit Card</Typography>
         </Space>
         <Card>
-          <div id="verification" />
+          <div id="verification-widget" />
         </Card>
       </div>
     </>

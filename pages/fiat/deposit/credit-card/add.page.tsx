@@ -9,6 +9,7 @@ import Link from "next/link";
 import Script from "next/script";
 import React, { ReactElement } from "react";
 import { axiosInstance } from "util/axios";
+import { useEffectOnce } from "util/effect-once";
 
 declare global {
   interface Window {
@@ -22,14 +23,11 @@ function Page() {
   const [hash, setHash] = React.useState<string>();
   const { api: notification } = React.useContext(NotificationContext);
 
-  React.useEffect(() => {
+  useEffectOnce(() => {
     axiosInstance.user
       .post<{ token: string }>("/api/fiat/credit-cards")
       .then((res) => {
         setHash(res.data.token);
-        if (window.pt) {
-          launch(res.data.token);
-        }
       })
       .catch((err: AxiosError<{ errors?: string[]; message?: string }>) => {
         if (err.response?.data.errors) {
@@ -42,9 +40,15 @@ function Page() {
             "Unknown error, please try again",
         });
       });
-  }, []);
+  });
+
+  React.useEffect(() => {
+    if (hash) launch(hash);
+  }, [hash]);
 
   const launch = (token: string) => {
+    if (!window.pt) return;
+
     window.pt.launchCreditCard({
       target: document.getElementById("verification"),
       resourceTokenHash: token,
@@ -108,7 +112,6 @@ function Page() {
         async={true}
         type="text/javascript"
         src="https://sandbox.bootstrapper.primetrust-cdn.com/bootstrap.js"
-        defer
       />
       <div className="container">
         <Space style={{ paddingBottom: "20px" }}>
