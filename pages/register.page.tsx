@@ -10,6 +10,7 @@ import {
   Row,
   Select,
   Space,
+  Typography,
 } from "antd";
 import { AxiosError } from "axios";
 import Footer from "components/footer";
@@ -93,6 +94,13 @@ function Page() {
             >
               <div style={{ display: otpSent ? "none" : "block" }}>
                 <Row justify="space-between" gutter={8}>
+                  <Col xs={24} md={24} style={{ paddingBottom: "20px" }}>
+                    <Typography>
+                      Currently intuition exchange is limited to beta testers
+                      only and you need an invitation to be able to create an
+                      account.
+                    </Typography>
+                  </Col>
                   <Col xs={24} md={12}>
                     <Form.Item
                       label="First name"
@@ -229,6 +237,21 @@ function Page() {
                         type="password"
                         placeholder="Password length must be greater than 8 characters"
                       />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24}>
+                    <Form.Item
+                      label="Invitation Code"
+                      required
+                      name="invitationCode"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Please enter invitation code!",
+                        },
+                      ]}
+                    >
+                      <Input placeholder="Enter the invitation code shared with you by Intuition team" />
                     </Form.Item>
                   </Col>
                   <Col xs={24}>
