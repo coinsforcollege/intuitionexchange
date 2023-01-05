@@ -11,6 +11,7 @@ import {
 } from "antd";
 import Footer from "components/footer";
 import Header from "components/header";
+import { UserAuthContextProvider } from "context/protect-route-user";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -160,9 +161,11 @@ Page.GetLayout = function GetLayout(page: ReactElement) {
       <Head>
         <title>Add credit card | Intuition Exchange</title>
       </Head>
-      <Header />
-      <div className="container">{page}</div>
-      <Footer />
+      <UserAuthContextProvider>
+        <Header />
+        <div className="container">{page}</div>
+        <Footer />
+      </UserAuthContextProvider>
     </>
   );
 };

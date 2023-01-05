@@ -4,6 +4,7 @@ import { AxiosError } from "axios";
 import Footer from "components/footer";
 import Header from "components/header";
 import { NotificationContext } from "context/notification";
+import { UserAuthContextProvider } from "context/protect-route-user";
 import Head from "next/head";
 import Link from "next/link";
 import Script from "next/script";
@@ -104,9 +105,7 @@ function Page() {
     <>
       <Script
         onLoad={() => {
-          if (hash) {
-            launch(hash);
-          }
+          if (hash) launch(hash);
         }}
         id="primetrust"
         async={true}
@@ -136,9 +135,11 @@ Page.GetLayout = function GetLayout(page: ReactElement) {
       <Head>
         <title>Add credit card | Intuition Exchange</title>
       </Head>
-      <Header />
-      <div className="container">{page}</div>
-      <Footer />
+      <UserAuthContextProvider>
+        <Header />
+        <div className="container">{page}</div>
+        <Footer />
+      </UserAuthContextProvider>
     </>
   );
 };

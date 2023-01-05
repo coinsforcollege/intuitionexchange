@@ -6,7 +6,6 @@ import LoadingScreen from "components/loading-screen";
 import { NotificationContext } from "context/notification";
 import { OnboardingAuthContextProvider } from "context/protect-route-onboarding";
 import Head from "next/head";
-import Script from "next/script";
 import React, { ReactElement } from "react";
 import { axiosInstance } from "util/axios";
 
@@ -15,14 +14,6 @@ import OnboardingStep1 from "./step-1";
 import OnboardingStep2 from "./step-2";
 import OnboardingStep3 from "./step-3";
 import OnboardingStep4 from "./step-4";
-
-declare global {
-  interface Window {
-    Socure: any;
-    SocureInitializer: any;
-    devicer: any;
-  }
-}
 
 export interface IOnboardingForm {
   address: {
@@ -58,7 +49,6 @@ export interface IOnboardingStatus {
 }
 
 export function Page() {
-  // const { user } = React.useContext(OnboardingAuthContext);
   const { api: notification } = React.useContext(NotificationContext);
 
   const [status, setStatus] = React.useState<IOnboardingStatus | undefined>(
@@ -210,15 +200,6 @@ export function Page() {
 
   return (
     <>
-      <Script
-        type="text/javascript"
-        src="https://js.dvnfo.com/devicer.min.js"
-      />
-      <Script
-        type="text/javascript"
-        src="https://websdk.socure.com/bundle.js"
-      />
-
       <div className="container">
         <Row
           justify="center"

@@ -1,10 +1,21 @@
-import { Button, Result, Row, Space } from "antd";
+import { Button, Result, Row, Space, Spin } from "antd";
+import { AxiosError } from "axios";
+import { NotificationContext } from "context/notification";
 import { OnboardingAuthContext } from "context/protect-route-onboarding";
+import Script from "next/script";
 import React from "react";
+import { axiosInstance } from "util/axios";
+import { useEffectOnce } from "util/effect-once";
 
 import { IOnboardingForm } from "./index.page";
 
-const SOCURE_PUBLIC_KEY = "fd6ced03-3abb-4931-a7a3-11ce4310876d";
+declare global {
+  interface Window {
+    Socure: any;
+    SocureInitializer: any;
+    devicer: any;
+  }
+}
 
 export default function OnboardingStep2({
   form,
@@ -19,8 +30,16 @@ export default function OnboardingStep2({
   onFinish: () => void;
   setForm: React.Dispatch<React.SetStateAction<IOnboardingForm>>;
 }) {
+  const [token, setToken] = React.useState<string>();
   const { user } = React.useContext(OnboardingAuthContext);
-  React.useEffect(() => {
+  const { api: notification } = React.useContext(NotificationContext);
+
+  const isDocumentUploaded =
+    form.socureDeviceId.length !== 0 && form.socureDocumentId.length !== 0;
+
+  const launch = () => {
+    if (!window.SocureInitializer) return;
+
     if (window.Socure) {
       window.Socure.cleanup();
       window.Socure.unmount();
@@ -29,23 +48,7 @@ export default function OnboardingStep2({
     setForm((prev) => ({
       ...prev,
       socureDocumentId: "",
-      socureDeviceId: "",
     }));
-
-    const deviceFPOptions = {
-      publicKey: SOCURE_PUBLIC_KEY,
-      userConsent: true,
-      context: "onboarding",
-    };
-
-    window.devicer.run(
-      deviceFPOptions,
-      function (response: { result: string; sessionId: string }) {
-        if (response.result === "Captured") {
-          setForm((prev) => ({ ...prev, socureDeviceId: response.sessionId }));
-        }
-      }
-    );
 
     // document capture
     const config = {
@@ -66,18 +69,85 @@ export default function OnboardingStep2({
       mobileNumber: `+${user.phoneCountry}${user.phone}`,
     };
 
-    window.SocureInitializer.init(SOCURE_PUBLIC_KEY).then((lib: any) => {
-      lib.init(SOCURE_PUBLIC_KEY, "#main-socure", config).then(function () {
+    window.SocureInitializer.init(token).then((lib: any) => {
+      lib.init(token, "#main-socure", config).then(function () {
         lib.start(2, input);
       });
     });
-  }, []);
+  };
 
-  const isDocumentUploaded =
-    form.socureDeviceId.length !== 0 && form.socureDocumentId.length !== 0;
+  const launchDevicer = () => {
+    if (!window.devicer) return;
+
+    setForm((prev) => ({
+      ...prev,
+      socureDeviceId: "",
+    }));
+
+    const deviceFPOptions = {
+      publicKey: token,
+      userConsent: true,
+      context: "onboarding",
+    };
+
+    window.devicer.run(
+      deviceFPOptions,
+      function (response: { result: string; sessionId: string }) {
+        if (response.result === "Captured") {
+          setForm((prev) => ({ ...prev, socureDeviceId: response.sessionId }));
+        }
+      }
+    );
+  };
+
+  useEffectOnce(() => {
+    axiosInstance.user
+      .post<{ token: string }>("/api/onboarding/socure")
+      .then((res) => {
+        setToken(res.data.token);
+      })
+      .catch((err: AxiosError<{ errors?: string[]; message?: string }>) => {
+        if (err.response?.data.errors) {
+          err.response.data.errors.forEach((err) => notification.error(err));
+        }
+        notification.error({
+          content:
+            err.response?.data?.message ??
+            err.message ??
+            "Unknown error, please try again",
+        });
+      });
+  });
+
+  React.useEffect(() => {
+    if (token) {
+      launch();
+      launchDevicer();
+    }
+  }, [token]);
 
   return (
     <>
+      <Script
+        type="text/javascript"
+        src="https://js.dvnfo.com/devicer.min.js"
+        async
+        onLoad={() => {
+          if (token) {
+            launchDevicer();
+          }
+        }}
+      />
+      <Script
+        type="text/javascript"
+        src="https://websdk.socure.com/bundle.js"
+        async
+        onLoad={() => {
+          if (token) {
+            launch();
+          }
+        }}
+      />
       {isDocumentUploaded && (
         <Row style={{ justifyContent: "center" }}>
           <Result status="success" title="Documents Uploaded, continue!" />
@@ -94,7 +164,9 @@ export default function OnboardingStep2({
               width: "100%",
             }}
             id="main-socure"
-          />
+          >
+            <Spin />
+          </div>
         </Row>
       )}
       <Row style={{ paddingTop: "2rem" }}>
