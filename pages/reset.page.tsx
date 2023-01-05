@@ -145,6 +145,11 @@ function Page() {
                       Verify
                     </Button>
                   </Form.Item>
+
+                  <Form.Item>
+                    {"Remember password? "}
+                    <Link href="/login">Login now!</Link>
+                  </Form.Item>
                 </div>
               )}
             </Form>
