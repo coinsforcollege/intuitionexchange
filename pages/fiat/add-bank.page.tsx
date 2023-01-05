@@ -109,7 +109,7 @@ export function Page() {
                     message: "Please enter routing number!",
                   },
                   {
-                    pattern: /^[0-9]{9}(-[0-9]{8})?$/,
+                    pattern: /^\d{9}$/,
                     message: "Routing number should have 9 digits!",
                   },
                 ]}
