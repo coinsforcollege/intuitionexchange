@@ -88,6 +88,10 @@ export function Page() {
                     required: true,
                     message: "Please enter bank account number!",
                   },
+                  {
+                    pattern: /^\d+$/,
+                    message: "Routing number should have digits only!",
+                  },
                 ]}
               >
                 <Input
@@ -103,6 +107,10 @@ export function Page() {
                   {
                     required: true,
                     message: "Please enter routing number!",
+                  },
+                  {
+                    pattern: /^[0-9]{9}(-[0-9]{8})?$/,
+                    message: "Routing number should have 9 digits!",
                   },
                 ]}
               >

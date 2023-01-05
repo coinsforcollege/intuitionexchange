@@ -1,13 +1,4 @@
-import {
-  Button,
-  Col,
-  Form,
-  Input,
-  InputNumber,
-  Row,
-  Select,
-  Space,
-} from "antd";
+import { Button, Col, Form, Input, Row, Select, Space } from "antd";
 import { regions } from "util/regions";
 
 import { IOnboardingForm } from "./index.page";
@@ -126,22 +117,20 @@ export default function OnboardingStep0({
                     message: "Please enter your postal code!",
                   },
                   {
-                    len: 5,
-                    transform: (value) => String(value),
+                    pattern: /^[0-9]{5}(-[0-9]{4})?$/,
                     message: "Postal code should have 5 digits!",
                   },
                 ]}
                 initialValue={form.address.postalCode}
               >
-                <InputNumber
-                  type="number"
+                <Input
                   style={{ width: "100%" }}
-                  onChange={(v) => {
+                  onChange={(e) => {
                     setForm((prev) => ({
                       ...prev,
                       address: {
                         ...prev.address,
-                        postalCode: v?.toString() ?? "",
+                        postalCode: e.target.value,
                       },
                     }));
                   }}

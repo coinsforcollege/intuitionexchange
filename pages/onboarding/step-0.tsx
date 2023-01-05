@@ -239,20 +239,19 @@ export default function OnboardingStep0({
                     message: "Please enter your Social Security Number!",
                   },
                   {
-                    len: 9,
-                    transform: (value) => String(value),
+                    pattern:
+                      /^(?!666|000|9\d{2})\d{3}(?!00)\d{2}(?!0{4})\d{4}$/,
                     message: "Social Security Number should have 9 digits!",
                   },
                 ]}
                 initialValue={form.taxId}
               >
-                <InputNumber
-                  type="number"
+                <Input
                   style={{ width: "100%" }}
-                  onChange={(v) => {
+                  onChange={(e) => {
                     setForm((prev) => ({
                       ...prev,
-                      taxId: v?.toString() ?? "",
+                      taxId: e.target.value,
                     }));
                   }}
                   placeholder="Please enter your Social Security Number"
