@@ -13,9 +13,12 @@ export default function OnboardingStep0({
   onFinish: () => void;
   setForm: React.Dispatch<React.SetStateAction<IOnboardingForm>>;
 }) {
+  const [cForm] = Form.useForm();
+
   return (
     <>
       <Form
+        form={cForm}
         layout="vertical"
         initialValues={{ remember: true }}
         onFinish={onFinish}
@@ -169,6 +172,12 @@ export default function OnboardingStep0({
                     <Input
                       style={{ width: "30%" }}
                       placeholder="MM"
+                      onBlur={(e) => {
+                        cForm.setFieldValue(
+                          "birthDateMM",
+                          e.target.value.padStart(2, "0")
+                        );
+                      }}
                       onChange={(e) => {
                         setForm((prev) => ({
                           ...prev,
@@ -205,6 +214,12 @@ export default function OnboardingStep0({
                     <Input
                       style={{ width: "30%" }}
                       placeholder="DD"
+                      onBlur={(e) => {
+                        cForm.setFieldValue(
+                          "birthDateDD",
+                          e.target.value.padStart(2, "0")
+                        );
+                      }}
                       onChange={(e) => {
                         setForm((prev) => ({
                           ...prev,
