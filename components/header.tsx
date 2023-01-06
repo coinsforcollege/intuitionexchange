@@ -130,7 +130,10 @@ export default function Header() {
                 <Typography.Text>Hello, {user.firstName}</Typography.Text>
                 {!isPhone && (
                   <div>
-                    <Dropdown menu={{ items, onClick: handleMenuClick }}>
+                    <Dropdown
+                      menu={{ items, onClick: handleMenuClick }}
+                      placement="bottomRight"
+                    >
                       <div
                         style={{
                           cursor: "pointer",
