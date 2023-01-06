@@ -96,6 +96,9 @@ export default function Header() {
                 <Link href="/fiat">
                   <Button type="text">Fiat</Button>
                 </Link>
+                <Typography style={{ opacity: 0.8, padding: "4px 15px" }}>
+                  |
+                </Typography>
                 <Typography.Text>Hello, {user.firstName}</Typography.Text>
                 <div>
                   <Dropdown menu={{ items, onClick: handleMenuClick }}>
