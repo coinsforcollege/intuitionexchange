@@ -157,6 +157,11 @@ export default function OnboardingStep0({
                 <Select
                   showSearch
                   placeholder="Select region"
+                  filterOption={(input, option) =>
+                    (option?.label ?? "")
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
+                  }
                   options={regions.map((r) => ({
                     label: r.State,
                     value: r.StateCode,

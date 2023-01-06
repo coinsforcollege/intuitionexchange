@@ -112,6 +112,11 @@ function Page() {
                           required: true,
                           message: "Please enter your first name!",
                         },
+                        {
+                          pattern: /^[a-zA-Z]+$/,
+                          message:
+                            "Special characters (including numbers) not allowed",
+                        },
                       ]}
                     >
                       <Input placeholder="Please enter your first name" />
@@ -125,6 +130,11 @@ function Page() {
                         {
                           required: false,
                           message: "Please enter your middle name!",
+                        },
+                        {
+                          pattern: /^[a-zA-Z]+$/,
+                          message:
+                            "Special characters (including numbers) not allowed",
                         },
                       ]}
                     >
@@ -140,6 +150,11 @@ function Page() {
                         {
                           required: true,
                           message: "Please enter your last name!",
+                        },
+                        {
+                          pattern: /^[a-zA-Z]+$/,
+                          message:
+                            "Special characters (including numbers) not allowed",
                         },
                       ]}
                     >

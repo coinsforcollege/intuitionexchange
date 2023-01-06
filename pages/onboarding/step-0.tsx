@@ -33,6 +33,11 @@ export default function OnboardingStep0({
                     required: true,
                     message: "Please enter your first name!",
                   },
+                  {
+                    pattern: /^[a-zA-Z]+$/,
+                    message:
+                      "Special characters (including numbers) not allowed",
+                  },
                 ]}
                 initialValue={form.firstName}
               >
@@ -55,6 +60,11 @@ export default function OnboardingStep0({
                   {
                     required: false,
                     message: "Please enter your middle name!",
+                  },
+                  {
+                    pattern: /^[a-zA-Z]+$/,
+                    message:
+                      "Special characters (including numbers) not allowed",
                   },
                 ]}
                 initialValue={form.middleName}
@@ -79,6 +89,11 @@ export default function OnboardingStep0({
                   {
                     required: true,
                     message: "Please enter your last name!",
+                  },
+                  {
+                    pattern: /^[a-zA-Z]+$/,
+                    message:
+                      "Special characters (including numbers) not allowed",
                   },
                 ]}
                 initialValue={form.lastName}
@@ -239,8 +254,9 @@ export default function OnboardingStep0({
                     message: "Please enter your Social Security Number!",
                   },
                   {
-                    pattern: /^\d{9}$/,
-                    message: "Social Security Number should have 9 digits!",
+                    pattern:
+                      /^(?!666|000|9\d{2})\d{3}(?!00)\d{2}(?!0{4})\d{4}$/,
+                    message: "Incorrect Social Security Number format!",
                   },
                 ]}
                 initialValue={form.taxId}
