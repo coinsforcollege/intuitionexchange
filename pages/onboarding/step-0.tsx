@@ -133,12 +133,12 @@ export default function OnboardingStep0({
                     <Input
                       style={{ width: "40%" }}
                       placeholder="YYYY"
-                      onChange={(value) => {
+                      onChange={(e) => {
                         setForm((prev) => ({
                           ...prev,
                           birthday: {
                             ...prev.birthday,
-                            year: value?.toString() ?? "",
+                            year: e.target.value?.toString() ?? "",
                           },
                         }));
                       }}
@@ -169,12 +169,12 @@ export default function OnboardingStep0({
                     <Input
                       style={{ width: "30%" }}
                       placeholder="MM"
-                      onChange={(value) => {
+                      onChange={(e) => {
                         setForm((prev) => ({
                           ...prev,
                           birthday: {
                             ...prev.birthday,
-                            month: value?.toString() ?? "",
+                            month: e.target.value?.toString() ?? "",
                           },
                         }));
                       }}

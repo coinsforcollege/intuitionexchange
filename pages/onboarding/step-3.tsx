@@ -132,6 +132,7 @@ export default function OnboardingStep2({
         async
         onLoad={() => {
           if (token) {
+            launch();
             launchDevicer();
           }
         }}
