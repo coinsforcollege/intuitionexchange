@@ -153,6 +153,10 @@ export default function OnboardingStep0({
                         message: "Birth month is required",
                       },
                       {
+                        max: 2,
+                        message: "The month should be in MM format",
+                      },
+                      {
                         type: "number",
                         min: 1,
                         max: 12,
@@ -183,6 +187,10 @@ export default function OnboardingStep0({
                       {
                         required: true,
                         message: "Birth day is required",
+                      },
+                      {
+                        max: 2,
+                        message: "The day should be in DD format",
                       },
                       {
                         type: "number",
