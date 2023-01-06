@@ -83,11 +83,13 @@ export default function OnboardingStep2({
       socureDocumentId: "",
     }));
 
-    await axiosInstance.user
+    axiosInstance.user
       .post<{ token: string }>("/api/onboarding/socure")
       .then((res) => {
-        launch(res.data.token);
-        launchDevicer(res.data.token);
+        setTimeout(() => {
+          launch(res.data.token);
+          launchDevicer(res.data.token);
+        }, 1000);
       })
       .catch((err: AxiosError<{ errors?: string[] }>) => {
         if (err.response?.data.errors?.length) {
