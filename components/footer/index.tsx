@@ -11,26 +11,7 @@ export default function Footer() {
       <Divider />
       <div>
         <Row>
-          <Col xs={12} sm={12} md={6}>
-            <Typography.Paragraph
-              style={{
-                textAlign: "start",
-                paddingRight: "1rem",
-                paddingBottom: "1rem",
-              }}
-            >
-              <Image
-                alt="InTuition Exchange Logo"
-                src={LogoImg}
-                style={{ maxWidth: "200px", width: "100%" }}
-              />
-            </Typography.Paragraph>
-            <Typography.Paragraph>
-              Intuition Exchange Limited <br /> 4464 Lone Tree Way #202 Antioch,{" "}
-              <br /> CA 94531
-            </Typography.Paragraph>
-          </Col>
-          <Col xs={12} sm={12} md={6}>
+          <Col xs={12} sm={12} md={8}>
             <Typography.Title level={4}>Compliance</Typography.Title>
             <ul className={styles.footerList}>
               <li>
@@ -60,7 +41,7 @@ export default function Footer() {
               </li>
             </ul>
           </Col>
-          <Col xs={12} sm={12} md={6}>
+          <Col xs={12} sm={12} md={8}>
             <Typography.Title level={4}>User Services</Typography.Title>
             <ul className={styles.footerList}>
               <li>
@@ -90,7 +71,7 @@ export default function Footer() {
               </li>
             </ul>
           </Col>
-          <Col xs={12} sm={12} md={6}>
+          <Col xs={12} sm={12} md={8}>
             <Typography.Title level={4}>About</Typography.Title>
             <ul className={styles.footerList}>
               <li>
@@ -112,7 +93,15 @@ export default function Footer() {
           </Col>
         </Row>
         <Divider />
-        <div style={{ textAlign: "center" }}>
+        <div style={{ textAlign: "center", padding: "4rem 0" }}>
+          <Typography.Paragraph>
+            <Image
+              alt="InTuition Exchange Logo"
+              src={LogoImg}
+              style={{ maxWidth: "200px", width: "100%" }}
+            />
+          </Typography.Paragraph>
+          <Typography.Paragraph>Antioch, CA, 94531</Typography.Paragraph>
           <Typography.Text>© Intuition Exchange Limited 2022</Typography.Text>
         </div>
       </div>

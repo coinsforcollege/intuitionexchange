@@ -73,6 +73,7 @@ function Page() {
             margin: "auto",
             maxWidth: "600px",
             paddingTop: "2vw",
+            paddingBottom: "12vw",
           }}
         >
           <Card
