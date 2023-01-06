@@ -102,7 +102,9 @@ export default function Footer() {
             />
           </Typography.Paragraph>
           <Typography.Paragraph>Antioch, CA, 94531</Typography.Paragraph>
-          <Typography.Text>© Intuition Exchange Limited 2022</Typography.Text>
+          <Typography.Text>
+            © Intuition Exchange Limited {new Date().getFullYear()}
+          </Typography.Text>
         </div>
       </div>
     </div>
