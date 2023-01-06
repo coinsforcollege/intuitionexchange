@@ -33,11 +33,6 @@ export default function OnboardingStep2({
       window.Socure.unmount();
     }
 
-    setForm((prev) => ({
-      ...prev,
-      socureDocumentId: "",
-    }));
-
     // document capture
     const config = {
       // onProgress: console.log, //callback method for reading the progress status
@@ -65,11 +60,6 @@ export default function OnboardingStep2({
   };
 
   const launchDevicer = (token: string) => {
-    setForm((prev) => ({
-      ...prev,
-      socureDeviceId: "",
-    }));
-
     const deviceFPOptions = {
       publicKey: token,
       userConsent: true,
@@ -86,8 +76,14 @@ export default function OnboardingStep2({
     );
   };
 
-  useEffectOnce(() => {
-    axiosInstance.user
+  const startSocure = async () => {
+    setForm((prev) => ({
+      ...prev,
+      socureDeviceId: "",
+      socureDocumentId: "",
+    }));
+
+    await axiosInstance.user
       .post<{ token: string }>("/api/onboarding/socure")
       .then((res) => {
         launch(res.data.token);
@@ -102,6 +98,10 @@ export default function OnboardingStep2({
           });
         }
       });
+  };
+
+  useEffectOnce(() => {
+    startSocure();
   });
 
   return (
@@ -131,6 +131,13 @@ export default function OnboardingStep2({
         <Space>
           <Button disabled={loading} type="dashed" onClick={onBack}>
             Back
+          </Button>
+          <Button
+            onClick={() => {
+              startSocure();
+            }}
+          >
+            Restart Document Upload
           </Button>
           <Button
             disabled={loading || !isDocumentUploaded}
