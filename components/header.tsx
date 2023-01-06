@@ -77,15 +77,6 @@ export default function Header() {
                   style={{ maxWidth: "200px", width: "100%" }}
                 />
               </Link>
-              <Link href="/exchange">
-                <Button>Exchange</Button>
-              </Link>
-              <Link href="/assets">
-                <Button>Assets</Button>
-              </Link>
-              <Link href="/fiat">
-                <Button>Fiat</Button>
-              </Link>
             </Space>
           </div>
           <div>
@@ -96,6 +87,15 @@ export default function Header() {
             )}
             {user && (
               <Space>
+                <Link href="/exchange">
+                  <Button type="text">Exchange</Button>
+                </Link>
+                <Link href="/assets">
+                  <Button type="text">Assets</Button>
+                </Link>
+                <Link href="/fiat">
+                  <Button type="text">Fiat</Button>
+                </Link>
                 <Typography.Text>Hello, {user.firstName}</Typography.Text>
                 <div>
                   <Dropdown menu={{ items, onClick: handleMenuClick }}>

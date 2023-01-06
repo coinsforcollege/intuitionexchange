@@ -209,8 +209,9 @@ export function Page() {
           justify="center"
           style={{ paddingTop: "2vw", paddingBottom: "12vw" }}
         >
-          <Col xs={24} style={{ alignSelf: "center" }}>
+          <Col xs={24} md={4} style={{ alignSelf: "center" }}>
             <Steps
+              direction="vertical"
               current={step}
               items={[
                 {
@@ -236,7 +237,7 @@ export function Page() {
               ]}
             />
           </Col>
-          <Col xs={24}>
+          <Col xs={24} md={20}>
             <div
               style={{
                 maxWidth: step < 2 ? "800px" : undefined,
