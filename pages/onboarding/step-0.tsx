@@ -1,4 +1,4 @@
-import { Button, Col, Form, Input, InputNumber, Row, Select } from "antd";
+import { Button, Col, Form, Input, Row, Select } from "antd";
 
 import { IOnboardingForm } from "./index.page";
 
@@ -130,8 +130,7 @@ export default function OnboardingStep0({
                     ]}
                     initialValue={form.birthday.year}
                   >
-                    <InputNumber
-                      type="number"
+                    <Input
                       style={{ width: "40%" }}
                       placeholder="YYYY"
                       onChange={(value) => {
@@ -163,8 +162,7 @@ export default function OnboardingStep0({
                     ]}
                     initialValue={form.birthday.month}
                   >
-                    <InputNumber
-                      type="number"
+                    <Input
                       style={{ width: "30%" }}
                       placeholder="MM"
                       onChange={(value) => {
@@ -196,16 +194,15 @@ export default function OnboardingStep0({
                     ]}
                     initialValue={form.birthday.day}
                   >
-                    <InputNumber
-                      type="number"
+                    <Input
                       style={{ width: "30%" }}
                       placeholder="DD"
-                      onChange={(value) => {
+                      onChange={(e) => {
                         setForm((prev) => ({
                           ...prev,
                           birthday: {
                             ...prev.birthday,
-                            day: value?.toString() ?? "",
+                            day: e.target.value?.toString() ?? "",
                           },
                         }));
                       }}
