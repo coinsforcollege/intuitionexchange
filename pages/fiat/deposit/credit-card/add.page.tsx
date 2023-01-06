@@ -30,16 +30,14 @@ function Page() {
       .then((res) => {
         setHash(res.data.token);
       })
-      .catch((err: AxiosError<{ errors?: string[]; message?: string }>) => {
-        if (err.response?.data.errors) {
+      .catch((err: AxiosError<{ errors?: string[] }>) => {
+        if (err.response?.data.errors?.length) {
           err.response.data.errors.forEach((err) => notification.error(err));
+        } else {
+          notification.error({
+            content: err.message ?? "Unknown error, please try again",
+          });
         }
-        notification.error({
-          content:
-            err.response?.data?.message ??
-            err.message ??
-            "Unknown error, please try again",
-        });
       });
   });
 

@@ -49,13 +49,14 @@ function Page() {
           router.replace("/login");
         }
       })
-      .catch((err: AxiosError<{ message: string }>) => {
-        notification.error({
-          content:
-            err.response?.data?.message ??
-            err.message ??
-            "Unknown error, please try again",
-        });
+      .catch((err: AxiosError<{ errors?: string[] }>) => {
+        if (err.response?.data.errors?.length) {
+          err.response.data.errors.forEach((err) => notification.error(err));
+        } else {
+          notification.error({
+            content: err.message ?? "Unknown error, please try again",
+          });
+        }
         setLoading(false);
       });
   };

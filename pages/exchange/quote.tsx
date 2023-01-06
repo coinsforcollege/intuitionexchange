@@ -71,21 +71,17 @@ export function QuoteScreen({ assetId }: { assetId: string | undefined }) {
               .then(() => {
                 notification.success("order executed");
               })
-              .catch(
-                (err: AxiosError<{ errors?: string[]; message?: string }>) => {
-                  if (err.response?.data.errors) {
-                    err.response.data.errors.forEach((err) =>
-                      notification.error(err)
-                    );
-                  }
+              .catch((err: AxiosError<{ errors?: string[] }>) => {
+                if (err.response?.data.errors?.length) {
+                  err.response.data.errors.forEach((err) =>
+                    notification.error(err)
+                  );
+                } else {
                   notification.error({
-                    content:
-                      err.response?.data?.message ??
-                      err.message ??
-                      "Unknown error, please try again",
+                    content: err.message ?? "Unknown error, please try again",
                   });
                 }
-              );
+              });
           },
           onCancel() {
             console.log("Cancel");

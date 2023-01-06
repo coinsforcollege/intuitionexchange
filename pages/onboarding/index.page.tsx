@@ -98,13 +98,14 @@ export function Page() {
           setStep(4);
         }
       })
-      .catch((err: AxiosError<{ message?: string }>) => {
-        notification.error({
-          content:
-            err.response?.data?.message ??
-            err.message ??
-            "Unknown error, please try again",
-        });
+      .catch((err: AxiosError<{ errors?: string[] }>) => {
+        if (err.response?.data.errors?.length) {
+          err.response.data.errors.forEach((err) => notification.error(err));
+        } else {
+          notification.error({
+            content: err.message ?? "Unknown error, please try again",
+          });
+        }
       });
   };
 
@@ -119,13 +120,14 @@ export function Page() {
           setAgreement(res.data.agreement);
           setStep(2);
         })
-        .catch((err: AxiosError<{ message?: string }>) => {
-          notification.error({
-            content:
-              err.response?.data?.message ??
-              err.message ??
-              "Unknown error, please try again",
-          });
+        .catch((err: AxiosError<{ errors?: string[] }>) => {
+          if (err.response?.data.errors?.length) {
+            err.response.data.errors.forEach((err) => notification.error(err));
+          } else {
+            notification.error({
+              content: err.message ?? "Unknown error, please try again",
+            });
+          }
         });
     } else if (step === 2) {
       setStep(3);
@@ -136,13 +138,14 @@ export function Page() {
           setStep(4);
           refreshStatus();
         })
-        .catch((err: AxiosError<{ message?: string }>) => {
-          notification.error({
-            content:
-              err.response?.data?.message ??
-              err.message ??
-              "Unknown error, please try again",
-          });
+        .catch((err: AxiosError<{ errors?: string[] }>) => {
+          if (err.response?.data.errors?.length) {
+            err.response.data.errors.forEach((err) => notification.error(err));
+          } else {
+            notification.error({
+              content: err.message ?? "Unknown error, please try again",
+            });
+          }
         });
     } else if (step === 4) {
       await axiosInstance.user
@@ -155,13 +158,14 @@ export function Page() {
           setStep(0);
           refreshStatus();
         })
-        .catch((err: AxiosError<{ message?: string }>) => {
-          notification.error({
-            content:
-              err.response?.data?.message ??
-              err.message ??
-              "Unknown error, please try again",
-          });
+        .catch((err: AxiosError<{ errors?: string[] }>) => {
+          if (err.response?.data.errors?.length) {
+            err.response.data.errors.forEach((err) => notification.error(err));
+          } else {
+            notification.error({
+              content: err.message ?? "Unknown error, please try again",
+            });
+          }
         });
     }
     setLoading(false);
