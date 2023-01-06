@@ -2,20 +2,11 @@ import { Button, Result, Row, Space, Spin } from "antd";
 import { AxiosError } from "axios";
 import { NotificationContext } from "context/notification";
 import { OnboardingAuthContext } from "context/protect-route-onboarding";
-import Script from "next/script";
 import React from "react";
 import { axiosInstance } from "util/axios";
 import { useEffectOnce } from "util/effect-once";
 
 import { IOnboardingForm } from "./index.page";
-
-declare global {
-  interface Window {
-    Socure: any;
-    SocureInitializer: any;
-    devicer: any;
-  }
-}
 
 export default function OnboardingStep2({
   form,
@@ -30,16 +21,13 @@ export default function OnboardingStep2({
   onFinish: () => void;
   setForm: React.Dispatch<React.SetStateAction<IOnboardingForm>>;
 }) {
-  const [token, setToken] = React.useState<string>();
   const { user } = React.useContext(OnboardingAuthContext);
   const { api: notification } = React.useContext(NotificationContext);
 
   const isDocumentUploaded =
     form.socureDeviceId.length !== 0 && form.socureDocumentId.length !== 0;
 
-  const launch = () => {
-    if (!window.SocureInitializer) return;
-
+  const launch = (token: string) => {
     if (window.Socure) {
       window.Socure.cleanup();
       window.Socure.unmount();
@@ -76,9 +64,7 @@ export default function OnboardingStep2({
     });
   };
 
-  const launchDevicer = () => {
-    if (!window.devicer) return;
-
+  const launchDevicer = (token: string) => {
     setForm((prev) => ({
       ...prev,
       socureDeviceId: "",
@@ -104,7 +90,8 @@ export default function OnboardingStep2({
     axiosInstance.user
       .post<{ token: string }>("/api/onboarding/socure")
       .then((res) => {
-        setToken(res.data.token);
+        launch(res.data.token);
+        launchDevicer(res.data.token);
       })
       .catch((err: AxiosError<{ errors?: string[] }>) => {
         if (err.response?.data.errors?.length) {
@@ -117,36 +104,8 @@ export default function OnboardingStep2({
       });
   });
 
-  React.useEffect(() => {
-    if (token) {
-      launch();
-      launchDevicer();
-    }
-  }, [token]);
-
   return (
     <>
-      <Script
-        type="text/javascript"
-        src="https://js.dvnfo.com/devicer.min.js"
-        async
-        onLoad={() => {
-          if (token) {
-            launch();
-            launchDevicer();
-          }
-        }}
-      />
-      <Script
-        type="text/javascript"
-        src="https://websdk.socure.com/bundle.js"
-        async
-        onLoad={() => {
-          if (token) {
-            launch();
-          }
-        }}
-      />
       {isDocumentUploaded && (
         <Row style={{ justifyContent: "center" }}>
           <Result status="success" title="Documents Uploaded, continue!" />
