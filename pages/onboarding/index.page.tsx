@@ -205,11 +205,8 @@ export function Page() {
   return (
     <>
       <div className="container">
-        <Row
-          justify="center"
-          style={{ paddingTop: "2vw", paddingBottom: "12vw" }}
-        >
-          <Col xs={24} md={4} style={{ alignSelf: "center" }}>
+        <Row style={{ paddingTop: "2vw", paddingBottom: "12vw" }}>
+          <Col xs={24} md={6}>
             <Steps
               direction="vertical"
               current={step}
@@ -237,12 +234,11 @@ export function Page() {
               ]}
             />
           </Col>
-          <Col xs={24} md={20}>
+          <Col xs={24} md={18}>
             <div
               style={{
                 maxWidth: step < 2 ? "800px" : undefined,
                 margin: "auto",
-                paddingTop: "2vw",
               }}
             >
               <Card
