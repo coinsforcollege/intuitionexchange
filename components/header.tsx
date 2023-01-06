@@ -1,5 +1,14 @@
 import { LogoutOutlined, UserOutlined } from "@ant-design/icons";
-import { Avatar, Button, Dropdown, MenuProps, Space, Typography } from "antd";
+import { Icon } from "@iconify/react";
+import {
+  Avatar,
+  Button,
+  Drawer,
+  Dropdown,
+  MenuProps,
+  Space,
+  Typography,
+} from "antd";
 import { AxiosError } from "axios";
 import { NotificationContext } from "context/notification";
 import { AuthContext } from "context/protect-route";
@@ -11,12 +20,41 @@ import { useUserStore } from "store/user-store";
 import { axiosInstance } from "util/axios";
 
 import LogoImg from "../public/logo.svg";
+import useMediaQuery from "./useMediaQuery";
 
 export default function Header() {
   const { api: notification } = React.useContext(NotificationContext);
   const userStore = useUserStore();
   const { user } = React.useContext(AuthContext);
+  const [isPhone, setIsPhone] = React.useState(false);
+  const [drawer, setDrawer] = React.useState(false);
   const router = useRouter();
+
+  const isPhoneCheck = useMediaQuery("(max-width: 768px)");
+
+  const isDrawerOpen = isPhone && drawer;
+
+  React.useEffect(() => {
+    setIsPhone(isPhoneCheck);
+  }, [isPhoneCheck]);
+
+  const logout = () => {
+    axiosInstance.user
+      .post("/api/account/logout")
+      .then((res) => {
+        notification.success({ content: res.data.message });
+        userStore.setUser(null);
+      })
+      .catch((err: AxiosError<{ errors?: string[] }>) => {
+        if (err.response?.data.errors?.length) {
+          err.response.data.errors.forEach((err) => notification.error(err));
+        } else {
+          notification.error({
+            content: err.message ?? "Unknown error, please try again",
+          });
+        }
+      });
+  };
 
   const handleMenuClick: MenuProps["onClick"] = (e) => {
     if (e.key === "account") {
@@ -24,21 +62,7 @@ export default function Header() {
     }
 
     if (e.key === "logout") {
-      axiosInstance.user
-        .post("/api/account/logout")
-        .then((res) => {
-          notification.success({ content: res.data.message });
-          userStore.setUser(null);
-        })
-        .catch((err: AxiosError<{ errors?: string[] }>) => {
-          if (err.response?.data.errors?.length) {
-            err.response.data.errors.forEach((err) => notification.error(err));
-          } else {
-            notification.error({
-              content: err.message ?? "Unknown error, please try again",
-            });
-          }
-        });
+      logout();
     }
   };
 
@@ -87,34 +111,97 @@ export default function Header() {
             )}
             {user && (
               <Space>
-                <Link href="/exchange">
-                  <Button type="text">Exchange</Button>
-                </Link>
-                <Link href="/assets">
-                  <Button type="text">Assets</Button>
-                </Link>
-                <Link href="/fiat">
-                  <Button type="text">Fiat</Button>
-                </Link>
-                <Typography style={{ opacity: 0.8, padding: "4px 15px" }}>
-                  |
-                </Typography>
+                {!isPhone && (
+                  <>
+                    <Link href="/exchange">
+                      <Button type="text">Exchange</Button>
+                    </Link>
+                    <Link href="/assets">
+                      <Button type="text">Assets</Button>
+                    </Link>
+                    <Link href="/fiat">
+                      <Button type="text">Fiat</Button>
+                    </Link>
+                    <Typography style={{ opacity: 0.8, padding: "4px 15px" }}>
+                      |
+                    </Typography>
+                  </>
+                )}
                 <Typography.Text>Hello, {user.firstName}</Typography.Text>
-                <div>
-                  <Dropdown menu={{ items, onClick: handleMenuClick }}>
-                    <div
-                      style={{
-                        cursor: "pointer",
+                {!isPhone && (
+                  <div>
+                    <Dropdown menu={{ items, onClick: handleMenuClick }}>
+                      <div
+                        style={{
+                          cursor: "pointer",
+                        }}
+                      >
+                        <Avatar
+                          style={{
+                            color: "#f56a00",
+                            backgroundColor: "#fde3cf",
+                          }}
+                        >
+                          {user.firstName.charAt(0).toUpperCase()}
+                        </Avatar>
+                      </div>
+                    </Dropdown>
+                  </div>
+                )}
+                {isPhone && (
+                  <Icon
+                    icon="material-symbols:menu-rounded"
+                    fontSize="24"
+                    onClick={() => setDrawer(true)}
+                    style={{ display: "flex", cursor: "pointer" }}
+                  />
+                )}
+                <Drawer
+                  title="Intuition Exchange"
+                  placement="right"
+                  onClose={() => setDrawer(false)}
+                  open={isDrawerOpen}
+                >
+                  <Space direction="vertical" style={{ width: "100%" }}>
+                    <Link href="/exchange">
+                      <Button
+                        type="text"
+                        style={{ width: "100%", textAlign: "start" }}
+                        onClick={() => setDrawer(false)}
+                      >
+                        Exchange
+                      </Button>
+                    </Link>
+                    <Link href="/assets">
+                      <Button
+                        type="text"
+                        style={{ width: "100%", textAlign: "start" }}
+                        onClick={() => setDrawer(false)}
+                      >
+                        Assets
+                      </Button>
+                    </Link>
+                    <Link href="/fiat">
+                      <Button
+                        type="text"
+                        style={{ width: "100%", textAlign: "start" }}
+                        onClick={() => setDrawer(false)}
+                      >
+                        Fiat
+                      </Button>
+                    </Link>
+                    <Button
+                      type="text"
+                      style={{ width: "100%", textAlign: "start" }}
+                      onClick={() => {
+                        setDrawer(false);
+                        logout();
                       }}
                     >
-                      <Avatar
-                        style={{ color: "#f56a00", backgroundColor: "#fde3cf" }}
-                      >
-                        {user.firstName.charAt(0).toUpperCase()}
-                      </Avatar>
-                    </div>
-                  </Dropdown>
-                </div>
+                      Logout
+                    </Button>
+                  </Space>
+                </Drawer>
               </Space>
             )}
           </div>
