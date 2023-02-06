@@ -128,7 +128,7 @@ export default function OnboardingStep0({
                         min: 1950,
                         max: 2050,
                         transform: (value) => Number(value),
-                        message: "The month should be between 1950 to 2050",
+                        message: "The year should be between 1950 to 2050",
                       },
                     ]}
                     initialValue={form.birthday.year}
@@ -173,10 +173,12 @@ export default function OnboardingStep0({
                       style={{ width: "30%" }}
                       placeholder="MM"
                       onBlur={(e) => {
-                        cForm.setFieldValue(
-                          "birthDateMM",
-                          e.target.value.padStart(2, "0")
-                        );
+                        if (e.target.value.length !== 0) {
+                          cForm.setFieldValue(
+                            "birthDateMM",
+                            e.target.value.padStart(2, "0")
+                          );
+                        }
                       }}
                       onChange={(e) => {
                         setForm((prev) => ({
@@ -215,10 +217,12 @@ export default function OnboardingStep0({
                       style={{ width: "30%" }}
                       placeholder="DD"
                       onBlur={(e) => {
-                        cForm.setFieldValue(
-                          "birthDateDD",
-                          e.target.value.padStart(2, "0")
-                        );
+                        if (e.target.value.length !== 0) {
+                          cForm.setFieldValue(
+                            "birthDateDD",
+                            e.target.value.padStart(2, "0")
+                          );
+                        }
                       }}
                       onChange={(e) => {
                         setForm((prev) => ({
