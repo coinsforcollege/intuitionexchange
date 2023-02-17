@@ -3,7 +3,7 @@ import { ColumnsType } from "antd/es/table";
 import useSWR from "swr";
 import { ApiOrder } from "types";
 import { axiosInstance } from "util/axios";
-import { FormatCurrency } from "util/functions";
+import { FormatAssetPrice } from "util/functions";
 
 export function HistoryScreen() {
   const { data, error, isLoading } = useSWR("/orders", (url) =>
@@ -33,7 +33,7 @@ export function HistoryScreen() {
       title: "Amount",
       dataIndex: "amount",
       key: "amount",
-      render: (_, t) => `$${FormatCurrency(t.primeTrustBaseAmount)}`,
+      render: (_, t) => `$${FormatAssetPrice(t.total)}`,
     },
     {
       title: "Date & Time",
@@ -53,10 +53,10 @@ export function HistoryScreen() {
         <div style={{ paddingTop: "2rem" }}>
           <Table
             style={{ width: "100%" }}
-            rowKey={(t) => t.primeTrustTxnId}
-            bordered
+            rowKey={(t) => t.id}
             dataSource={data}
             columns={columns}
+            locale={{ emptyText: "No Records" }}
           />
         </div>
       </Card>

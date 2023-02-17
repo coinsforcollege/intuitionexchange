@@ -23,6 +23,9 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
 
   const themeConfig: ThemeConfig = {
     components: {
+      Pagination: {
+        colorBgContainer: "var(--color-background-10)",
+      },
       Button: {
         colorBgContainer: "var(--color-background-10)",
       },

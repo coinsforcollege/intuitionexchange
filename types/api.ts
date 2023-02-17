@@ -100,14 +100,12 @@ export interface ApiAssetWithdraw {
 }
 
 export interface ApiOrder {
-  _id: string;
-  assetId: string;
   createdAt: string;
-  custodialAccountId: string;
-  exchangeFee: number;
-  primeTrustBaseAmount: number;
-  primeTrustFee: number;
-  primeTrustHot: boolean;
-  primeTrustTxnId: string;
-  primeTrustUnitCount: number;
+  id: string;
+  makerFee: number;
+  platformFee: number;
+  pricePerUnit: number;
+  total: number;
+  totalValue: number;
+  unit: number;
 }

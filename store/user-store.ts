@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 type Data = {
   id: string;
@@ -23,7 +23,7 @@ const useUserStore = create(
     }),
     {
       name: "user",
-      getStorage: () => localStorage,
+      storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => (state) => {
         if (state) {
           state._hasHydrated = true;

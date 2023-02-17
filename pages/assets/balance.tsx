@@ -82,7 +82,7 @@ export function AssetBalance() {
           <div style={{ display: "flex" }}>
             <img
               alt={t.code}
-              src={`/asset/${t.code}.png`}
+              src={`/asset/${t.code.toLowerCase()}.png`}
               width={24}
               height={24}
             />
@@ -161,7 +161,6 @@ export function AssetBalance() {
       <Table
         style={{ width: "100%" }}
         rowKey={(t) => t.code}
-        bordered
         dataSource={data}
         columns={columns}
         pagination={false}
