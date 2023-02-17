@@ -17,15 +17,12 @@ import RocketImage from "../public/Rocket.png";
 
 export function Page() {
   const [isPhone, setIsPhone] = React.useState(false);
-  const [isDarkOS, setIsDarkOS] = React.useState(false);
 
-  const isDarkOSCheck = useMediaQuery("(prefers-color-scheme: dark)");
   const isPhoneCheck = useMediaQuery("(max-width: 768px)");
 
   React.useEffect(() => {
     setIsPhone(isPhoneCheck);
-    setIsDarkOS(isDarkOSCheck);
-  }, [isDarkOSCheck, isPhoneCheck]);
+  }, [isPhoneCheck]);
 
   return (
     <>
@@ -145,7 +142,7 @@ export function Page() {
             <CryptocurrencyMarket
               widgetProps={{
                 width: "100%",
-                colorTheme: isDarkOS ? "dark" : "light",
+                colorTheme: "dark",
               }}
             />
           </Col>
