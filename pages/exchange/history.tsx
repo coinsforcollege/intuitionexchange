@@ -1,5 +1,5 @@
-import { Card, Result, Skeleton, Typography } from "antd";
-import Table, { ColumnsType } from "antd/es/table";
+import { Card, Result, Skeleton, Table, Typography } from "antd";
+import { ColumnsType } from "antd/es/table";
 import useSWR from "swr";
 import { ApiOrder } from "types";
 import { axiosInstance } from "util/axios";
