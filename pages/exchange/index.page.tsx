@@ -1,4 +1,4 @@
-import { Col, Form, Row, Select, Space } from "antd";
+import { Col, Row, Space } from "antd";
 import Footer from "components/footer";
 import AdvancedChart from "components/graphs/AdvancedChart";
 import TechnicalAnalysis from "components/graphs/TechnicalAnalysis";
@@ -6,43 +6,48 @@ import Header from "components/header";
 import { UserAuthContextProvider } from "context/protect-route-user";
 import Head from "next/head";
 import React, { ReactElement } from "react";
-import { assetsList } from "types";
 
+import { ExchangeContextProvider } from "./exchange-context";
+import { HistoryScreen } from "./history";
+import { PairsScreen } from "./pairs";
 import { QuoteScreen } from "./quote";
 
 export function Page() {
   const [asset, setAsset] = React.useState("BTC");
-  const findAsset = assetsList.find((item) => item.code === asset);
+  const [baseAsset, setBaseAsset] = React.useState("USD");
 
   return (
     <>
-      <Form.Item label="Asset">
-        <Select
-          value={asset}
-          onChange={(value) => setAsset(value)}
-          options={assetsList.map((asset) => ({
-            label: asset.name,
-            value: asset.code,
-          }))}
-        />
-      </Form.Item>
       <Row gutter={24}>
-        <Col xs={24} md={16}>
-          <div style={{ minHeight: 400 }}>
+        <Col xs={24} md={5}>
+          <PairsScreen
+            base={baseAsset}
+            setBase={setBaseAsset}
+            asset={asset}
+            setAsset={setAsset}
+          />
+        </Col>
+        <Col xs={24} md={12}>
+          <div>
             <AdvancedChart
               widgetProps={{
-                symbol: `BINANCEUS:${asset}USD`,
-                height: 600,
+                symbol: `${asset}${baseAsset}`,
+                height: 400,
+                toolbar_bg: "transparent",
+                hide_side_toolbar: true,
               }}
             />
           </div>
+          <div style={{ paddingTop: "1rem" }}>
+            <HistoryScreen />
+          </div>
         </Col>
-        <Col xs={24} md={8}>
+        <Col xs={24} md={7}>
           <Space direction="vertical" style={{ width: "100%" }}>
-            <QuoteScreen assetId={findAsset?.assetId} />
+            <QuoteScreen asset={asset} base={baseAsset} />
             <TechnicalAnalysis
               widgetProps={{
-                symbol: `BINANCEUS:${asset}USD`,
+                symbol: `${asset}${baseAsset}`,
                 width: "100%",
                 height: 420,
               }}
@@ -62,7 +67,9 @@ Page.GetLayout = function GetLayout(page: ReactElement) {
       </Head>
       <UserAuthContextProvider>
         <Header />
-        <div className="container">{page}</div>
+        <div className="container">
+          <ExchangeContextProvider>{page}</ExchangeContextProvider>
+        </div>
         <Footer />
       </UserAuthContextProvider>
     </>

@@ -81,20 +81,9 @@ export interface ApiAssetTransaction {
 }
 
 export interface ApiAssetSummary {
-  assetId: string;
-  contingentHold: number;
-  disbursable: number;
-  disbursableCold: number;
-  disbursableHot: number;
+  code: string;
   id: string;
   name: string;
-  nonContingentHold: number;
-  nonContingentHoldCold: number;
-  nonContingentHoldHot: number;
-  pendingSettlement: number;
-  pendingTransfer: number;
-  pendingTransferCold: number;
-  pendingTransferHot: number;
   settled: number;
   settledCold: number;
   settledHot: number;
@@ -108,4 +97,17 @@ export interface ApiAssetDeposit {
 export interface ApiAssetWithdraw {
   id: string;
   walletAddress: string;
+}
+
+export interface ApiOrder {
+  _id: string;
+  assetId: string;
+  createdAt: string;
+  custodialAccountId: string;
+  exchangeFee: number;
+  primeTrustBaseAmount: number;
+  primeTrustFee: number;
+  primeTrustHot: boolean;
+  primeTrustTxnId: string;
+  primeTrustUnitCount: number;
 }

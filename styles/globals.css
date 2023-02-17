@@ -1,13 +1,7 @@
 :root {
-  --background: #fff;
-  --color: rgba(0, 0, 0, 0.88);
-}
-
-@media screen and (prefers-color-scheme: dark) {
-  :root {
-    --background: #1b1b1b;
-    --color: rgba(255, 255, 255, 0.85);
-  }
+  --color-background: #101623;
+  --color-background-10: #1e2433;
+  --color: rgba(255, 255, 255, 0.85);
 }
 
 html,
@@ -20,7 +14,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
     "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  background-color: var(--background);
+  background-color: var(--color-background);
 }
 
 * {
@@ -35,4 +29,21 @@ body {
 
 form div.ant-form-item-explain .ant-form-item-explain-error:not(:first-child) {
   display: none;
+}
+
+.scroll::-webkit-scrollbar {
+  width: 3px;
+  background-color: #2d3446;
+}
+
+.scroll::-webkit-scrollbar-thumb {
+  background-color: #abb1bf;
+}
+
+.ant-table-wrapper .ant-table-tbody > tr.ant-table-row:hover > td {
+  background: transparent;
+}
+
+.ant-table-wrapper .ant-table-thead > tr > th {
+  background: transparent;
 }

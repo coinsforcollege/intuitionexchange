@@ -81,7 +81,7 @@ const AdvancedChart = (props: AdvancedChartProps) => {
         }
       }
     };
-  }, [ref, widgetProps, widgetPropsAny, containerId]);
+  }, [widgetProps?.symbol]);
 
   return <div id={containerId} ref={ref} />;
 };

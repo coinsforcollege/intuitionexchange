@@ -6,3 +6,7 @@ export function GetPercentage(value: number, total: number): number {
 export function FormatCurrency(value: number): string {
   return value.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
 }
+
+export function FormatAssetPrice(value: number): number {
+  return Math.floor(value * 100000) / 100000;
+}

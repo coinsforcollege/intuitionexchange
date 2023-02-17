@@ -116,11 +116,8 @@ export default function Header() {
                     <Link href="/exchange">
                       <Button type="text">Exchange</Button>
                     </Link>
-                    <Link href="/assets">
-                      <Button type="text">Assets</Button>
-                    </Link>
-                    <Link href="/fiat">
-                      <Button type="text">Fiat</Button>
+                    <Link href="/funds">
+                      <Button type="text">Funds</Button>
                     </Link>
                     <Typography style={{ opacity: 0.8, padding: "4px 15px" }}>
                       |
@@ -175,22 +172,13 @@ export default function Header() {
                         Exchange
                       </Button>
                     </Link>
-                    <Link href="/assets">
+                    <Link href="/funds">
                       <Button
                         type="text"
                         style={{ width: "100%", textAlign: "start" }}
                         onClick={() => setDrawer(false)}
                       >
-                        Assets
-                      </Button>
-                    </Link>
-                    <Link href="/fiat">
-                      <Button
-                        type="text"
-                        style={{ width: "100%", textAlign: "start" }}
-                        onClick={() => setDrawer(false)}
-                      >
-                        Fiat
+                        Funds
                       </Button>
                     </Link>
                     <Button

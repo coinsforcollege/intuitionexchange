@@ -118,7 +118,7 @@ function Page() {
           status="success"
           title="Transaction Verified!"
           extra={
-            <Link href="/fiat">
+            <Link href="/funds">
               <Button>View Balance</Button>
             </Link>
           }

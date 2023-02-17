@@ -1,4 +1,4 @@
-import { LeftOutlined } from "@ant-design/icons";
+import { CloseOutlined } from "@ant-design/icons";
 import {
   Button,
   Card,
@@ -11,30 +11,27 @@ import {
   Typography,
 } from "antd";
 import { AxiosError } from "axios";
-import Footer from "components/footer";
-import Header from "components/header";
 import { NotificationContext } from "context/notification";
-import { UserAuthContextProvider } from "context/protect-route-user";
-import Head from "next/head";
-import Link from "next/link";
-import { useRouter } from "next/router";
-import React, { ReactElement } from "react";
+import React from "react";
 import useSWR from "swr";
-import { ApiAssetWithdraw, assetsList } from "types";
+import { ApiAssetWithdraw } from "types";
 import { axiosInstance } from "util/axios";
 
-export function Page() {
-  const router = useRouter();
+export function WithdrawScreen({
+  asset,
+  onAddWallet,
+  onClose,
+}: {
+  asset: string;
+  onAddWallet: () => void;
+  onClose: () => void;
+}) {
   const [completed, setCompleted] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const { api: notification } = React.useContext(NotificationContext);
 
-  const asset = assetsList.find(
-    (item) => item.assetId === router.query.assetId
-  );
-
   const { data, error, isLoading } = useSWR(
-    `/api/assets/withdraw/addresses?assetId=${router.query.assetId}`,
+    `/api/assets/withdraw/addresses?asset=${asset}`,
     (url) =>
       axiosInstance.user.get<ApiAssetWithdraw[]>(url).then((res) => res.data)
   );
@@ -77,7 +74,7 @@ export function Page() {
       .post<{
         message: string;
       }>("/api/assets/withdraw", {
-        assetId: router.query.assetId,
+        asset: asset,
         assetTransferMethodId: data.assetTransferMethodId,
         unitCount: data.unitCount,
       })
@@ -102,20 +99,11 @@ export function Page() {
     <>
       <div style={{ maxWidth: "800px", margin: "auto" }}>
         <Card
-          title={
-            <Space>
-              <Link href="/assets">
-                <Button type="text">
-                  <LeftOutlined />
-                </Button>
-              </Link>
-              <Typography>Withdraw {asset?.name}</Typography>
-            </Space>
-          }
+          title={`Withdraw ${asset}`}
           extra={
-            <Link href={`/assets/add-wallet?assetId=${router.query.assetId}`}>
-              <Button>Add wallet</Button>
-            </Link>
+            <Button type="text" onClick={() => onClose()}>
+              <CloseOutlined />
+            </Button>
           }
         >
           {data.length === 0 && (
@@ -125,11 +113,7 @@ export function Page() {
                   In order for you to withdraw assets from your account, you
                   will need to register your external wallet details with us.
                 </Typography>
-                <Link
-                  href={`/assets/add-wallet?assetId=${router.query.assetId}`}
-                >
-                  Add wallet
-                </Link>
+                <a onClick={() => onAddWallet()}>Add wallet</a>
               </Space>
             </div>
           )}
@@ -153,6 +137,7 @@ export function Page() {
                         {item.walletAddress}
                       </Radio>
                     ))}
+                    <a onClick={() => onAddWallet()}>Add wallet</a>
                   </Space>
                 </Radio.Group>
               </Form.Item>
@@ -164,9 +149,8 @@ export function Page() {
               >
                 <InputNumber
                   style={{ width: "100%" }}
-                  prefix="$"
                   title="Amount"
-                  placeholder="Enter amount"
+                  placeholder="0.0"
                 />
               </Form.Item>
               <Form.Item>
@@ -185,20 +169,3 @@ export function Page() {
     </>
   );
 }
-
-Page.GetLayout = function GetLayout(page: ReactElement) {
-  return (
-    <>
-      <Head>
-        <title>Deposit fiat | Intuition Exchange</title>
-      </Head>
-      <UserAuthContextProvider>
-        <Header />
-        <div className="container">{page}</div>
-        <Footer />
-      </UserAuthContextProvider>
-    </>
-  );
-};
-
-export default Page;

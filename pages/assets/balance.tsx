@@ -1,12 +1,56 @@
 import { Button, Card, Result, Skeleton, Space, Table, Typography } from "antd";
 import { ColumnsType } from "antd/es/table";
-import Link from "next/link";
+import React from "react";
 import useSWR from "swr";
-import { ApiAssetSummary, AssetListItem, assetsList } from "types";
+import { ApiAssetSummary } from "types";
 import { axiosInstance } from "util/axios";
+import { FormatAssetPrice } from "util/functions";
+
+import { AddWalletScreen } from "./add-wallet";
+import { DepositScreen } from "./deposit";
+import { WithdrawScreen } from "./withdraw";
+
+function RenderExpand({
+  asset,
+  expendKey,
+  onClose,
+  setType,
+  type,
+}: {
+  asset: string;
+  expendKey: string;
+  onClose: () => void;
+  setType: (type: string) => void;
+  type: string;
+}) {
+  if (expendKey !== asset) {
+    return <></>;
+  }
+
+  if (type === "withdraw") {
+    return (
+      <WithdrawScreen
+        asset={asset}
+        onAddWallet={() => setType("add-wallet")}
+        onClose={onClose}
+      />
+    );
+  }
+
+  if (type === "add-wallet") {
+    return (
+      <AddWalletScreen asset={asset} onClose={() => setType("withdraw")} />
+    );
+  }
+
+  return <DepositScreen asset={asset} onClose={onClose} />;
+}
 
 export function AssetBalance() {
-  const { data, error, isLoading } = useSWR("/api/assets/totals", (url) =>
+  const [expand, setExpand] = React.useState("");
+  const [type, setType] = React.useState("withdraw");
+
+  const { data, error, isLoading } = useSWR("/api/assets", (url) =>
     axiosInstance.user.get<ApiAssetSummary[]>(url).then((res) => res.data)
   );
 
@@ -28,33 +72,42 @@ export function AssetBalance() {
     );
   }
 
-  const columns: ColumnsType<AssetListItem> = [
+  const columns: ColumnsType<ApiAssetSummary> = [
     {
       title: "Name",
       dataIndex: "name",
       key: "name",
-      render: (_, t) => t.name,
+      render: (_, t) => (
+        <>
+          <div style={{ display: "flex" }}>
+            <img
+              alt={t.code}
+              src={`/asset/${t.code}.png`}
+              width={24}
+              height={24}
+            />
+            <Typography style={{ paddingLeft: "8px" }}>{t.code}</Typography>
+          </div>
+        </>
+      ),
     },
     {
       title: "Balance",
       dataIndex: "balance",
       key: "balance",
-      render: (_, t) =>
-        `${data.find((f) => f.assetId === t.assetId)?.settled ?? 0}`,
+      render: (_, t) => FormatAssetPrice(t.settled),
     },
     {
       title: "Balance Cold",
       dataIndex: "balanceCold",
       key: "balanceCold",
-      render: (_, t) =>
-        `${data.find((f) => f.assetId === t.assetId)?.settledCold ?? 0}`,
+      render: (_, t) => FormatAssetPrice(t.settledCold),
     },
     {
       title: "Balance Hot",
       dataIndex: "balanceHot",
       key: "balanceHot",
-      render: (_, t) =>
-        `${data.find((f) => f.assetId === t.assetId)?.settledHot ?? 0}`,
+      render: (_, t) => FormatAssetPrice(t.settledHot),
     },
     {
       title: "Actions",
@@ -62,12 +115,32 @@ export function AssetBalance() {
       key: "actions",
       render: (_, t) => (
         <Space>
-          <Link href={`/assets/deposit?assetId=${t.assetId}`}>
-            <Button>Deposit</Button>
-          </Link>
-          <Link href={`/assets/withdraw?assetId=${t.assetId}`}>
-            <Button>Withdraw</Button>
-          </Link>
+          <Button
+            onClick={() => {
+              if (t.code === expand && type === "deposit") {
+                setExpand("");
+                setType("deposit");
+              } else {
+                setExpand(t.code);
+                setType("deposit");
+              }
+            }}
+          >
+            Deposit
+          </Button>
+          <Button
+            onClick={() => {
+              if (t.code === expand && type === "withdraw") {
+                setExpand("");
+                setType("withdraw");
+              } else {
+                setExpand(t.code);
+                setType("withdraw");
+              }
+            }}
+          >
+            Withdraw
+          </Button>
         </Space>
       ),
     },
@@ -87,11 +160,28 @@ export function AssetBalance() {
       </Typography>
       <Table
         style={{ width: "100%" }}
-        rowKey={(t) => t.assetId}
+        rowKey={(t) => t.code}
         bordered
-        dataSource={assetsList}
+        dataSource={data}
         columns={columns}
+        pagination={false}
         scroll={{ x: 800 }}
+        expandable={{
+          expandedRowKeys: [expand],
+          showExpandColumn: false,
+          expandedRowRender: (t) => (
+            <RenderExpand
+              asset={t.code}
+              expendKey={expand}
+              type={type}
+              setType={setType}
+              onClose={() => {
+                setExpand("");
+                setType("deposit");
+              }}
+            />
+          ),
+        }}
       />
     </>
   );

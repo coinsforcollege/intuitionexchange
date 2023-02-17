@@ -1,22 +1,21 @@
-import { Row } from "antd";
 import Footer from "components/footer";
 import Header from "components/header";
 import { UserAuthContextProvider } from "context/protect-route-user";
 import Head from "next/head";
-import { ReactElement } from "react";
+import React, { ReactElement } from "react";
 
-import { AssetBalance } from "./balance";
-import { AssetTransactions } from "./transactions";
+import { AssetBalance } from "./assets/balance";
+import { FiatBalance } from "./fiat/balance";
 
 export function Page() {
   return (
     <>
-      <Row>
+      <div>
+        <FiatBalance />
+      </div>
+      <div style={{ paddingTop: "2rem" }}>
         <AssetBalance />
-      </Row>
-      <Row style={{ paddingTop: "2rem" }}>
-        <AssetTransactions />
-      </Row>
+      </div>
     </>
   );
 }
@@ -25,7 +24,7 @@ Page.GetLayout = function GetLayout(page: ReactElement) {
   return (
     <>
       <Head>
-        <title>Assets | Intuition Exchange</title>
+        <title>Funds | Intuition Exchange</title>
       </Head>
       <UserAuthContextProvider>
         <Header />

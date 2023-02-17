@@ -1,26 +1,20 @@
-import { LeftOutlined } from "@ant-design/icons";
-import { Button, Card, Form, Input, Result, Space, Typography } from "antd";
+import { CloseOutlined } from "@ant-design/icons";
+import { Button, Card, Form, Input, Result } from "antd";
 import { AxiosError } from "axios";
-import Footer from "components/footer";
-import Header from "components/header";
 import { NotificationContext } from "context/notification";
-import { UserAuthContextProvider } from "context/protect-route-user";
-import Head from "next/head";
-import Link from "next/link";
-import { useRouter } from "next/router";
-import React, { ReactElement } from "react";
-import { assetsList } from "types";
+import React from "react";
 import { axiosInstance } from "util/axios";
 
-export function Page() {
-  const router = useRouter();
+export function AddWalletScreen({
+  asset,
+  onClose,
+}: {
+  asset: string;
+  onClose: () => void;
+}) {
   const [step, setStep] = React.useState(0);
   const [loading, setLoading] = React.useState(false);
   const { api: notification } = React.useContext(NotificationContext);
-
-  const asset = assetsList.find(
-    (item) => item.assetId === router.query.assetId
-  );
 
   const onFinish = (data: { walletId: string }) => {
     setLoading(true);
@@ -29,7 +23,7 @@ export function Page() {
       .post<{
         message: string;
       }>("/api/assets/withdraw/addresses", {
-        assetId: router.query.assetId,
+        asset: asset,
         walletId: data.walletId,
       })
       .then((res) => {
@@ -53,15 +47,11 @@ export function Page() {
     <>
       <div style={{ maxWidth: "800px", margin: "auto" }}>
         <Card
-          title={
-            <Space>
-              <Link href={`/assets/withdraw?assetId=${router.query.assetId}`}>
-                <Button type="text">
-                  <LeftOutlined />
-                </Button>
-              </Link>
-              <Typography>Add wallet to withdraw {asset?.name}</Typography>
-            </Space>
+          title="Add wallet"
+          extra={
+            <Button type="text" onClick={() => onClose()}>
+              <CloseOutlined />
+            </Button>
           }
         >
           {step === 1 && <Result status="success" title="Wallet added!" />}
@@ -96,20 +86,3 @@ export function Page() {
     </>
   );
 }
-
-Page.GetLayout = function GetLayout(page: ReactElement) {
-  return (
-    <>
-      <Head>
-        <title>Add wallet | Intuition Exchange</title>
-      </Head>
-      <UserAuthContextProvider>
-        <Header />
-        <div className="container">{page}</div>
-        <Footer />
-      </UserAuthContextProvider>
-    </>
-  );
-};
-
-export default Page;

@@ -1,14 +1,18 @@
 import { Button, Card, Descriptions, Result, Skeleton, Space } from "antd";
-import { FiatContext } from "context/fiat";
 import Link from "next/link";
 import React from "react";
+import useSWR from "swr";
+import { ApiFiatTotals } from "types";
+import { axiosInstance } from "util/axios";
 import { FormatCurrency } from "util/functions";
 
 export function FiatBalance() {
-  const { data, error, isLoading, refresh } = React.useContext(FiatContext);
+  const { data, error, isLoading, mutate } = useSWR("/api/fiat/totals", (url) =>
+    axiosInstance.user.get<ApiFiatTotals>(url).then((res) => res.data)
+  );
 
   React.useEffect(() => {
-    refresh();
+    mutate();
   }, []);
 
   if (error) {
@@ -33,7 +37,7 @@ export function FiatBalance() {
     <>
       <Descriptions
         style={{ width: "100%" }}
-        title="Balance"
+        title="Fiat"
         extra={
           <Space>
             <Link href="/fiat/deposit">

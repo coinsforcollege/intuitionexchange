@@ -5,7 +5,7 @@ import React from "react";
 
 import LoadingScreen from "../components/loading-screen";
 import { ApiUserInfo, Flags } from "../types";
-import { FiatContextProvider } from "./fiat";
+import { BalanceContextProvider } from "./balance";
 import { AuthContext } from "./protect-route";
 
 type UserAuthContext = {
@@ -57,7 +57,7 @@ export const UserAuthContextProvider = ({
 
   return (
     <UserAuthContext.Provider value={{ loading, user, refresh }}>
-      <FiatContextProvider>{children}</FiatContextProvider>
+      <BalanceContextProvider>{children}</BalanceContextProvider>
     </UserAuthContext.Provider>
   );
 };
