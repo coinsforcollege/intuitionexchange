@@ -46,7 +46,7 @@ export function PairsScreen({
               >
                 <div style={{ display: "flex" }}>
                   <img
-                    src={`/asset/${pair}.png`}
+                    src={`/asset/${pair.toLowerCase()}.png`}
                     alt={pair}
                     width={24}
                     height={24}
