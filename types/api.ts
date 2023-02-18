@@ -109,6 +109,6 @@ export interface ApiOrder {
   pricePerUnit: number;
   total: number;
   totalValue: number;
-  type: string;
+  type: "buy" | "sell";
   unit: number;
 }

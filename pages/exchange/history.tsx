@@ -14,11 +14,7 @@ import React from "react";
 import useSWR from "swr";
 import { ApiOrder } from "types";
 import { axiosInstance } from "util/axios";
-import {
-  capitalizeFirstLetter,
-  FormatCurrency,
-  FormatPrice,
-} from "util/functions";
+import { FormatCurrency, FormatPrice } from "util/functions";
 
 export function HistoryScreen() {
   const { data: balances } = React.useContext(BalanceContext);
@@ -98,7 +94,7 @@ export function HistoryScreen() {
           <Modal
             open={receipt === t.id}
             onCancel={() => setReceipt("")}
-            title={`${capitalizeFirstLetter(t.type)} ${t.assetCode} with USD`}
+            title={`${t.assetCode} ${t.type === "buy" ? "Purchased" : "Sold"}`}
           >
             <div style={{ paddingTop: "2rem" }}>
               <Descriptions bordered column={1}>
@@ -110,19 +106,19 @@ export function HistoryScreen() {
                   {t.unit} {t.assetCode}
                 </Descriptions.Item>
                 <Descriptions.Item label="Rate">
-                  {t.pricePerUnit} USD
+                  {FormatCurrency(t.pricePerUnit.toFixed(2))} USD
                 </Descriptions.Item>
                 <Descriptions.Item label="Total Value">
-                  {t.totalValue} USD
+                  {FormatCurrency(t.totalValue.toFixed(2))} USD
                 </Descriptions.Item>
                 <Descriptions.Item label="Maker Fee (0.50%)">
-                  {t.makerFee} USD
+                  {FormatCurrency(t.makerFee.toFixed(2))} USD
                 </Descriptions.Item>
                 <Descriptions.Item label="Platform Fee (0.49%)">
-                  {t.platformFee} USD
+                  {FormatCurrency(t.platformFee.toFixed(2))} USD
                 </Descriptions.Item>
                 <Descriptions.Item label="Transaction Value">
-                  {t.total} USD
+                  {FormatCurrency(t.total.toFixed(2))} USD
                 </Descriptions.Item>
               </Descriptions>
             </div>

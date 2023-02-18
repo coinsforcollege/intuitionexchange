@@ -7,7 +7,7 @@ export function capitalizeFirstLetter(string: string): string {
   return string.charAt(0).toUpperCase() + string.toLowerCase().slice(1);
 }
 
-export function FormatCurrency(value: number): string {
+export function FormatCurrency(value: number | string): string {
   return value.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
 }
 
