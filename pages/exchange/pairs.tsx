@@ -22,6 +22,7 @@ export function PairsScreen({
       <Card style={{ height: "100%" }}>
         <div>
           <Radio.Group
+            size="small"
             onChange={(e) => setMode(e.target.value)}
             value={mode}
             style={{ marginBottom: 8, width: "100%", textAlign: "center" }}
