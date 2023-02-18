@@ -103,23 +103,26 @@ export function HistoryScreen() {
             <div style={{ paddingTop: "2rem" }}>
               <Descriptions bordered column={1}>
                 <Descriptions.Item label="Order ID">{t.id}</Descriptions.Item>
+                <Descriptions.Item label="Date & Time">
+                  {new Date(t.createdAt).toLocaleString()}
+                </Descriptions.Item>
                 <Descriptions.Item label="Amount">
-                  {t.totalValue}
+                  {t.unit} {t.assetCode}
                 </Descriptions.Item>
                 <Descriptions.Item label="Rate">
-                  {t.pricePerUnit}
+                  {t.pricePerUnit} USD
                 </Descriptions.Item>
-                <Descriptions.Item label="Transaction Value">
-                  {t.total}
+                <Descriptions.Item label="Total Value">
+                  {t.totalValue} USD
                 </Descriptions.Item>
                 <Descriptions.Item label="Maker Fee (0.50%)">
-                  {t.makerFee}
+                  {t.makerFee} USD
                 </Descriptions.Item>
                 <Descriptions.Item label="Platform Fee (0.49%)">
-                  {t.platformFee}
+                  {t.platformFee} USD
                 </Descriptions.Item>
-                <Descriptions.Item label="Date & Time">
-                  {new Date(t.createdAt).toLocaleDateString()}
+                <Descriptions.Item label="Transaction Value">
+                  {t.total} USD
                 </Descriptions.Item>
               </Descriptions>
             </div>
