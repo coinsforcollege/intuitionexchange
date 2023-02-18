@@ -1,6 +1,6 @@
 import { Card, Divider, Radio, Typography } from "antd";
 import React from "react";
-import { FormatAssetPrice } from "util/functions";
+import { FormatPrice } from "util/functions";
 
 import { ExchangeContext } from "./exchange-context";
 
@@ -29,6 +29,7 @@ export function PairsScreen({
             <Radio.Button value="USD">USD</Radio.Button>
             <Radio.Button value="BTC">BTC</Radio.Button>
             <Radio.Button value="ETH">ETH</Radio.Button>
+            <Radio.Button value="ADA">ADA</Radio.Button>
           </Radio.Group>
         </div>
         <Divider />
@@ -56,7 +57,7 @@ export function PairsScreen({
                   </div>
                   <div>
                     <Typography>
-                      {FormatAssetPrice(pairs[pair]?.[mode]?.PRICE ?? 0)} {mode}
+                      {FormatPrice(pairs[pair]?.[mode]?.PRICE ?? 0)} {mode}
                     </Typography>
                   </div>
                 </div>

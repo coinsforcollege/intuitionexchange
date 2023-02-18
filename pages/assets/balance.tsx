@@ -4,7 +4,7 @@ import React from "react";
 import useSWR from "swr";
 import { ApiAssetSummary } from "types";
 import { axiosInstance } from "util/axios";
-import { FormatAssetPrice } from "util/functions";
+import { FormatPrice } from "util/functions";
 
 import { AddWalletScreen } from "./add-wallet";
 import { DepositScreen } from "./deposit";
@@ -95,19 +95,19 @@ export function AssetBalance() {
       title: "Balance",
       dataIndex: "balance",
       key: "balance",
-      render: (_, t) => FormatAssetPrice(t.settled),
+      render: (_, t) => FormatPrice(t.settled),
     },
     {
       title: "Balance Cold",
       dataIndex: "balanceCold",
       key: "balanceCold",
-      render: (_, t) => FormatAssetPrice(t.settledCold),
+      render: (_, t) => FormatPrice(t.settledCold),
     },
     {
       title: "Balance Hot",
       dataIndex: "balanceHot",
       key: "balanceHot",
-      render: (_, t) => FormatAssetPrice(t.settledHot),
+      render: (_, t) => FormatPrice(t.settledHot),
     },
     {
       title: "Actions",

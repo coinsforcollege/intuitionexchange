@@ -3,10 +3,15 @@ export function GetPercentage(value: number, total: number): number {
   return Number.isFinite(percentage) ? percentage : 0;
 }
 
+export function capitalizeFirstLetter(string: string): string {
+  return string.charAt(0).toUpperCase() + string.toLowerCase().slice(1);
+}
+
 export function FormatCurrency(value: number): string {
   return value.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
 }
 
-export function FormatAssetPrice(value: number): number {
-  return Math.floor(value * 100000) / 100000;
+export function FormatPrice(value: number, decimal = 5): number {
+  const rate = Math.pow(10, decimal);
+  return Math.floor(value * rate) / rate;
 }

@@ -100,6 +100,8 @@ export interface ApiAssetWithdraw {
 }
 
 export interface ApiOrder {
+  assetCode: string;
+  assetName: string;
   createdAt: string;
   id: string;
   makerFee: number;
@@ -107,5 +109,6 @@ export interface ApiOrder {
   pricePerUnit: number;
   total: number;
   totalValue: number;
+  type: string;
   unit: number;
 }

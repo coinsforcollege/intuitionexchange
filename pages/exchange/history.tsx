@@ -1,14 +1,36 @@
-import { Card, Result, Skeleton, Table, Typography } from "antd";
+import {
+  Button,
+  Card,
+  Descriptions,
+  Modal,
+  Result,
+  Skeleton,
+  Table,
+  Typography,
+} from "antd";
 import { ColumnsType } from "antd/es/table";
+import { BalanceContext } from "context/balance";
+import React from "react";
 import useSWR from "swr";
 import { ApiOrder } from "types";
 import { axiosInstance } from "util/axios";
-import { FormatAssetPrice } from "util/functions";
+import {
+  capitalizeFirstLetter,
+  FormatCurrency,
+  FormatPrice,
+} from "util/functions";
 
 export function HistoryScreen() {
-  const { data, error, isLoading } = useSWR("/orders", (url) =>
+  const { data: balances } = React.useContext(BalanceContext);
+  const [receipt, setReceipt] = React.useState("");
+
+  const { data, error, isLoading, mutate } = useSWR("/orders", (url) =>
     axiosInstance.user.get<ApiOrder[]>(url).then((res) => res.data)
   );
+
+  React.useEffect(() => {
+    mutate();
+  }, [balances.find((bx) => bx.code === "USD")?.unit]);
 
   if (error) {
     return (
@@ -30,29 +52,95 @@ export function HistoryScreen() {
 
   const columns: ColumnsType<ApiOrder> = [
     {
-      title: "Amount",
-      dataIndex: "amount",
-      key: "amount",
-      render: (_, t) => `$${FormatAssetPrice(t.total)}`,
+      title: "Asset",
+      dataIndex: "asset",
+      key: "asset",
+      render: (_, t) => (
+        <div>
+          <img
+            alt={t.assetCode}
+            src={`/asset/${t.assetCode.toLowerCase()}.png`}
+            width={24}
+            height={24}
+          />
+          {t.assetName}
+        </div>
+      ),
     },
     {
-      title: "Date & Time",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (_, t) =>
-        `${new Date(t.createdAt).toLocaleDateString()} ${new Date(
-          t.createdAt
-        ).toLocaleTimeString()}`,
+      title: "Quantity",
+      dataIndex: "amount",
+      key: "amount",
+      render: (_, t) => (
+        <div style={{ color: t.type === "buy" ? "#4ddc44" : "#dc4446" }}>
+          {t.unit} {t.assetCode}
+        </div>
+      ),
+    },
+    {
+      title: "Rate",
+      dataIndex: "rate",
+      key: "rate",
+      render: (_, t) => `${FormatCurrency(FormatPrice(t.pricePerUnit, 2))} USD`,
+    },
+    {
+      title: "Transaction Value",
+      dataIndex: "price",
+      key: "price",
+      render: (_, t) => `${FormatCurrency(FormatPrice(t.total, 2))} USD`,
+    },
+    {
+      title: "Actions",
+      dataIndex: "actions",
+      key: "actions",
+      render: (_, t) => (
+        <>
+          <Modal
+            open={receipt === t.id}
+            onCancel={() => setReceipt("")}
+            title={`${capitalizeFirstLetter(t.type)} ${t.assetCode} with USD`}
+          >
+            <div style={{ paddingTop: "2rem" }}>
+              <Descriptions bordered column={1}>
+                <Descriptions.Item label="Order ID">{t.id}</Descriptions.Item>
+                <Descriptions.Item label="Amount">
+                  {t.totalValue}
+                </Descriptions.Item>
+                <Descriptions.Item label="Rate">
+                  {t.pricePerUnit}
+                </Descriptions.Item>
+                <Descriptions.Item label="Transaction Value">
+                  {t.total}
+                </Descriptions.Item>
+                <Descriptions.Item label="Maker Fee (0.50%)">
+                  {t.makerFee}
+                </Descriptions.Item>
+                <Descriptions.Item label="Platform Fee (0.49%)">
+                  {t.platformFee}
+                </Descriptions.Item>
+                <Descriptions.Item label="Date & Time">
+                  {new Date(t.createdAt).toLocaleDateString()}
+                </Descriptions.Item>
+              </Descriptions>
+            </div>
+          </Modal>
+          <Button onClick={() => setReceipt(t.id)}>View</Button>
+        </>
+      ),
     },
   ];
 
   return (
     <>
-      <Card style={{ width: "100%", height: "300px" }}>
+      <Card style={{ width: "100%" }}>
         <Typography style={{ fontWeight: "bold" }}>Order History</Typography>
         <div style={{ paddingTop: "2rem" }}>
           <Table
-            style={{ width: "100%" }}
+            size="small"
+            style={{ width: "100%", minHeight: "300px" }}
+            pagination={{
+              pageSize: 5,
+            }}
             rowKey={(t) => t.id}
             dataSource={data}
             columns={columns}
