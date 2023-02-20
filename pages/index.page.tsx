@@ -1,7 +1,8 @@
-import { Button, Col, Row, Space, Typography } from "antd";
+import { Button, Card, Col, Row, Space, Typography } from "antd";
 import Footer from "components/footer";
 import CryptocurrencyMarket from "components/graphs/CryptocurrencyMarket";
 import Header from "components/header";
+import { TuitCoinCounter } from "components/tuit-coin-counter";
 import useMediaQuery from "components/useMediaQuery";
 import Head from "next/head";
 import Image from "next/image";
@@ -10,10 +11,10 @@ import React, { ReactElement } from "react";
 
 import AccessImage from "../public/Access.png";
 import LockImage from "../public/Lock.png";
-import mainImageX from "../public/main-x.webp";
 import mainImageY from "../public/main-y.webp";
 import ProtectImage from "../public/Protect.png";
 import RocketImage from "../public/Rocket.png";
+import tuitLogo from "../public/tuit-white.svg";
 
 export function Page() {
   const [isPhone, setIsPhone] = React.useState(false);
@@ -27,51 +28,82 @@ export function Page() {
   return (
     <>
       <div className="container">
-        <Row gutter={[16, 16]} style={{ alignItems: "center" }}>
-          <Col xs={24} md={10}>
-            <div style={{ textAlign: "center", padding: "4rem" }}>
-              <Image
-                alt="Intuition Exchange"
-                src={mainImageX}
-                style={{ width: "100%", height: "auto" }}
-              />
-            </div>
-          </Col>
+        <Row
+          gutter={[32, 32]}
+          style={{ alignItems: "center", padding: "4rem 0" }}
+        >
           <Col xs={24} md={14}>
             <Typography.Title
               level={1}
-              style={{ fontSize: isPhone ? undefined : "6rem" }}
+              style={{ fontSize: isPhone ? undefined : "4rem" }}
             >
-              Most intuitive way to invest in crypto
+              Investing in the Future
             </Typography.Title>
             <Typography.Title
               level={3}
               style={{ fontSize: isPhone ? undefined : "2rem" }}
             >
-              Buy and sell crypto assets with the easiest and most secure
-              onboarding
+              InTuition Exchange Gives 10% of Its Revenue to Support College
+              Education for Students
             </Typography.Title>
-            <Link href="/">
+            <Link href="/login">
               <Button type="primary" size="large">
                 Start Trading
               </Button>
             </Link>
+          </Col>
+          <Col xs={24} md={10}>
+            <div style={{ padding: "4rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  borderRadius: "8px",
+                  alignItems: "center",
+                  background: "rgba(117, 119, 184, 0.5)",
+                  width: "fit-content",
+                  margin: "auto",
+                }}
+              >
+                <div
+                  style={{
+                    background: "#7577B8",
+                    borderRadius: "8px 0 0 8px",
+                    padding: "1rem",
+                    display: "flex",
+                    alignContent: "center",
+                  }}
+                >
+                  <Image
+                    alt="logo"
+                    src={tuitLogo}
+                    style={{
+                      width: "3rem",
+                      height: "auto",
+                    }}
+                  />
+                </div>
+                <div style={{ padding: "0 1rem" }}>
+                  <TuitCoinCounter />
+                </div>
+              </div>
+            </div>
           </Col>
         </Row>
         <Row
           style={{
             paddingTop: "10rem",
             textAlign: "center",
-            maxWidth: "800px",
             margin: "auto",
           }}
           gutter={[16, 16]}
         >
-          <Typography.Title level={3}>
-            Our exchange is designed to bring together all those who are
-            passionate about cryptocurrency and want to be a part of the digital
-            revolution that is taking place at an accelerated rate.
-          </Typography.Title>
+          <Card style={{ width: "100%", padding: "2rem" }}>
+            <Typography.Title level={3}>
+              Our exchange is designed to bring together all those who are
+              passionate about cryptocurrency and want to be a part of the
+              digital revolution that is taking place at an accelerated rate.
+            </Typography.Title>
+          </Card>
         </Row>
         <Row gutter={[16, 16]} style={{ paddingTop: "10rem" }}>
           <Col xs={24} md={6}>
