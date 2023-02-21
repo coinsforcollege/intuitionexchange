@@ -38,10 +38,35 @@ jobs:
           push: true
           tags: ${{ secrets.REGISTRY_HOST }}/${{ steps.tag.outputs.name }}
 
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$SSH_KEY" > ~/.ssh/staging.key
+          chmod 600 ~/.ssh/staging.key
+          cat >>~/.ssh/config <<END
+          Host staging
+            HostName $SSH_HOST
+            User $SSH_USER
+            IdentityFile ~/.ssh/staging.key
+            StrictHostKeyChecking no
+          END
+        env:
+          SSH_USER: ${{ secrets.STAGING_SSH_USER }}
+          SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+          SSH_HOST: ${{ secrets.STAGING_SSH_HOST }}
+
+      - name: Set deployment image
+        run: ssh staging 'microk8s kubectl set image deployments/web web=localhost:32000/${{ needs.build.outputs.tag }} -n exchange'
+
   alert:
     name: Alert
     if: ${{ always() }}
-    needs: build
+    needs: [build, deploy]
     runs-on: ubuntu-latest
     steps:
       - name: Successful
