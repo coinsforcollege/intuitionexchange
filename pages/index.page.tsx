@@ -1,6 +1,6 @@
 import { Button, Card, Col, Row, Space, Typography } from "antd";
 import Footer from "components/footer";
-import CryptocurrencyMarket from "components/graphs/CryptocurrencyMarket";
+import MarketQuote from "components/graphs/MarketQuote";
 import Header from "components/header";
 import { TuitCoinCounter } from "components/tuit-coin-counter";
 import useMediaQuery from "components/useMediaQuery";
@@ -59,14 +59,14 @@ export function Page() {
                   display: "flex",
                   borderRadius: "8px",
                   alignItems: "center",
-                  background: "rgba(117, 119, 184, 0.5)",
+                  background: "rgba(22, 104, 220, 0.5)",
                   width: "fit-content",
                   margin: "auto",
                 }}
               >
                 <div
                   style={{
-                    background: "#7577B8",
+                    background: "#1668DC",
                     borderRadius: "8px 0 0 8px",
                     padding: "1rem",
                     display: "flex",
@@ -171,10 +171,36 @@ export function Page() {
         <Row style={{ paddingTop: "10rem" }}>
           <Col xs={24}>
             <Typography.Title level={3}>Market Overview</Typography.Title>
-            <CryptocurrencyMarket
+            <MarketQuote
               widgetProps={{
                 width: "100%",
                 colorTheme: "dark",
+                symbolsGroups: [
+                  {
+                    name: "USD",
+                    originalName: "Indices",
+                    symbols: [
+                      {
+                        name: "BITSTAMP:BTCUSD",
+                      },
+                      {
+                        name: "BITSTAMP:ETHUSD",
+                      },
+                      {
+                        name: "BITSTAMP:ADAUSD",
+                      },
+                      {
+                        name: "BITSTAMP:LTCUSD",
+                      },
+                      {
+                        name: "BITSTAMP:USDCUSD",
+                      },
+                      {
+                        name: "BITSTAMP:USDTUSD",
+                      },
+                    ],
+                  },
+                ],
               }}
             />
           </Col>
