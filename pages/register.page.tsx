@@ -258,21 +258,6 @@ function Page() {
                   </Col>
                   <Col xs={24}>
                     <Form.Item
-                      label="Invitation Code"
-                      required
-                      name="invitationCode"
-                      rules={[
-                        {
-                          required: true,
-                          message: "Please enter invitation code!",
-                        },
-                      ]}
-                    >
-                      <Input placeholder="Enter the invitation code shared with you by Intuition team" />
-                    </Form.Item>
-                  </Col>
-                  <Col xs={24}>
-                    <Form.Item
                       label="Country"
                       name="country"
                       extra="We currently serve only in the United States"
