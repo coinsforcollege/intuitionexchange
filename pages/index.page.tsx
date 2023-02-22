@@ -32,7 +32,7 @@ export function Page() {
           gutter={[32, 32]}
           style={{ alignItems: "center", padding: "4rem 0" }}
         >
-          <Col xs={24} md={14}>
+          <Col xs={{ span: 24, order: 2 }} md={{ span: 14, order: 1 }}>
             <Typography.Title
               level={1}
               style={{ fontSize: isPhone ? undefined : "4rem" }}
@@ -52,38 +52,48 @@ export function Page() {
               </Button>
             </Link>
           </Col>
-          <Col xs={24} md={10}>
-            <div style={{ padding: "4rem" }}>
+          <Col xs={{ span: 24, order: 1 }} md={{ span: 10, order: 1 }}>
+            <div style={{ position: "relative", height: "100px" }}>
               <div
                 style={{
-                  display: "flex",
-                  borderRadius: "8px",
-                  alignItems: "center",
-                  background: "rgba(22, 104, 220, 0.5)",
-                  width: "fit-content",
                   margin: "auto",
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
                 }}
               >
                 <div
                   style={{
-                    background: "#1668DC",
-                    borderRadius: "8px 0 0 8px",
-                    padding: "1rem",
                     display: "flex",
-                    alignContent: "center",
+                    borderRadius: "8px",
+                    alignItems: "center",
+                    background: "rgba(22, 104, 220, 0.5)",
+                    justifyContent: "center",
+                    width: "fit-content",
+                    margin: "auto",
                   }}
                 >
-                  <Image
-                    alt="logo"
-                    src={tuitLogo}
+                  <div
                     style={{
-                      width: "3rem",
-                      height: "auto",
+                      background: "#1668DC",
+                      borderRadius: "8px 0 0 8px",
+                      padding: "1rem",
+                      display: "flex",
+                      alignContent: "center",
                     }}
-                  />
-                </div>
-                <div style={{ padding: "0 1rem" }}>
-                  <TuitCoinCounter />
+                  >
+                    <Image
+                      alt="logo"
+                      src={tuitLogo}
+                      style={{
+                        width: "3rem",
+                        height: "auto",
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <TuitCoinCounter />
+                  </div>
                 </div>
               </div>
             </div>
