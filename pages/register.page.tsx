@@ -195,7 +195,6 @@ function Page() {
                           initialValue="1"
                         >
                           <Input
-                            disabled
                             prefix="+"
                             style={{
                               width: "15%",
@@ -254,6 +253,21 @@ function Page() {
                         type="password"
                         placeholder="Password length must be greater than 8 characters"
                       />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24}>
+                    <Form.Item
+                      label="Invitation Code"
+                      required
+                      name="invitationCode"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Please enter invitation code!",
+                        },
+                      ]}
+                    >
+                      <Input placeholder="Enter the invitation code shared with you by Intuition team" />
                     </Form.Item>
                   </Col>
                   <Col xs={24}>
