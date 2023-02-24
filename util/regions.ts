@@ -261,6 +261,7 @@ export const regions = [
     Division: "East South Central",
   },
   {
+    disabled: true,
     State: "Texas",
     StateCode: "TX",
     Region: "South",

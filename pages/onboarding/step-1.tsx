@@ -140,7 +140,7 @@ export default function OnboardingStep0({
             </Col>
             <Col xs={24} md={12}>
               <Form.Item
-                extra="We are currently not serving the residents of New York, Hawaii, and South Dakota."
+                extra="We are currently not serving the residents of New York, Hawaii, South Dakota and Texas."
                 label="Region"
                 name={["address", "region"]}
                 required
