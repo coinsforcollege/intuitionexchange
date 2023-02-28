@@ -30,6 +30,7 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
       colorPrimary: darkMode ? "#1677ff" : "#1677ff",
       colorBgBase: darkMode ? "#1e2433" : "#fff",
       colorTextBase: darkMode ? "#ffffff" : "#000",
+      colorBorder: darkMode ? "#4e4e4e" : "#d9d9d9",
     },
   };
 
