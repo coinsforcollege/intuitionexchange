@@ -1,7 +1,7 @@
 import "antd/dist/reset.css";
 import "../styles/globals.css";
 
-import { ConfigProvider } from "antd";
+import { ConfigProvider, theme } from "antd";
 import { ThemeConfig } from "antd/es/config-provider/context";
 import { NotificationProvider } from "context/notification";
 import { AuthContextProvider } from "context/protect-route";
@@ -26,12 +26,10 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
 
   const themeConfig: ThemeConfig = {
     token: {
-      colorPrimaryBg: darkMode ? "#1677ffaa" : "#e6f4ff",
-      colorPrimary: darkMode ? "#1677ff" : "#1677ff",
-      colorBgBase: darkMode ? "#1e2433" : "#fff",
-      colorTextBase: darkMode ? "#ffffff" : "#000",
-      colorBorder: darkMode ? "#4e4e4e" : "#d9d9d9",
+      colorBgContainer: darkMode ? "#1e2433" : "#ffffff",
+      colorBgElevated: darkMode ? "#1e2433" : "#ffffff",
     },
+    algorithm: [darkMode ? theme.darkAlgorithm : theme.defaultAlgorithm],
   };
 
   function HandleThemeChange(e: MediaQueryListEvent) {
