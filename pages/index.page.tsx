@@ -4,6 +4,7 @@ import MarketQuote from "components/graphs/MarketQuote";
 import Header from "components/header";
 import { TuitCoinCounter } from "components/tuit-coin-counter";
 import useMediaQuery from "components/useMediaQuery";
+import { ResponsiveContext } from "context/responsive";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
@@ -17,6 +18,7 @@ import RocketImage from "../public/Rocket.png";
 import tuitLogo from "../public/tuit-white.svg";
 
 export function Page() {
+  const { isDarkMode } = React.useContext(ResponsiveContext);
   const [isPhone, setIsPhone] = React.useState(false);
 
   const isPhoneCheck = useMediaQuery("(max-width: 768px)");
@@ -184,7 +186,7 @@ export function Page() {
             <MarketQuote
               widgetProps={{
                 width: "100%",
-                colorTheme: "dark",
+                colorTheme: isDarkMode ? "dark" : "light",
                 symbolsGroups: [
                   {
                     name: "USD",

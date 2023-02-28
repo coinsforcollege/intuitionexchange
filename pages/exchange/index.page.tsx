@@ -4,6 +4,7 @@ import AdvancedChart from "components/graphs/AdvancedChart";
 import TechnicalAnalysis from "components/graphs/TechnicalAnalysis";
 import Header from "components/header";
 import { UserAuthContextProvider } from "context/protect-route-user";
+import { ResponsiveContext } from "context/responsive";
 import Head from "next/head";
 import React, { ReactElement } from "react";
 
@@ -13,6 +14,7 @@ import { PairsScreen } from "./pairs";
 import { QuoteScreen } from "./quote";
 
 export function Page() {
+  const { isDarkMode } = React.useContext(ResponsiveContext);
   const [asset, setAsset] = React.useState("BTC");
   const [baseAsset, setBaseAsset] = React.useState("USD");
 
@@ -31,6 +33,7 @@ export function Page() {
           <div>
             <AdvancedChart
               widgetProps={{
+                theme: isDarkMode ? "dark" : "light",
                 symbol: `${asset}${baseAsset}`,
                 height: 400,
                 toolbar_bg: "transparent",
@@ -47,6 +50,7 @@ export function Page() {
             <QuoteScreen asset={asset} base={baseAsset} />
             <TechnicalAnalysis
               widgetProps={{
+                colorTheme: isDarkMode ? "dark" : "light",
                 symbol: `${asset}${baseAsset}`,
                 width: "100%",
                 height: 420,

@@ -1,8 +1,4 @@
-:root {
-  --color-background: #101623;
-  --color-background-10: #1e2433;
-  --color: rgba(255, 255, 255, 0.85);
-}
+@import url("./colors.css");
 
 html,
 body {
@@ -38,28 +34,4 @@ form div.ant-form-item-explain .ant-form-item-explain-error:not(:first-child) {
 
 .scroll::-webkit-scrollbar-thumb {
   background-color: #abb1bf;
-}
-
-.ant-table-wrapper
-  .ant-table:not(.ant-table-bordered)
-  .ant-table-tbody
-  > tr
-  > td {
-  border-top: none;
-}
-
-.ant-table-wrapper
-  .ant-table:not(.ant-table-bordered)
-  .ant-table-tbody
-  > tr:last-child
-  > td {
-  border-bottom: none;
-}
-
-.ant-table-wrapper .ant-table-tbody > tr.ant-table-row:hover > td {
-  background: transparent;
-}
-
-.ant-table-wrapper .ant-table-thead > tr > th {
-  background: transparent;
 }

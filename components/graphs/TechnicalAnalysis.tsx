@@ -57,7 +57,7 @@ const TechnicalAnalysis = (props: TechnicalAnalysisProps) => {
         }
       }
     };
-  }, [widgetProps?.symbol]);
+  }, [widgetProps?.symbol, widgetProps?.colorTheme]);
 
   return <div ref={ref} />;
 };

@@ -1,10 +1,11 @@
 import "antd/dist/reset.css";
 import "../styles/globals.css";
 
-import { ConfigProvider, theme } from "antd";
+import { ConfigProvider } from "antd";
 import { ThemeConfig } from "antd/es/config-provider/context";
 import { NotificationProvider } from "context/notification";
 import { AuthContextProvider } from "context/protect-route";
+import { ResponsiveContext } from "context/responsive";
 import { NextPage } from "next";
 import type { AppProps } from "next/app";
 import React, { ReactElement, ReactNode } from "react";
@@ -18,52 +19,56 @@ type AppPropsWithLayout = AppProps & {
 };
 
 export default function App({ Component, pageProps }: AppPropsWithLayout) {
+  const [darkMode, setDarkMode] = React.useState(true);
+
   // Use the layout defined at the page level, if available
   const GetLayout = Component.GetLayout ?? ((page) => page);
 
   const themeConfig: ThemeConfig = {
-    components: {
-      Pagination: {
-        colorBgContainer: "var(--color-background-10)",
-      },
-      Button: {
-        colorBgContainer: "var(--color-background-10)",
-      },
-      Menu: {
-        colorBgContainer: "var(--color-background-10)",
-      },
-      Radio: {
-        colorBgContainer: "var(--color-background-10)",
-      },
-      Card: {
-        colorBgContainer: "var(--color-background-10)",
-      },
-      Input: {
-        colorBgContainer: "#2c3345",
-      },
-      InputNumber: {
-        colorBgContainer: "#2c3345",
-      },
-      Table: {
-        colorBgContainer: "var(--color-background-10)",
-      },
-      Modal: {
-        colorBgElevated: "var(--color-background-10)",
-      },
-      Notification: {
-        colorPrimaryBg: "var(--color-background-10)",
-      },
+    token: {
+      colorPrimaryBg: darkMode ? "#1677ffaa" : "#e6f4ff",
+      colorPrimary: darkMode ? "#1677ff" : "#1677ff",
+      colorBgBase: darkMode ? "#1e2433" : "#fff",
+      colorTextBase: darkMode ? "#ffffff" : "#000",
     },
-    algorithm: [theme.darkAlgorithm],
   };
 
+  function HandleThemeChange(e: MediaQueryListEvent) {
+    setDarkMode(e.matches);
+    document.documentElement.setAttribute(
+      "data-theme",
+      e.matches ? "dark" : "light"
+    );
+  }
+
+  React.useEffect(() => {
+    const val = document.documentElement.getAttribute("data-theme");
+    if (val === "light") {
+      setDarkMode(false);
+    }
+
+    // MediaQueryList
+    const darkModePreference = window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    );
+
+    // recommended method for newer browsers: specify event-type as first argument
+    darkModePreference.addEventListener("change", HandleThemeChange);
+
+    return () => {
+      darkModePreference.removeEventListener("change", HandleThemeChange);
+    };
+  }, []);
+
   return (
-    <ConfigProvider theme={themeConfig}>
-      <NotificationProvider>
-        <AuthContextProvider>
-          {GetLayout(<Component {...pageProps} />)}
-        </AuthContextProvider>
-      </NotificationProvider>
-    </ConfigProvider>
+    <ResponsiveContext.Provider value={{ isDarkMode: darkMode }}>
+      <ConfigProvider theme={themeConfig}>
+        <NotificationProvider>
+          <AuthContextProvider>
+            {GetLayout(<Component {...pageProps} />)}
+          </AuthContextProvider>
+        </NotificationProvider>
+      </ConfigProvider>
+    </ResponsiveContext.Provider>
   );
 }

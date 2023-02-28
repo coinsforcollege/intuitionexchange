@@ -169,6 +169,8 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
             theme={{
               token: {
                 colorPrimary: "#4ddc44",
+                colorPrimaryBg: "#4ddc44aa",
+                colorErrorBg: "#ff4d4faa",
               },
             }}
           >
