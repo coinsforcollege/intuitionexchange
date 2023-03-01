@@ -5,7 +5,6 @@ import {
   Descriptions,
   InputNumber,
   Modal,
-  Radio,
   Space,
   Typography,
 } from "antd";
@@ -17,6 +16,7 @@ import { axiosInstance } from "util/axios";
 import { FormatPrice } from "util/functions";
 
 import { ExchangeContext } from "./exchange-context";
+import style from "./pairs.module.css";
 
 export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
   const { pairs } = React.useContext(ExchangeContext);
@@ -98,96 +98,181 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
           </Descriptions>
         </div>
       </Modal>
-      <Card>
-        <Space direction="vertical" style={{ width: "100%" }}>
-          <Space style={{ width: "100%", justifyContent: "space-between" }}>
-            <Typography>
-              At Price {asset}: {FormatPrice(price)} {base}
-            </Typography>
-
-            <Radio.Group
-              style={{
-                width: "100%",
-                minWidth: "max-content",
-              }}
-              size="large"
-              onChange={(val) => setMode(val.target.value)}
-              value={mode}
-              optionType="button"
-              buttonStyle="solid"
-            >
-              <ConfigProvider
-                theme={{
-                  token: {
-                    colorPrimary: "#4ddc44",
-                  },
-                }}
-              >
-                <Radio.Button value="buy">Buy</Radio.Button>
-              </ConfigProvider>
-              <ConfigProvider
-                theme={{
-                  token: {
-                    colorPrimary: "#dc4446",
-                  },
-                }}
-              >
-                <Radio.Button value="sell">Sell</Radio.Button>
-              </ConfigProvider>
-            </Radio.Group>
-          </Space>
-          <Typography>Amount {asset}</Typography>
-          <InputNumber
-            value={unit > 0 ? unit : null}
-            style={{ width: "100%" }}
-            placeholder="0.0"
-            onChange={(val: number | null) => {
-              const value = val ?? 0;
-              setUnit(value);
-              setTotal(FormatPrice(value * price));
-            }}
-          />
-          <Typography>Total {base}</Typography>
-          <InputNumber
-            value={total > 0 ? total : null}
-            style={{ width: "100%" }}
-            placeholder="0"
-            onChange={(val: number | null) => {
-              const value = val ?? 0;
-              setTotal(value);
-              setUnit(FormatPrice(value / price));
-            }}
-          />
-          <Typography>
-            Balance:{" "}
-            {FormatPrice(balances.find((bx) => bx.code === base)?.unit ?? 0)}{" "}
-            {base}{" "}
-            {FormatPrice(balances.find((bx) => bx.code === asset)?.unit ?? 0)}{" "}
-            {asset}
-          </Typography>
-          <ConfigProvider
-            theme={{
-              token: {
-                colorPrimary: "#4ddc44",
-                colorPrimaryBg: "#4ddc44aa",
-                colorErrorBg: "#ff4d4faa",
-              },
+      <Card
+        style={{ height: "100%", overflow: "hidden", border: 0 }}
+        bodyStyle={{ padding: 0 }}
+      >
+        <div style={{ display: "flex" }}>
+          <div
+            onClick={() => setMode("buy")}
+            style={{
+              backgroundColor:
+                mode == "buy"
+                  ? "var(--color-background-l0)"
+                  : "var(--color-background-l1)",
+              boxShadow:
+                mode == "buy"
+                  ? "inset 0 4px 0 0 var(--color-green)"
+                  : "inset 0 -1px 0 0 var(--color-divider)",
+              padding: "10px 12px",
+              flexGrow: 1,
+              cursor: "pointer",
             }}
           >
-            <Button
-              disabled={unit === 0}
+            <Typography
               style={{
-                width: "100%",
+                display: "block",
+                color:
+                  mode == "buy"
+                    ? "var(--color-text-l1)"
+                    : "var(--color-text-l2)",
+                fontSize: "12px",
+                letterSpacing: "0.4px",
                 textTransform: "uppercase",
+                textAlign: "center",
+                fontWeight: "bold",
+                lineHeight: 1.33,
               }}
-              type="primary"
-              danger={mode === "sell"}
-              onClick={() => setShowQuote(true)}
             >
-              {mode.toUpperCase()} {asset.toUpperCase()}
-            </Button>
-          </ConfigProvider>
-        </Space>
+              Buy
+            </Typography>
+          </div>
+          <div
+            onClick={() => setMode("sell")}
+            style={{
+              borderLeft: "1px solid var(--color-divider)",
+              backgroundColor:
+                mode == "sell"
+                  ? "var(--color-background-l0)"
+                  : "var(--color-background-l1)",
+              boxShadow:
+                mode == "sell"
+                  ? "inset 0 4px 0 0 var(--color-red)"
+                  : "inset 0 -1px 0 0 var(--color-divider)",
+              padding: "10px 12px",
+              flexGrow: 1,
+              cursor: "pointer",
+            }}
+          >
+            <Typography
+              style={{
+                display: "block",
+                color:
+                  mode == "sell"
+                    ? "var(--color-text-l1)"
+                    : "var(--color-text-l2)",
+                fontSize: "12px",
+                letterSpacing: "0.4px",
+                textTransform: "uppercase",
+                textAlign: "center",
+                fontWeight: "bold",
+                lineHeight: 1.33,
+              }}
+            >
+              Sell
+            </Typography>
+          </div>
+        </div>
+        <div style={{ padding: "24px" }}>
+          <Space direction="vertical" style={{ width: "100%" }} size="large">
+            <InputNumber
+              prefix={
+                <div
+                  style={{
+                    fontSize: "10px",
+                    color: "var(--color-text-l2)",
+                    textAlign: "end",
+                    width: "48px",
+                    paddingRight: "8px",
+                  }}
+                >
+                  <span>AMOUNT</span> <br />{" "}
+                  <span style={{ fontWeight: "bold" }}>{asset}</span>
+                </div>
+              }
+              className={style["antd-input"]}
+              value={unit > 0 ? unit : null}
+              placeholder="0.0"
+              onChange={(val: number | null) => {
+                const value = val ?? 0;
+                setUnit(value);
+                setTotal(FormatPrice(value * price));
+              }}
+            />
+            <div>
+              <InputNumber
+                prefix={
+                  <div
+                    style={{
+                      fontSize: "10px",
+                      color: "var(--color-text-l2)",
+                      textAlign: "end",
+                      width: "48px",
+                      paddingRight: "8px",
+                    }}
+                  >
+                    <span>TOTAL</span> <br />{" "}
+                    <span style={{ fontWeight: "bold" }}>{base}</span>
+                  </div>
+                }
+                className={style["antd-input"]}
+                value={total > 0 ? total : null}
+                placeholder="0"
+                onChange={(val: number | null) => {
+                  const value = val ?? 0;
+                  setTotal(value);
+                  setUnit(FormatPrice(value / price));
+                }}
+              />
+              <Typography
+                style={{
+                  fontSize: "10px",
+                  color: "var(--color-text-l3)",
+                  display: "flex",
+                  marginTop: "8px",
+                }}
+              >
+                <span style={{ flexGrow: 1 }}>
+                  Balance:{" "}
+                  {FormatPrice(
+                    balances.find((bx) => bx.code === base)?.unit ?? 0
+                  )}{" "}
+                  {base}
+                </span>
+                <span>
+                  {" "}
+                  {FormatPrice(
+                    balances.find((bx) => bx.code === asset)?.unit ?? 0
+                  )}{" "}
+                  {asset}
+                </span>
+              </Typography>
+            </div>
+            <ConfigProvider
+              theme={{
+                token: {
+                  colorPrimary: "#55bd6c",
+                  colorPrimaryBg: "#55bd6c00",
+                  colorErrorBg: "#f6685e00",
+                  colorError: "#f6685e",
+                },
+              }}
+            >
+              <Button
+                style={{
+                  width: "100%",
+                  textTransform: "uppercase",
+                  fontWeight: 700,
+                }}
+                type="primary"
+                danger={mode === "sell"}
+                onClick={() => setShowQuote(true)}
+              >
+                {mode.toUpperCase()} {asset.toUpperCase()}
+              </Button>
+            </ConfigProvider>
+          </Space>
+        </div>
       </Card>
     </>
   );

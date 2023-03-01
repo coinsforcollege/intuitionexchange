@@ -12,6 +12,7 @@ import {
 import { AxiosError } from "axios";
 import { NotificationContext } from "context/notification";
 import { AuthContext } from "context/protect-route";
+import { ResponsiveContext } from "context/responsive";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -23,6 +24,7 @@ import LogoImg from "../public/logo.svg";
 import useMediaQuery from "./useMediaQuery";
 
 export default function Header() {
+  const responsive = React.useContext(ResponsiveContext);
   const { api: notification } = React.useContext(NotificationContext);
   const userStore = useUserStore();
   const { user } = React.useContext(AuthContext);
@@ -113,6 +115,18 @@ export default function Header() {
               <Space>
                 {!isPhone && (
                   <>
+                    <Button
+                      type="text"
+                      onClick={() => {
+                        document.documentElement.setAttribute(
+                          "data-theme",
+                          !responsive.isDarkMode ? "dark" : "light"
+                        );
+                        responsive.setDarkMode(!responsive.isDarkMode);
+                      }}
+                    >
+                      Theme
+                    </Button>
                     <Link href="/exchange">
                       <Button type="text">Exchange</Button>
                     </Link>

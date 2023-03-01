@@ -60,7 +60,9 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
   }, []);
 
   return (
-    <ResponsiveContext.Provider value={{ isDarkMode: darkMode }}>
+    <ResponsiveContext.Provider
+      value={{ isDarkMode: darkMode, setDarkMode: setDarkMode }}
+    >
       <ConfigProvider theme={themeConfig}>
         <NotificationProvider>
           <AuthContextProvider>

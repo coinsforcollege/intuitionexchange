@@ -131,7 +131,7 @@ export function HistoryScreen() {
 
   return (
     <>
-      <Card style={{ width: "100%" }}>
+      <Card style={{ width: "100%", border: 0 }}>
         <Typography style={{ fontWeight: "bold" }}>Order History</Typography>
         <div style={{ paddingTop: "2rem" }}>
           <Table

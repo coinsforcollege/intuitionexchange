@@ -1,4 +1,4 @@
-import { Col, Row, Space } from "antd";
+import { Col, Row } from "antd";
 import Footer from "components/footer";
 import AdvancedChart from "components/graphs/AdvancedChart";
 import TechnicalAnalysis from "components/graphs/TechnicalAnalysis";
@@ -20,7 +20,7 @@ export function Page() {
 
   return (
     <>
-      <Row gutter={24}>
+      <Row gutter={12}>
         <Col xs={24} md={5}>
           <PairsScreen
             base={baseAsset}
@@ -41,22 +41,24 @@ export function Page() {
               }}
             />
           </div>
-          <div style={{ paddingTop: "1rem" }}>
+          <div style={{ paddingTop: "12px" }}>
             <HistoryScreen />
           </div>
         </Col>
         <Col xs={24} md={7}>
-          <Space direction="vertical" style={{ width: "100%" }}>
+          <div>
             <QuoteScreen asset={asset} base={baseAsset} />
-            <TechnicalAnalysis
-              widgetProps={{
-                colorTheme: isDarkMode ? "dark" : "light",
-                symbol: `${asset}${baseAsset}`,
-                width: "100%",
-                height: 420,
-              }}
-            />
-          </Space>
+            <div style={{ paddingTop: "12px" }}>
+              <TechnicalAnalysis
+                widgetProps={{
+                  colorTheme: isDarkMode ? "dark" : "light",
+                  symbol: `${asset}${baseAsset}`,
+                  width: "100%",
+                  height: 420,
+                }}
+              />
+            </div>
+          </div>
         </Col>
       </Row>
     </>

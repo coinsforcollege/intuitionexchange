@@ -1,10 +1,13 @@
-import { Card, Divider, Radio, Typography } from "antd";
+import { SearchOutlined } from "@ant-design/icons";
+import { Card, Input } from "antd";
 import React from "react";
-import { FormatPrice } from "util/functions";
+import { FormatCurrency, FormatPrice } from "util/functions";
 
 import { ExchangeContext } from "./exchange-context";
+import style from "./pairs.module.css";
 
 export function PairsScreen({
+  asset,
   base,
   setBase,
   setAsset,
@@ -19,52 +22,129 @@ export function PairsScreen({
 
   return (
     <>
-      <Card style={{ height: "100%" }}>
-        <div>
-          <Radio.Group
-            size="small"
-            onChange={(e) => setMode(e.target.value)}
-            value={mode}
-            style={{ marginBottom: 8, width: "100%", textAlign: "center" }}
-          >
-            <Radio.Button value="USD">USD</Radio.Button>
-            <Radio.Button value="BTC">BTC</Radio.Button>
-            <Radio.Button value="ETH">ETH</Radio.Button>
-            <Radio.Button value="ADA">ADA</Radio.Button>
-          </Radio.Group>
+      <Card
+        style={{ height: "100%", overflow: "hidden", border: 0 }}
+        bodyStyle={{ padding: 0 }}
+      >
+        <div className={style["container"]}>
+          <div className={`${style["toggle-group"]} ${style["full-width"]}`}>
+            <label
+              onClick={() => setMode("USD")}
+              className={`${style["btn"]} ${style["btn-primary"]} ${
+                mode === "USD" ? style["active"] : ""
+              }`}
+            >
+              USD
+            </label>
+            <label
+              onClick={() => setMode("BTC")}
+              className={`${style["btn"]} ${style["btn-primary"]} ${
+                mode === "BTC" ? style["active"] : ""
+              }`}
+            >
+              BTC
+            </label>
+            <label
+              onClick={() => setMode("ETH")}
+              className={`${style["btn"]} ${style["btn-primary"]} ${
+                mode === "ETH" ? style["active"] : ""
+              }`}
+            >
+              ETH
+            </label>
+            <label
+              onClick={() => setMode("ADA")}
+              className={`${style["btn"]} ${style["btn-primary"]} ${
+                mode === "ADA" ? style["active"] : ""
+              }`}
+            >
+              ADA
+            </label>
+          </div>
         </div>
-        <Divider />
-        <div className="scroll" style={{ height: "600px", overflowY: "auto" }}>
-          {Object.keys(pairs)
-            .filter((pair) => pair !== mode && pair !== "USD")
-            .map((pair) => (
-              <div
-                style={{ cursor: "pointer" }}
-                key={`${pair}${base}`}
-                onClick={() => {
-                  setAsset(pair);
-                  setBase(mode);
-                }}
-              >
-                <div style={{ display: "flex" }}>
-                  <img
-                    src={`/asset/${pair.toLowerCase()}.png`}
-                    alt={pair}
-                    width={24}
-                    height={24}
-                  />
-                  <div style={{ paddingLeft: "8px", flexGrow: 1 }}>
-                    <Typography>{pair}</Typography>
+        <div style={{ padding: "12px 24px" }}>
+          <Input
+            prefix={<SearchOutlined />}
+            size="small"
+            placeholder="Search"
+            className={style["search-input"]}
+          />
+        </div>
+        <div>
+          <div
+            className="scroll"
+            style={{ height: "750px", overflowY: "auto", paddingTop: "12px" }}
+          >
+            {Object.keys(pairs)
+              .filter((pair) => pair !== mode && pair !== "USD")
+              .map((pair) => (
+                <a
+                  key={`${pair}${base}`}
+                  className={`${style["ticker-item"]} ${
+                    asset === pair && base === mode ? style["selected"] : ""
+                  }`}
+                  id={`ticker-${pair}`}
+                  href="/exchange"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setAsset(pair);
+                    setBase(mode);
+                  }}
+                >
+                  <div className={style["currency-logo"]}>
+                    <img
+                      src={`/asset/${pair.toLowerCase()}.png`}
+                      alt={pair}
+                      className={style["img"]}
+                    />
                   </div>
-                  <div>
-                    <Typography>
-                      {FormatPrice(pairs[pair]?.[mode]?.PRICE ?? 0)} {mode}
-                    </Typography>
+                  <div className={style["market"]}>
+                    <div className={style["market-name"]}>
+                      <span className={style["market-name-text"]}>
+                        {pair}
+                        <span className={style["subtext"]}>/{mode}</span>
+                      </span>
+                    </div>
+                    <div className={style["market-change"]}>
+                      <span
+                        style={{
+                          color: "var(--color-red)",
+                        }}
+                        className={style["change"]}
+                      >
+                        ▼ -12.15%
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <Divider />
-              </div>
-            ))}
+                  <div className={style["price"]}>
+                    <div className={style["price-box"]}>
+                      <span
+                        className={`${style["price-text"]} ${style["ticker-price"]}`}
+                      >
+                        {FormatCurrency(
+                          FormatPrice(pairs[pair]?.[mode]?.PRICE ?? 0),
+                          5
+                        )}{" "}
+                        {mode}
+                      </span>
+                    </div>
+                    {mode != "USD" && (
+                      <div className={style["price-box"]}>
+                        <span className={style["price-subtext"]}>
+                          $
+                          {FormatCurrency(
+                            FormatPrice(
+                              (pairs[pair]?.[mode]?.PRICE ?? 0) *
+                                (pairs[mode]?.["USD"]?.PRICE ?? 0)
+                            )
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </a>
+              ))}
+          </div>
         </div>
       </Card>
     </>
