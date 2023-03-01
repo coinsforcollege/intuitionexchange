@@ -20,7 +20,7 @@ export function Page() {
 
   return (
     <>
-      <Row gutter={12}>
+      <Row gutter={[12, 12]}>
         <Col xs={24} md={5}>
           <PairsScreen
             base={baseAsset}

@@ -1,4 +1,9 @@
-import { LogoutOutlined, UserOutlined } from "@ant-design/icons";
+import {
+  BulbFilled,
+  BulbOutlined,
+  LogoutOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
 import { Icon } from "@iconify/react";
 import {
   Avatar,
@@ -58,9 +63,21 @@ export default function Header() {
       });
   };
 
+  function switchTheme() {
+    document.documentElement.setAttribute(
+      "data-theme",
+      !responsive.isDarkMode ? "dark" : "light"
+    );
+    responsive.setDarkMode(!responsive.isDarkMode);
+  }
+
   const handleMenuClick: MenuProps["onClick"] = (e) => {
     if (e.key === "account") {
       router.push("/");
+    }
+
+    if (e.key === "theme") {
+      switchTheme();
     }
 
     if (e.key === "logout") {
@@ -74,6 +91,11 @@ export default function Header() {
       label: "Manage Account",
       icon: <UserOutlined />,
       disabled: true,
+    },
+    {
+      key: "theme",
+      label: responsive.isDarkMode ? "Light mode" : "Dark mode",
+      icon: responsive.isDarkMode ? <BulbOutlined /> : <BulbFilled />,
     },
     { type: "divider" },
     {
@@ -115,18 +137,6 @@ export default function Header() {
               <Space>
                 {!isPhone && (
                   <>
-                    <Button
-                      type="text"
-                      onClick={() => {
-                        document.documentElement.setAttribute(
-                          "data-theme",
-                          !responsive.isDarkMode ? "dark" : "light"
-                        );
-                        responsive.setDarkMode(!responsive.isDarkMode);
-                      }}
-                    >
-                      Theme
-                    </Button>
                     <Link href="/exchange">
                       <Button type="text">Exchange</Button>
                     </Link>
@@ -195,6 +205,17 @@ export default function Header() {
                         Funds
                       </Button>
                     </Link>
+                    <Button
+                      type="text"
+                      style={{ width: "100%", textAlign: "start" }}
+                      onClick={() => {
+                        setDrawer(false);
+                        switchTheme();
+                      }}
+                    >
+                      {responsive.isDarkMode ? "Light mode" : "Dark mode"}
+                    </Button>
+
                     <Button
                       type="text"
                       style={{ width: "100%", textAlign: "start" }}
