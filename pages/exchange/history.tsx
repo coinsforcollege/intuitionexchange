@@ -1,13 +1,4 @@
-import {
-  Button,
-  Card,
-  Descriptions,
-  Modal,
-  Result,
-  Skeleton,
-  Table,
-  Typography,
-} from "antd";
+import { Button, Card, Modal, Result, Skeleton, Table, Typography } from "antd";
 import { ColumnsType } from "antd/es/table";
 import { BalanceContext } from "context/balance";
 import React from "react";
@@ -15,6 +6,8 @@ import useSWR from "swr";
 import { ApiOrder } from "types";
 import { axiosInstance } from "util/axios";
 import { FormatCurrency, FormatPrice } from "util/functions";
+
+import style from "./pairs.module.css";
 
 export function HistoryScreen() {
   const { data: balances } = React.useContext(BalanceContext);
@@ -95,32 +88,47 @@ export function HistoryScreen() {
             open={receipt === t.id}
             onCancel={() => setReceipt("")}
             title={`${t.assetCode} ${t.type === "buy" ? "Purchased" : "Sold"}`}
+            footer={[]}
           >
             <div style={{ paddingTop: "2rem" }}>
-              <Descriptions bordered column={1}>
-                <Descriptions.Item label="Order ID">{t.id}</Descriptions.Item>
-                <Descriptions.Item label="Date & Time">
-                  {new Date(t.createdAt).toLocaleString()}
-                </Descriptions.Item>
-                <Descriptions.Item label="Amount">
-                  {t.unit} {t.assetCode}
-                </Descriptions.Item>
-                <Descriptions.Item label="Rate">
-                  {FormatCurrency(t.pricePerUnit.toFixed(2))} USD
-                </Descriptions.Item>
-                <Descriptions.Item label="Total Value">
-                  {FormatCurrency(t.totalValue.toFixed(2))} USD
-                </Descriptions.Item>
-                <Descriptions.Item label="Maker Fee (0.50%)">
-                  {FormatCurrency(t.makerFee.toFixed(2))} USD
-                </Descriptions.Item>
-                <Descriptions.Item label="Platform Fee (0.49%)">
-                  {FormatCurrency(t.platformFee.toFixed(2))} USD
-                </Descriptions.Item>
-                <Descriptions.Item label="Transaction Value">
-                  {FormatCurrency(t.total.toFixed(2))} USD
-                </Descriptions.Item>
-              </Descriptions>
+              <div className={style["quote-main"]}>
+                <div className={style["quote-container"]}>
+                  <div className={style["quote-item"]}>
+                    <span>Order ID</span>
+                    <span>{t.id}</span>
+                  </div>
+                  <div className={style["quote-item"]}>
+                    <span>Date & Time</span>
+                    <span>{new Date(t.createdAt).toLocaleString()}</span>
+                  </div>
+                  <div className={style["quote-item"]}>
+                    <span>Amount</span>
+                    <span>
+                      {t.unit} {t.assetCode}
+                    </span>
+                  </div>
+                  <div className={style["quote-item"]}>
+                    <span>Rate</span>
+                    <span>{FormatCurrency(t.pricePerUnit.toFixed(2))} USD</span>
+                  </div>
+                  <div className={style["quote-item"]}>
+                    <span>Total Value</span>
+                    <span>{FormatCurrency(t.totalValue.toFixed(2))} USD</span>
+                  </div>
+                  <div className={style["quote-item"]}>
+                    <span>Maker Fee (0.50%)</span>
+                    <span>{FormatCurrency(t.makerFee.toFixed(2))} USD</span>
+                  </div>
+                  <div className={style["quote-item"]}>
+                    <span>Platform Fee (0.49%)</span>
+                    <span>{FormatCurrency(t.platformFee.toFixed(2))} USD</span>
+                  </div>
+                  <div className={style["quote-item"]}>
+                    <span>Transaction Value</span>
+                    <span>{FormatCurrency(t.total.toFixed(2))} USD</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </Modal>
           <Button onClick={() => setReceipt(t.id)}>View</Button>

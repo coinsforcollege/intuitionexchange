@@ -2,7 +2,6 @@ import {
   Button,
   Card,
   ConfigProvider,
-  Descriptions,
   InputNumber,
   Modal,
   Space,
@@ -13,7 +12,7 @@ import { BalanceContext } from "context/balance";
 import { NotificationContext } from "context/notification";
 import React from "react";
 import { axiosInstance } from "util/axios";
-import { FormatPrice } from "util/functions";
+import { FormatCurrency, FormatPrice } from "util/functions";
 
 import { ExchangeContext } from "./exchange-context";
 import style from "./pairs.module.css";
@@ -67,35 +66,80 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
       <Modal
         open={showQuote}
         title={`${mode === "buy" ? "Buy" : "Sell"} ${asset} for ${base}`}
-        okText="Place Order"
-        onOk={() => {
-          setShowQuote(false);
-          trade();
-        }}
         onCancel={() => setShowQuote(false)}
+        footer={[]}
       >
         <div style={{ paddingTop: "2rem" }}>
-          <Descriptions bordered column={1}>
-            <Descriptions.Item label="Spend">
-              {unit} {asset}
-            </Descriptions.Item>
-            <Descriptions.Item label="You Receive">
-              {FormatPrice(price * unit)} {base}
-            </Descriptions.Item>
-            <Descriptions.Item label="Rate">
-              {FormatPrice(price)} {base} per {asset}
-            </Descriptions.Item>
-            <Descriptions.Item label="Total Value">
-              {FormatPrice(quoteTotalValue, 2)} USD
-            </Descriptions.Item>
-            <Descriptions.Item label="Maker Fee (0.50%)">
-              {FormatPrice(quoteMakerFee, 2)}
-            </Descriptions.Item>
-            <Descriptions.Item label="Platform Fee (0.49%)">
-              {FormatPrice(quotePlatformFee, 2)}
-            </Descriptions.Item>
-            <Descriptions.Item label="Slippage:">3%</Descriptions.Item>
-          </Descriptions>
+          <div className={style["quote-main"]}>
+            <div className={style["quote-container"]}>
+              <div className={style["quote-item"]}>
+                <span>Spend</span>
+                <span>
+                  {FormatCurrency(unit)} {asset}
+                </span>
+              </div>
+              <div className={style["quote-item"]}>
+                <span>You Receive</span>
+                <span>
+                  {FormatCurrency(FormatPrice(price * unit))} {base}
+                </span>
+              </div>
+              <div className={style["quote-item"]}>
+                <span>Rate (per {asset})</span>
+                <span>
+                  {FormatCurrency(FormatPrice(price))} {base}
+                </span>
+              </div>
+              <div className={style["quote-item"]}>
+                <span>Total Value</span>
+                <span>
+                  {FormatCurrency(FormatPrice(quoteTotalValue, 2))} USD
+                </span>
+              </div>
+              <div className={style["quote-item"]}>
+                <span>Maker Fee (0.50%)</span>
+                <span>{FormatCurrency(FormatPrice(quoteMakerFee, 2))} USD</span>
+              </div>
+              <div className={style["quote-item"]}>
+                <span>Platform Fee (0.49%)</span>
+                <span>
+                  {FormatCurrency(FormatPrice(quotePlatformFee, 2))} USD
+                </span>
+              </div>
+              <div className={style["quote-item"]}>
+                <span>Slippage</span>
+                <span>3%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <ConfigProvider
+            theme={{
+              token: {
+                colorPrimary: "#55bd6c",
+                colorPrimaryBg: "#55bd6c00",
+                colorErrorBg: "#f6685e00",
+                colorError: "#f6685e",
+              },
+            }}
+          >
+            <Button
+              style={{
+                width: "100%",
+                textTransform: "uppercase",
+                fontWeight: 700,
+              }}
+              type="primary"
+              danger={mode === "sell"}
+              onClick={() => {
+                setShowQuote(false);
+                trade();
+              }}
+            >
+              Confirm {mode.toUpperCase()}
+            </Button>
+          </ConfigProvider>
         </div>
       </Modal>
       <Card
@@ -175,30 +219,50 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
         </div>
         <div style={{ padding: "24px" }}>
           <Space direction="vertical" style={{ width: "100%" }} size="large">
-            <InputNumber
-              prefix={
-                <div
-                  style={{
-                    fontSize: "10px",
-                    color: "var(--color-text-l2)",
-                    textAlign: "end",
-                    width: "48px",
-                    paddingRight: "8px",
-                  }}
-                >
-                  <span>AMOUNT</span> <br />{" "}
-                  <span style={{ fontWeight: "bold" }}>{asset}</span>
-                </div>
-              }
-              className={style["antd-input"]}
-              value={unit > 0 ? unit : null}
-              placeholder="0.0"
-              onChange={(val: number | null) => {
-                const value = val ?? 0;
-                setUnit(value);
-                setTotal(FormatPrice(value * price));
-              }}
-            />
+            <div>
+              <InputNumber
+                prefix={
+                  <div
+                    style={{
+                      fontSize: "10px",
+                      color: "var(--color-text-l2)",
+                      textAlign: "end",
+                      width: "48px",
+                      paddingRight: "8px",
+                    }}
+                  >
+                    <span>AMOUNT</span> <br />{" "}
+                    <span style={{ fontWeight: "bold" }}>{asset}</span>
+                  </div>
+                }
+                className={style["antd-input"]}
+                value={unit > 0 ? unit : null}
+                placeholder="0.0"
+                onChange={(val: number | null) => {
+                  const value = val ?? 0;
+                  setUnit(value);
+                  setTotal(FormatPrice(value * price));
+                }}
+              />
+              <Typography
+                style={{
+                  fontSize: "10px",
+                  color: "var(--color-text-l3)",
+                  display: "flex",
+                  marginTop: "8px",
+                }}
+              >
+                <span style={{ flexGrow: 1 }}>
+                  Balance:{" "}
+                  {FormatCurrency(
+                    FormatPrice(
+                      balances.find((bx) => bx.code === asset)?.unit ?? 0
+                    )
+                  )}{" "}
+                  {asset}
+                </span>
+              </Typography>
+            </div>
             <div>
               <InputNumber
                 prefix={
@@ -234,17 +298,12 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
               >
                 <span style={{ flexGrow: 1 }}>
                   Balance:{" "}
-                  {FormatPrice(
-                    balances.find((bx) => bx.code === base)?.unit ?? 0
+                  {FormatCurrency(
+                    FormatPrice(
+                      balances.find((bx) => bx.code === base)?.unit ?? 0
+                    )
                   )}{" "}
                   {base}
-                </span>
-                <span>
-                  {" "}
-                  {FormatPrice(
-                    balances.find((bx) => bx.code === asset)?.unit ?? 0
-                  )}{" "}
-                  {asset}
                 </span>
               </Typography>
             </div>

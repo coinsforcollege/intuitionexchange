@@ -17,6 +17,7 @@ export function PairsScreen({
   setAsset: React.Dispatch<React.SetStateAction<string>>;
   setBase: React.Dispatch<React.SetStateAction<string>>;
 }) {
+  const [search, setSearch] = React.useState("");
   const [mode, setMode] = React.useState(base);
   const { pairs } = React.useContext(ExchangeContext);
 
@@ -64,6 +65,9 @@ export function PairsScreen({
         </div>
         <div style={{ padding: "12px 24px" }}>
           <Input
+            onChange={(e) => {
+              setSearch(e.target.value ?? "");
+            }}
             prefix={<SearchOutlined />}
             size="small"
             placeholder="Search"
@@ -76,7 +80,12 @@ export function PairsScreen({
             style={{ height: "750px", overflowY: "auto", paddingTop: "12px" }}
           >
             {Object.keys(pairs)
-              .filter((pair) => pair !== mode && pair !== "USD")
+              .filter(
+                (pair) =>
+                  pair !== mode &&
+                  pair !== "USD" &&
+                  pair.toLowerCase().startsWith(search)
+              )
               .map((pair) => (
                 <a
                   key={`${pair}${base}`}

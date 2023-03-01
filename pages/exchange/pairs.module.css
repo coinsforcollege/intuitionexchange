@@ -212,3 +212,45 @@
   width: 100%;
   background-color: var(--color-background-input);
 }
+
+.quote-main {
+  display: flex;
+  margin: 0px 4px;
+  flex-direction: column;
+  flex-shrink: 0;
+  color: var(--color-text-l1);
+}
+
+.quote-container {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.quote-item {
+  display: flex;
+  -webkit-box-pack: justify;
+  justify-content: space-between;
+  padding: 8px 0px;
+  flex-wrap: wrap;
+}
+
+.quote-item span:first-child {
+  display: block;
+  color: var(--color-text-l2);
+  font-size: 12px;
+  line-height: 1.67;
+  letter-spacing: 0.4px;
+  text-align: left;
+  font-weight: 400;
+}
+
+.quote-item span:last-child {
+  display: block;
+  color: var(--color-text-l1);
+  font-size: 12px;
+  line-height: 1.67;
+  letter-spacing: 0.4px;
+  text-align: right;
+  font-weight: bold;
+}
