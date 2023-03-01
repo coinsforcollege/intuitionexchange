@@ -64,6 +64,7 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
   return (
     <>
       <Modal
+        width={"400px"}
         open={showQuote}
         title={`${mode === "buy" ? "Buy" : "Sell"} ${asset} for ${base}`}
         onCancel={() => setShowQuote(false)}
@@ -113,7 +114,7 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
             </div>
           </div>
         </div>
-        <div>
+        <div style={{ paddingTop: "1rem" }}>
           <ConfigProvider
             theme={{
               token: {

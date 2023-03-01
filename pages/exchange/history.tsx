@@ -85,6 +85,7 @@ export function HistoryScreen() {
       render: (_, t) => (
         <>
           <Modal
+            width={"400px"}
             open={receipt === t.id}
             onCancel={() => setReceipt("")}
             title={`${t.assetCode} ${t.type === "buy" ? "Purchased" : "Sold"}`}
