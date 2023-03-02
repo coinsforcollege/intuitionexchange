@@ -140,12 +140,14 @@ export function HistoryScreen() {
 
   return (
     <>
-      <Card style={{ width: "100%", border: 0 }}>
-        <Typography style={{ fontWeight: "bold" }}>Order History</Typography>
-        <div style={{ paddingTop: "2rem" }}>
+      <Card style={{ width: "100%", border: 0 }} bodyStyle={{ padding: 0 }}>
+        <Typography style={{ fontWeight: "bold", padding: "12px" }}>
+          Order History
+        </Typography>
+        <div>
           <Table
             size="small"
-            style={{ width: "100%", minHeight: "300px" }}
+            style={{ width: "100%", height: "370px" }}
             pagination={{
               pageSize: 5,
             }}
