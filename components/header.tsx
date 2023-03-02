@@ -57,7 +57,7 @@ export default function Header() {
           err.response.data.errors.forEach((err) => notification.error(err));
         } else {
           notification.error({
-            content: err.message ?? "Unknown error, please try again",
+            content: err.message ?? "An error occurred, please try again later",
           });
         }
       });

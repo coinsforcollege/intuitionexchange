@@ -54,7 +54,7 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
           err.response.data.errors.forEach((err) => notification.error(err));
         } else {
           notification.error({
-            content: err.message ?? "Unknown error, please try again",
+            content: err.message ?? "An error occurred, please try again later",
           });
         }
         refresh();
