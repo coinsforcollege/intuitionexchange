@@ -51,10 +51,11 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
       })
       .catch((err: AxiosError<{ errors?: string[] }>) => {
         if (err.response?.data.errors?.length) {
-          err.response.data.errors.forEach((err) => notification.error(err));
+          err.response.data.errors.forEach((err) => notification.error(err, 8));
         } else {
           notification.error({
             content: err.message ?? "An error occurred, please try again later",
+            duration: 8,
           });
         }
         refresh();
