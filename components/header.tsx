@@ -28,7 +28,7 @@ import { axiosInstance } from "util/axios";
 import LogoImg from "../public/logo.svg";
 import useMediaQuery from "./useMediaQuery";
 
-export default function Header() {
+export default function Header({ fullWidth }: { fullWidth?: boolean }) {
   const responsive = React.useContext(ResponsiveContext);
   const { api: notification } = React.useContext(NotificationContext);
   const userStore = useUserStore();
@@ -107,7 +107,7 @@ export default function Header() {
 
   return (
     <>
-      <div className="container">
+      <div className="container" style={fullWidth ? { maxWidth: "100%" } : {}}>
         <div
           style={{
             display: "flex",

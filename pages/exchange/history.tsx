@@ -1,3 +1,4 @@
+import { EyeOutlined } from "@ant-design/icons";
 import { Button, Card, Modal, Result, Skeleton, Table, Typography } from "antd";
 import { ColumnsType } from "antd/es/table";
 import { BalanceContext } from "context/balance";
@@ -46,13 +47,15 @@ export function HistoryScreen() {
       key: "asset",
       render: (_, t) => (
         <div>
-          <img
-            alt={t.assetCode}
-            src={`/asset/${t.assetCode.toLowerCase()}.png`}
-            width={24}
-            height={24}
-          />
-          {t.assetName}
+          <Typography style={{ fontSize: "12px" }}>
+            <img
+              alt={t.assetCode}
+              src={`/asset/${t.assetCode.toLowerCase()}.png`}
+              width={24}
+              height={24}
+            />
+            {t.assetName}
+          </Typography>
         </div>
       ),
     },
@@ -61,22 +64,32 @@ export function HistoryScreen() {
       dataIndex: "amount",
       key: "amount",
       render: (_, t) => (
-        <div style={{ color: t.type === "buy" ? "#4ddc44" : "#dc4446" }}>
-          {t.unit} {t.assetCode}
-        </div>
+        <Typography style={{ fontSize: "12px" }}>
+          <div style={{ color: t.type === "buy" ? "#4ddc44" : "#dc4446" }}>
+            {t.unit} {t.assetCode}
+          </div>
+        </Typography>
       ),
     },
     {
       title: "Rate",
       dataIndex: "rate",
       key: "rate",
-      render: (_, t) => `${FormatCurrency(FormatPrice(t.pricePerUnit, 2))} USD`,
+      render: (_, t) => (
+        <Typography style={{ fontSize: "12px" }}>
+          {FormatCurrency(FormatPrice(t.pricePerUnit, 2))} USD
+        </Typography>
+      ),
     },
     {
       title: "Transaction Value",
       dataIndex: "price",
       key: "price",
-      render: (_, t) => `${FormatCurrency(FormatPrice(t.total, 2))} USD`,
+      render: (_, t) => (
+        <Typography style={{ fontSize: "12px" }}>
+          {FormatCurrency(FormatPrice(t.total, 2))} USD
+        </Typography>
+      ),
     },
     {
       title: "Actions",
@@ -132,7 +145,9 @@ export function HistoryScreen() {
               </div>
             </div>
           </Modal>
-          <Button onClick={() => setReceipt(t.id)}>View</Button>
+          <Button type="text" onClick={() => setReceipt(t.id)}>
+            <EyeOutlined />
+          </Button>
         </>
       ),
     },
@@ -141,15 +156,22 @@ export function HistoryScreen() {
   return (
     <>
       <Card style={{ width: "100%", border: 0 }} bodyStyle={{ padding: 0 }}>
-        <Typography style={{ fontWeight: "bold", padding: "12px" }}>
+        <Typography
+          style={{
+            padding: "12px",
+            fontSize: "12px",
+            letterSpacing: "0.4px",
+            textTransform: "uppercase",
+          }}
+        >
           Order History
         </Typography>
         <div>
           <Table
             size="small"
-            style={{ width: "100%", height: "370px" }}
+            style={{ width: "100%", height: "400px", overflowY: "auto" }}
             pagination={{
-              pageSize: 5,
+              pageSize: 6,
             }}
             rowKey={(t) => t.id}
             dataSource={data}

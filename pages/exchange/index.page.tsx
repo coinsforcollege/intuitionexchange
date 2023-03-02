@@ -54,7 +54,7 @@ export function Page() {
                   colorTheme: isDarkMode ? "dark" : "light",
                   symbol: `${asset}${baseAsset}`,
                   width: "100%",
-                  height: 420,
+                  height: 500,
                 }}
               />
             </div>
@@ -72,8 +72,8 @@ Page.GetLayout = function GetLayout(page: ReactElement) {
         <title>Exchange | Intuition Exchange</title>
       </Head>
       <UserAuthContextProvider>
-        <Header />
-        <div className="container">
+        <Header fullWidth />
+        <div className="container" style={{ maxWidth: "100%" }}>
           <ExchangeContextProvider>{page}</ExchangeContextProvider>
         </div>
         <Footer />

@@ -21,6 +21,14 @@ export function PairsScreen({
   const [mode, setMode] = React.useState(base);
   const { pairs } = React.useContext(ExchangeContext);
 
+  const average = (pair: string) => {
+    const price = pairs[pair]?.[mode]?.PRICE ?? 0;
+    const openDay = pairs[pair]?.[mode]?.OPENDAY ?? 0;
+
+    const difference = (price - openDay) / openDay;
+    return difference;
+  };
+
   return (
     <>
       <Card
@@ -117,11 +125,15 @@ export function PairsScreen({
                     <div className={style["market-change"]}>
                       <span
                         style={{
-                          color: "var(--color-red)",
+                          color:
+                            average(pair) > 0
+                              ? "var(--color-green)"
+                              : "var(--color-red)",
                         }}
                         className={style["change"]}
                       >
-                        ▼ -12.15%
+                        {average(pair) > 0 ? "▲" : "▼"}{" "}
+                        {FormatPrice(average(pair), 2)}%
                       </span>
                     </div>
                   </div>
