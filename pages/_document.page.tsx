@@ -1,3 +1,4 @@
+import { createCache, extractStyle, StyleProvider } from "@ant-design/cssinjs";
 import Document, {
   DocumentContext,
   Head,
@@ -40,9 +41,35 @@ const blockingSetInitialColorMode = `(function() {
 
 class MyDocument extends Document {
   static async getInitialProps(ctx: DocumentContext) {
+    const cache = createCache();
+    const originalRenderPage = ctx.renderPage;
+
+    ctx.renderPage = () =>
+      originalRenderPage({
+        enhanceApp: (App) => (props) =>
+          (
+            <StyleProvider cache={cache}>
+              <App {...props} />
+            </StyleProvider>
+          ),
+      });
+
     const initialProps = await Document.getInitialProps(ctx);
 
-    return initialProps;
+    return {
+      ...initialProps,
+      styles: (
+        <>
+          {initialProps.styles}
+          {/* This is hack, `extractStyle` does not currently support returning JSX or related data. */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `</script>${extractStyle(cache)}<script>`,
+            }}
+          />
+        </>
+      ),
+    };
   }
 
   render() {

@@ -246,7 +246,13 @@ export function Page() {
             </Link>
           </Col>
           <Col xs={24} md={12}>
-            <div style={{ textAlign: "center", padding: "4rem" }}>
+            <div
+              style={{
+                textAlign: "center",
+                padding: "4rem",
+                maxWidth: "600px",
+              }}
+            >
               <Image
                 alt="Intuition Exchange"
                 src={mainImageY}
