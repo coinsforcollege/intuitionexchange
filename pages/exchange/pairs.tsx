@@ -126,13 +126,13 @@ export function PairsScreen({
                       <span
                         style={{
                           color:
-                            average(pair) > 0
+                            average(pair) >= 0
                               ? "var(--color-green)"
                               : "var(--color-red)",
                         }}
                         className={style["change"]}
                       >
-                        {average(pair) > 0 ? "▲" : "▼"}{" "}
+                        {average(pair) >= 0 ? "▲" : "▼"}{" "}
                         {FormatPrice(average(pair), 2)}%
                       </span>
                     </div>

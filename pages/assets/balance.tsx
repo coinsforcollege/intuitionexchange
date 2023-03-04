@@ -74,7 +74,7 @@ export function AssetBalance() {
 
   const columns: ColumnsType<ApiAssetSummary> = [
     {
-      title: "Name",
+      title: "Assets",
       dataIndex: "name",
       key: "name",
       render: (_, t) => (
@@ -148,16 +148,6 @@ export function AssetBalance() {
 
   return (
     <>
-      <Typography
-        style={{
-          fontWeight: 600,
-          fontSize: "16px",
-          lineHeight: 1.5,
-          marginBottom: "20px",
-        }}
-      >
-        Assets
-      </Typography>
       <Table
         style={{ width: "100%" }}
         rowKey={(t) => t.code}

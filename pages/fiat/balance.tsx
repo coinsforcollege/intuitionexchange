@@ -1,4 +1,12 @@
-import { Button, Card, Descriptions, Result, Skeleton, Space } from "antd";
+import {
+  Button,
+  Card,
+  Descriptions,
+  Result,
+  Skeleton,
+  Space,
+  Typography,
+} from "antd";
 import Link from "next/link";
 import React from "react";
 import useSWR from "swr";
@@ -37,7 +45,27 @@ export function FiatBalance() {
     <>
       <Descriptions
         style={{ width: "100%" }}
-        title="Fiat"
+        title={
+          <Typography
+            style={{
+              fontWeight: 700,
+              fontSize: "14px",
+              lineHeight: 1.5,
+              color: "var(--color-text-l2)",
+              textTransform: "uppercase",
+            }}
+          >
+            Balances
+          </Typography>
+        }
+        labelStyle={{
+          fontWeight: 700,
+          fontSize: "12px",
+          lineHeight: 1.5,
+          marginBottom: "20px",
+          color: "var(--color-text-l2)",
+          textTransform: "uppercase",
+        }}
         extra={
           <Space>
             <Link href="/fiat/deposit">
