@@ -29,14 +29,7 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
       colorBgContainer: darkMode ? "#1e2433" : "#ffffff",
       colorBgElevated: darkMode ? "#1e2433" : "#ffffff",
       colorBorderSecondary: darkMode ? "#ffffff10" : "#00000020",
-    },
-    components: {
-      Input: {
-        colorBorder: darkMode ? "#ffffff10" : "#00000020",
-      },
-      InputNumber: {
-        colorBorder: darkMode ? "#ffffff10" : "#00000020",
-      },
+      colorBorder: darkMode ? "#ffffff10" : "#00000020",
     },
     algorithm: [darkMode ? theme.darkAlgorithm : theme.defaultAlgorithm],
   };
