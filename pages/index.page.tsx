@@ -45,7 +45,7 @@ export function Page() {
               level={3}
               style={{ fontSize: isPhone ? undefined : "2rem" }}
             >
-              InTuition Exchange Gives 10% of Its Revenue to Support College
+              InTuition Exchange Gives 10% of Its Net Revenue to Support College
               Education for Students
             </Typography.Title>
             <Link href="/login">
