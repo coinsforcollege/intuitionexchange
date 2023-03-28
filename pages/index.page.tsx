@@ -55,7 +55,7 @@ export function Page() {
             </Link>
           </Col>
           <Col xs={{ span: 24, order: 1 }} md={{ span: 10, order: 1 }}>
-            <div style={{ position: "relative", height: "100px" }}>
+            <div style={{ position: "relative", height: "6rem" }}>
               <div
                 style={{
                   margin: "auto",
@@ -99,6 +99,9 @@ export function Page() {
                 </div>
               </div>
             </div>
+            <Typography style={{ textAlign: "center" }}>
+              Tuition Coins pledged to parents
+            </Typography>
           </Col>
         </Row>
         <Row
@@ -111,9 +114,9 @@ export function Page() {
         >
           <Card style={{ width: "100%", padding: "2rem" }}>
             <Typography.Title level={3}>
-              Our exchange is designed to bring together all those who are
-              passionate about cryptocurrency and want to be a part of the
-              digital revolution that is taking place at an accelerated rate.
+              Intuition Exchange, in partnership with Coins For College, is a
+              social impact platform connecting the community to tackle high
+              tuition costs and increase access to quality education.
             </Typography.Title>
           </Card>
         </Row>
