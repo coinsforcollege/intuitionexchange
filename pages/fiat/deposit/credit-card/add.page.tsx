@@ -108,7 +108,7 @@ function Page() {
         id="primetrust"
         async={true}
         type="text/javascript"
-        src="https://sandbox.bootstrapper.primetrust-cdn.com/bootstrap.js"
+        src="https://bootstrapper.primetrust-cdn.com/bootstrap.js"
       />
       <div className="container">
         <Space style={{ paddingBottom: "20px" }}>
