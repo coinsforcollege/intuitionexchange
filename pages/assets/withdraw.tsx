@@ -74,7 +74,7 @@ export function WithdrawScreen({
       .post<{
         message: string;
       }>("/api/assets/withdraw", {
-        assetId: asset,
+        asset: asset,
         assetTransferMethodId: data.assetTransferMethodId,
         unitCount: data.unitCount,
       })
