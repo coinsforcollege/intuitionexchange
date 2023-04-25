@@ -112,3 +112,67 @@ export interface ApiOrder {
   type: "buy" | "sell";
   unit: number;
 }
+
+export enum OrderType {
+  Buy = "BUY",
+  Sell = "SELL",
+}
+
+export enum OrderState {
+  Closed = "CLOSED",
+  Open = "OPEN",
+}
+
+export enum OrderBaseType {
+  Asset = "ASSET",
+  Fiat = "FIAT",
+}
+
+export interface IP2POrder {
+  _id: string;
+  assetId: string;
+  custodialAccountId: string;
+  orderType: string;
+  price: number;
+  quantity: number;
+  quantityRemaining: number;
+  status: OrderState;
+  timestamp: Date;
+  userId: string;
+}
+
+export interface P2POrderBaseCurrency {
+  currency: string;
+  type: OrderBaseType.Fiat;
+}
+
+export interface P2POrderBaseAsset {
+  code: string;
+  id: string;
+  name: string;
+  type: OrderBaseType.Asset;
+}
+
+export interface P2POrderRecord {
+  assetCode: string;
+  assetId: string;
+  assetName: string;
+  base: P2POrderBaseCurrency | P2POrderBaseAsset;
+  id: string;
+  orderType: OrderType;
+  price: number;
+  quantity: number;
+  quantityRemaining: number;
+  status: OrderState;
+  timestamp: string;
+}
+
+export interface P2PTransaction {
+  _id: string;
+  buyOrderId: string;
+  executedPrice: number;
+  executedQuantity: number;
+  sellOrderId: string;
+  timestamp: string;
+  tradeId: string;
+}
