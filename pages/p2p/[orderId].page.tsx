@@ -7,6 +7,7 @@ import { Card, Result, Space, Typography } from "antd";
 import Footer from "components/footer";
 import Header from "components/header";
 import LoadingScreen from "components/loading-screen";
+import { ExchangeContextProvider } from "context/exchange-context";
 import { UserAuthContextProvider } from "context/protect-route-user";
 import dayjs from "dayjs";
 import Head from "next/head";
@@ -20,8 +21,6 @@ import {
   P2PTransaction,
 } from "types";
 import { axiosInstance } from "util/axios";
-
-import { ExchangeContextProvider } from "./exchange-context";
 
 function ViewOrder(props: { orderId: string }) {
   const { data, error } = useSWR(`/p2p-order/${props.orderId}`, (url: string) =>

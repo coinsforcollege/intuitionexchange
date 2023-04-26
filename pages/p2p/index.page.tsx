@@ -1,11 +1,11 @@
 import { Col, Row } from "antd";
 import Footer from "components/footer";
 import Header from "components/header";
+import { ExchangeContextProvider } from "context/exchange-context";
 import { UserAuthContextProvider } from "context/protect-route-user";
 import Head from "next/head";
 import React, { ReactElement } from "react";
 
-import { ExchangeContextProvider } from "./exchange-context";
 import { HistoryScreen } from "./history";
 import { MatchScreen } from "./match-screen";
 import { PairsScreen } from "./pairs";

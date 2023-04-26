@@ -3,7 +3,7 @@ import { Card, Input } from "antd";
 import React from "react";
 import { FormatCurrency, FormatPrice } from "util/functions";
 
-import { ExchangeContext } from "./exchange-context";
+import { ExchangeContext } from "../../context/exchange-context";
 import style from "./pairs.module.css";
 
 export function PairsScreen({

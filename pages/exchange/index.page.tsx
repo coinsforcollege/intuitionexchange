@@ -8,7 +8,7 @@ import { ResponsiveContext } from "context/responsive";
 import Head from "next/head";
 import React, { ReactElement } from "react";
 
-import { ExchangeContextProvider } from "./exchange-context";
+import { ExchangeContextProvider } from "../../context/exchange-context";
 import { HistoryScreen } from "./history";
 import { PairsScreen } from "./pairs";
 import { QuoteScreen } from "./quote";

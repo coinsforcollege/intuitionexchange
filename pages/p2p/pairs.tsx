@@ -1,9 +1,9 @@
 import { SearchOutlined } from "@ant-design/icons";
 import { Card, Input } from "antd";
+import { ExchangeContext } from "context/exchange-context";
 import React from "react";
 import { FormatCurrency, FormatPrice } from "util/functions";
 
-import { ExchangeContext } from "./exchange-context";
 import style from "./pairs.module.css";
 
 export function PairsScreen({
