@@ -72,8 +72,8 @@ Page.GetLayout = function GetLayout(page: ReactElement) {
         <title>Exchange | Intuition Exchange</title>
       </Head>
       <UserAuthContextProvider>
-        <Header fullWidth />
-        <div className="container" style={{ maxWidth: "100%" }}>
+        <Header />
+        <div className="container">
           <ExchangeContextProvider>{page}</ExchangeContextProvider>
         </div>
         <Footer />
