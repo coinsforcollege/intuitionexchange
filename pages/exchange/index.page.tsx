@@ -1,7 +1,6 @@
 import { Col, Row } from "antd";
 import Footer from "components/footer";
 import AdvancedChart from "components/graphs/AdvancedChart";
-import TechnicalAnalysis from "components/graphs/TechnicalAnalysis";
 import Header from "components/header";
 import { UserAuthContextProvider } from "context/protect-route-user";
 import { ResponsiveContext } from "context/responsive";
@@ -48,16 +47,6 @@ export function Page() {
         <Col xs={24} md={7}>
           <div>
             <QuoteScreen asset={asset} base={baseAsset} />
-            <div style={{ paddingTop: "12px" }}>
-              <TechnicalAnalysis
-                widgetProps={{
-                  colorTheme: isDarkMode ? "dark" : "light",
-                  symbol: `${asset}${baseAsset}`,
-                  width: "100%",
-                  height: 500,
-                }}
-              />
-            </div>
           </div>
         </Col>
       </Row>
@@ -72,11 +61,11 @@ Page.GetLayout = function GetLayout(page: ReactElement) {
         <title>Exchange | Intuition Exchange</title>
       </Head>
       <UserAuthContextProvider>
-        <Header />
-        <div className="container">
+        <Header fullWidth />
+        <div className="container" style={{ maxWidth: "100%" }}>
           <ExchangeContextProvider>{page}</ExchangeContextProvider>
         </div>
-        <Footer />
+        <Footer fullWidth />
       </UserAuthContextProvider>
     </>
   );

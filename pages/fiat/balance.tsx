@@ -74,6 +74,9 @@ export function FiatBalance() {
             <Link href="/fiat/withdraw">
               <Button>Withdraw</Button>
             </Link>
+            <Link href="/fiat/history">
+              <Button>Fiat History</Button>
+            </Link>
           </Space>
         }
         bordered

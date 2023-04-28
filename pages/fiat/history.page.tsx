@@ -1,11 +1,17 @@
 import { Card, Result, Skeleton, Table, Typography } from "antd";
 import { ColumnsType } from "antd/es/table";
+import Footer from "components/footer";
+import Header from "components/header";
+import { UserAuthContextProvider } from "context/protect-route-user";
+import dayjs from "dayjs";
+import Head from "next/head";
+import { ReactElement } from "react";
 import useSWR from "swr";
 import { ApiFiatTransaction } from "types";
 import { axiosInstance } from "util/axios";
 import { FormatCurrency } from "util/functions";
 
-export function FiatTransactions() {
+function Page() {
   const { data, error, isLoading } = useSWR("/api/fiat/transactions", (url) =>
     axiosInstance.user.get<ApiFiatTransaction[]>(url).then((res) => res.data)
   );
@@ -33,7 +39,7 @@ export function FiatTransactions() {
       title: "Amount",
       dataIndex: "amount",
       key: "amount",
-      render: (_, t) => `$${FormatCurrency(t.amount)}`,
+      render: (_, t) => `${FormatCurrency(t.amount)} USD`,
       sorter: (a, b) => a.amount - b.amount,
     },
     {
@@ -47,9 +53,9 @@ export function FiatTransactions() {
       dataIndex: "createdAt",
       key: "createdAt",
       render: (_, t) =>
-        `${new Date(t.createdAt).toLocaleDateString()} ${new Date(
+        `${dayjs(t.createdAt).format("MMMM DD, YYYY")} at ${dayjs(
           t.createdAt
-        ).toLocaleTimeString()}`,
+        ).format("hh:mm A")}`,
       sorter: (a, b) => {
         const first = new Date(a.createdAt);
         const second = new Date(b.createdAt);
@@ -69,7 +75,7 @@ export function FiatTransactions() {
           marginBottom: "20px",
         }}
       >
-        Transaction History
+        Fiat History
       </Typography>
       <Table
         style={{ width: "100%" }}
@@ -82,3 +88,20 @@ export function FiatTransactions() {
     </>
   );
 }
+
+Page.GetLayout = function GetLayout(page: ReactElement) {
+  return (
+    <>
+      <Head>
+        <title>Fiat History | Intuition Exchange</title>
+      </Head>
+      <UserAuthContextProvider>
+        <Header />
+        <div className="container">{page}</div>
+        <Footer />
+      </UserAuthContextProvider>
+    </>
+  );
+};
+
+export default Page;

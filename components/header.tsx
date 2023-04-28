@@ -140,8 +140,11 @@ export default function Header({ fullWidth }: { fullWidth?: boolean }) {
                     <Link href="/exchange">
                       <Button type="text">Exchange</Button>
                     </Link>
-                    <Link href="/funds">
-                      <Button type="text">Funds</Button>
+                    <Link href="/p2p">
+                      <Button type="text">P2P</Button>
+                    </Link>
+                    <Link href="/wallet">
+                      <Button type="text">Wallet</Button>
                     </Link>
                     <Typography style={{ opacity: 0.8, padding: "4px 15px" }}>
                       |
@@ -196,13 +199,22 @@ export default function Header({ fullWidth }: { fullWidth?: boolean }) {
                         Exchange
                       </Button>
                     </Link>
-                    <Link href="/funds">
+                    <Link href="/p2p">
                       <Button
                         type="text"
                         style={{ width: "100%", textAlign: "start" }}
                         onClick={() => setDrawer(false)}
                       >
-                        Funds
+                        P2P
+                      </Button>
+                    </Link>
+                    <Link href="/wallet">
+                      <Button
+                        type="text"
+                        style={{ width: "100%", textAlign: "start" }}
+                        onClick={() => setDrawer(false)}
+                      >
+                        Wallet
                       </Button>
                     </Link>
                     <Button

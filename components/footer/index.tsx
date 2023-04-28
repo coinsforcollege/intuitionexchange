@@ -5,9 +5,12 @@ import Link from "next/link";
 import LogoImg from "../../public/logo.svg";
 import styles from "./footer.module.css";
 
-export default function Footer() {
+export default function Footer(props: { fullWidth?: boolean }) {
   return (
-    <div className="container">
+    <div
+      className="container"
+      style={props.fullWidth ? { maxWidth: "100%" } : undefined}
+    >
       <Divider />
       <div>
         <Row>

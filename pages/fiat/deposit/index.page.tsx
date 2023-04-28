@@ -18,7 +18,7 @@ export function Page() {
         <Card
           title={
             <Space>
-              <Link href="/funds">
+              <Link href="/wallet">
                 <Button type="text">
                   <LeftOutlined />
                 </Button>

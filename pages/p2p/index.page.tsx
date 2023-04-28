@@ -51,11 +51,11 @@ Page.GetLayout = function GetLayout(page: ReactElement) {
         <title>P2P | Intuition Exchange</title>
       </Head>
       <UserAuthContextProvider>
-        <Header />
-        <div className="container">
+        <Header fullWidth />
+        <div className="container" style={{ maxWidth: "100%" }}>
           <ExchangeContextProvider>{page}</ExchangeContextProvider>
         </div>
-        <Footer />
+        <Footer fullWidth />
       </UserAuthContextProvider>
     </>
   );
