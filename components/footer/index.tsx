@@ -48,27 +48,25 @@ export default function Footer(props: { fullWidth?: boolean }) {
             <Typography.Title level={4}>User Services</Typography.Title>
             <ul className={styles.footerList}>
               <li>
-                <Link href="/" className="footer-link">
+                <Link href="/wallet" className="footer-link">
                   Wallet
                 </Link>
               </li>
               <li>
-                <Link href="/" className="footer-link">
-                  Funds
-                </Link>
-              </li>
-              <li>
-                <Link href="/" className="footer-link">
+                <Link href="/exchange" className="footer-link">
                   Exchange
                 </Link>
               </li>
               <li>
-                <Link href="/" className="footer-link">
-                  Buy and Sell
+                <Link href="/p2p" className="footer-link">
+                  P2P
                 </Link>
               </li>
               <li>
-                <Link href="/" className="footer-link">
+                <Link
+                  href="mailto:contact@intuitionexchange.com"
+                  className="footer-link"
+                >
                   Contact Support
                 </Link>
               </li>
@@ -83,7 +81,11 @@ export default function Footer(props: { fullWidth?: boolean }) {
                 </Link>
               </li>
               <li>
-                <Link href="/" className="footer-link">
+                <Link
+                  href="https://www.primetrust.com/about"
+                  className="footer-link"
+                  target="_blank"
+                >
                   Prime Trust
                 </Link>
               </li>

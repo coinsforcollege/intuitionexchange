@@ -22,8 +22,8 @@ export function Page() {
               Customer Service to resolve your issue. Once you have already done
               so, and Customer Service has been unable to resolve your issue,
               please email your complaint to&nbsp;
-              <a href="mailto:resolutions@binance.us">
-                support@intuitionexchange.org
+              <a href="mailto:contact@intuitionexchange.com">
+                contact@intuitionexchange.com
               </a>
               . In that email, you must provide your Customer Service ticket
               number, state the cause of your complaint, how you would like us

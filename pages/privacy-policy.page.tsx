@@ -17,12 +17,12 @@ export function Page() {
           disclose information, and your choices regarding this information.
         </Typography.Paragraph>
         <Typography.Paragraph>
-          This Policy applies to&nbsp;https://intuitionexchange.org&nbsp;and all
+          This Policy applies to&nbsp;https://intuitionexchange.com&nbsp;and all
           websites and mobile apps owned and operated by Intuition Exchange.
         </Typography.Paragraph>
         <Typography.Paragraph>
           Please read this Policy carefully and contact us with questions
-          at&nbsp;support@intuitionexchange.org.
+          at&nbsp;contact@intuitionexchange.com.
         </Typography.Paragraph>
         <Typography.Paragraph>
           <strong>Table Of Contents</strong>
@@ -49,7 +49,7 @@ export function Page() {
         </Typography.Title>
         <Typography.Paragraph>
           This Policy applies to our services, which include the services we
-          provide on&nbsp;https://intuitionexchange.org&nbsp;or any other
+          provide on&nbsp;https://intuitionexchange.com&nbsp;or any other
           websites, pages, features, or content we own or operate (collectively,
           the &ldquo;Sites&rdquo;) or when you use our mobile app and related
           services (collectively, the &ldquo;Services&rdquo;). If you do not
@@ -357,7 +357,7 @@ export function Page() {
           We do not allow use of our Services and Sites by anyone younger than
           18 years old. If you learn that anyone younger than 18 has unlawfully
           provided us with personal data, please contact us
-          at&nbsp;support@intuitionexchange.org&nbsp;and we will take steps to
+          at&nbsp;contact@intuitionexchange.com&nbsp;and we will take steps to
           delete such information, close any such accounts, and prevent the user
           from continuing to use our Services.
         </Typography.Paragraph>
@@ -596,7 +596,7 @@ export function Page() {
           <li>
             <strong>How To Submit A Request.&nbsp;</strong>If you would like to
             submit a request for information, access, or deletion, please
-            contact&nbsp;support@intuitionexchange.org.
+            contact&nbsp;contact@intuitionexchange.com.
           </li>
           <li>
             <strong>Identity Verification.&nbsp;</strong>The CCPA requires us to
@@ -630,7 +630,7 @@ export function Page() {
         <Typography.Paragraph>
           Please contact us if you have any questions about this Policy or if
           you are seeking to exercise any of your statutory rights. You may
-          contact us at&nbsp;support@intuitionexchange.org&nbsp;or at our
+          contact us at&nbsp;contact@intuitionexchange.com&nbsp;or at our
           mailing address below:
         </Typography.Paragraph>
         <Typography.Paragraph>Chief Grievance Officer</Typography.Paragraph>
