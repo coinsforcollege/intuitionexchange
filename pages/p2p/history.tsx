@@ -22,7 +22,10 @@ export function HistoryScreen() {
   const { data, error, isLoading, mutate } = useSWR(
     `/p2p-order?state=${mode}`,
     (url: string) =>
-      axiosInstance.user.get<P2POrderRecord[]>(url).then((res) => res.data)
+      axiosInstance.user.get<P2POrderRecord[]>(url).then((res) => res.data),
+    {
+      refreshInterval: 15_000,
+    }
   );
 
   React.useEffect(() => {
