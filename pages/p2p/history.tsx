@@ -1,4 +1,4 @@
-import { Card, Result, Skeleton, Table, Typography } from "antd";
+import { Card, Result, Table, Typography } from "antd";
 import { ColumnsType } from "antd/es/table";
 import { BalanceContext } from "context/balance";
 import dayjs from "dayjs";
@@ -19,7 +19,7 @@ export function HistoryScreen() {
   const [mode, setMode] = React.useState(OrderState.Open);
   const router = useRouter();
 
-  const { data, error, isLoading, mutate } = useSWR(
+  const { data, error, mutate } = useSWR(
     `/p2p-order?state=${mode}`,
     (url: string) =>
       axiosInstance.user.get<P2POrderRecord[]>(url).then((res) => res.data),
@@ -39,14 +39,6 @@ export function HistoryScreen() {
         status="error"
         title="An unexpected error has occurred, please reload the page"
       />
-    );
-  }
-
-  if (isLoading || !data) {
-    return (
-      <Card style={{ width: "100%" }}>
-        <Skeleton active />
-      </Card>
     );
   }
 
@@ -151,7 +143,7 @@ export function HistoryScreen() {
             }}
             dataSource={data}
             columns={columns}
-            locale={{ emptyText: "No Records" }}
+            locale={{ emptyText: <></> }}
           />
         </div>
       </Card>

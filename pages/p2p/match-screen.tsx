@@ -1,6 +1,5 @@
 import { CaretDownOutlined, CaretUpOutlined } from "@ant-design/icons";
 import { Card, Typography } from "antd";
-import LoadingScreen from "components/loading-screen";
 import dayjs from "dayjs";
 import useSWR from "swr";
 import { axiosInstance } from "util/axios";
@@ -26,10 +25,6 @@ export function MatchScreen(props: {
     (url: string) =>
       axiosInstance.user.get<Response[]>(url).then((res) => res.data)
   );
-
-  if (!data) {
-    return <LoadingScreen />;
-  }
 
   return (
     <Card style={{ minHeight: "400px" }} bodyStyle={{ padding: 0 }}>
@@ -58,31 +53,32 @@ export function MatchScreen(props: {
           </tr>
         </thead>
         <tbody>
-          {data.map((d, _index) => (
-            <tr
-              key={`match-${_index}`}
-              className={
-                (data[_index + 1]?.price ?? 0) < d.price
-                  ? style["fadeInGreen"]
-                  : style["fadeInRed"]
-              }
-              onClick={() => {
-                props.setPrice(d.price);
-                props.setUnit(d.quantity);
-              }}
-            >
-              <td>
-                {d.price}{" "}
-                {(data[_index + 1]?.price ?? 0) < d.price ? (
-                  <CaretUpOutlined />
-                ) : (
-                  <CaretDownOutlined />
-                )}
-              </td>
-              <td>{d.quantity}</td>
-              <td>{dayjs(d.timestamp).format("HH:mm:ss")}</td>
-            </tr>
-          ))}
+          {data &&
+            data.map((d, _index) => (
+              <tr
+                key={`match-${_index}`}
+                className={
+                  (data[_index + 1]?.price ?? 0) < d.price
+                    ? style["fadeInGreen"]
+                    : style["fadeInRed"]
+                }
+                onClick={() => {
+                  props.setPrice(d.price);
+                  props.setUnit(d.quantity);
+                }}
+              >
+                <td>
+                  {d.price}{" "}
+                  {(data[_index + 1]?.price ?? 0) < d.price ? (
+                    <CaretUpOutlined />
+                  ) : (
+                    <CaretDownOutlined />
+                  )}
+                </td>
+                <td>{d.quantity}</td>
+                <td>{dayjs(d.timestamp).format("HH:mm:ss")}</td>
+              </tr>
+            ))}
         </tbody>
       </table>
     </Card>

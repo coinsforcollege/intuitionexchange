@@ -1,5 +1,4 @@
 import { Card } from "antd";
-import LoadingScreen from "components/loading-screen";
 import React from "react";
 import useSWR from "swr";
 import { OrderType } from "types";
@@ -29,10 +28,6 @@ export function VolumeScreen(props: {
     (url: string) =>
       axiosInstance.user.get<Response[]>(url).then((res) => res.data)
   );
-
-  if (!data) {
-    return <LoadingScreen />;
-  }
 
   return (
     <Card style={{ minHeight: "400px" }} bodyStyle={{ padding: 0 }}>
@@ -73,22 +68,23 @@ export function VolumeScreen(props: {
           </tr>
         </thead>
         <tbody>
-          {data.map((d, _index) => (
-            <tr
-              key={`match-${_index}`}
-              onClick={() => {
-                props.setPrice(d.price);
-                props.setUnit(d.volume);
-                props.setMode(
-                  mode === OrderType.Buy ? OrderType.Sell : OrderType.Buy
-                );
-              }}
-            >
-              <td>{d.price}</td>
-              <td>{d.volume}</td>
-              <td>{d.orders}</td>
-            </tr>
-          ))}
+          {data &&
+            data.map((d, _index) => (
+              <tr
+                key={`match-${_index}`}
+                onClick={() => {
+                  props.setPrice(d.price);
+                  props.setUnit(d.volume);
+                  props.setMode(
+                    mode === OrderType.Buy ? OrderType.Sell : OrderType.Buy
+                  );
+                }}
+              >
+                <td>{d.price}</td>
+                <td>{d.volume}</td>
+                <td>{d.orders}</td>
+              </tr>
+            ))}
         </tbody>
       </table>
     </Card>
