@@ -11,34 +11,41 @@ import { AxiosError } from "axios";
 import { BalanceContext } from "context/balance";
 import { NotificationContext } from "context/notification";
 import React from "react";
+import { OrderType } from "types";
 import { axiosInstance } from "util/axios";
 import { PreciseCalculation } from "util/calculation";
 import { FormatCurrency, FormatPrice } from "util/functions";
 
 import style from "./pairs.module.css";
 
-export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
+export function QuoteScreen(props: {
+  asset: string;
+  base: string;
+  mode: OrderType;
+  price: number;
+  setMode: React.Dispatch<React.SetStateAction<OrderType>>;
+  setPrice: React.Dispatch<React.SetStateAction<number>>;
+  setUnit: React.Dispatch<React.SetStateAction<number>>;
+  unit: number;
+}) {
   const { api: notification } = React.useContext(NotificationContext);
   const { data: balances, refresh } = React.useContext(BalanceContext);
-  const [mode, setMode] = React.useState<"buy" | "sell">("buy");
-  const [unit, setUnit] = React.useState(0);
-  const [price, setPrice] = React.useState(0);
 
-  const total = PreciseCalculation.multiplication(unit, price);
+  const total = PreciseCalculation.multiplication(props.unit, props.price);
 
   React.useEffect(() => {
-    setUnit(0);
-    setPrice(0);
-  }, [asset, base]);
+    props.setUnit(0);
+    props.setPrice(0);
+  }, [props.asset, props.base]);
 
   const handle = () => {
     axiosInstance.user
       .post("/p2p-order", {
-        base: base,
-        asset: asset,
-        price: price,
-        unit: unit,
-        orderType: mode === "buy" ? "BUY" : "SELL",
+        base: props.base,
+        asset: props.asset,
+        price: props.price,
+        unit: props.unit,
+        orderType: props.mode,
       })
       .then(() => {
         notification.success("Order placed");
@@ -65,14 +72,14 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
       >
         <div style={{ display: "flex" }}>
           <div
-            onClick={() => setMode("buy")}
+            onClick={() => props.setMode(OrderType.Buy)}
             style={{
               backgroundColor:
-                mode == "buy"
+                props.mode == OrderType.Buy
                   ? "var(--color-background-l0)"
                   : "var(--color-background-l1)",
               boxShadow:
-                mode == "buy"
+                props.mode == OrderType.Buy
                   ? "inset 0 4px 0 0 var(--color-green)"
                   : "inset 0 -1px 0 0 var(--color-divider)",
               padding: "10px 12px",
@@ -84,7 +91,7 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
               style={{
                 display: "block",
                 color:
-                  mode == "buy"
+                  props.mode == OrderType.Buy
                     ? "var(--color-text-l1)"
                     : "var(--color-text-l2)",
                 fontSize: "12px",
@@ -99,15 +106,15 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
             </Typography>
           </div>
           <div
-            onClick={() => setMode("sell")}
+            onClick={() => props.setMode(OrderType.Sell)}
             style={{
               borderLeft: "1px solid var(--color-divider)",
               backgroundColor:
-                mode == "sell"
+                props.mode == OrderType.Sell
                   ? "var(--color-background-l0)"
                   : "var(--color-background-l1)",
               boxShadow:
-                mode == "sell"
+                props.mode == OrderType.Sell
                   ? "inset 0 4px 0 0 var(--color-red)"
                   : "inset 0 -1px 0 0 var(--color-divider)",
               padding: "10px 12px",
@@ -119,7 +126,7 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
               style={{
                 display: "block",
                 color:
-                  mode == "sell"
+                  props.mode == OrderType.Sell
                     ? "var(--color-text-l1)"
                     : "var(--color-text-l2)",
                 fontSize: "12px",
@@ -149,15 +156,15 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                     }}
                   >
                     <span>PRICE</span> <br />{" "}
-                    <span style={{ fontWeight: "bold" }}>{base}</span>
+                    <span style={{ fontWeight: "bold" }}>{props.base}</span>
                   </div>
                 }
                 className={style["antd-input"]}
-                value={price > 0 ? price : null}
+                value={props.price > 0 ? props.price : null}
                 placeholder="0.0"
                 onChange={(val: number | null) => {
                   const value = val ?? 0;
-                  setPrice(value);
+                  props.setPrice(value);
                 }}
               />
             </div>
@@ -174,15 +181,15 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                     }}
                   >
                     <span>VOLUME</span> <br />{" "}
-                    <span style={{ fontWeight: "bold" }}>{asset}</span>
+                    <span style={{ fontWeight: "bold" }}>{props.asset}</span>
                   </div>
                 }
                 className={style["antd-input"]}
-                value={unit > 0 ? unit : null}
+                value={props.unit > 0 ? props.unit : null}
                 placeholder="0.0"
                 onChange={(val: number | null) => {
                   const value = val ?? 0;
-                  setUnit(value);
+                  props.setUnit(value);
                 }}
               />
               <Typography
@@ -197,10 +204,10 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                   Balance:{" "}
                   {FormatCurrency(
                     FormatPrice(
-                      balances.find((bx) => bx.code === asset)?.unit ?? 0
+                      balances.find((bx) => bx.code === props.asset)?.unit ?? 0
                     )
                   )}{" "}
-                  {asset}
+                  {props.asset}
                 </span>
               </Typography>
             </div>
@@ -218,7 +225,7 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                     }}
                   >
                     <span>TOTAL</span> <br />{" "}
-                    <span style={{ fontWeight: "bold" }}>{base}</span>
+                    <span style={{ fontWeight: "bold" }}>{props.base}</span>
                   </div>
                 }
                 className={style["antd-input"]}
@@ -238,10 +245,10 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                   Balance:{" "}
                   {FormatCurrency(
                     FormatPrice(
-                      balances.find((bx) => bx.code === base)?.unit ?? 0
+                      balances.find((bx) => bx.code === props.base)?.unit ?? 0
                     )
                   )}{" "}
-                  {base}
+                  {props.base}
                 </span>
               </Typography>
             </div>
@@ -262,10 +269,10 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                   fontWeight: 700,
                 }}
                 type="primary"
-                danger={mode === "sell"}
+                danger={props.mode === OrderType.Sell}
                 onClick={() => handle()}
               >
-                {mode.toUpperCase()} {asset.toUpperCase()}
+                {props.mode.toUpperCase()} {props.asset.toUpperCase()}
               </Button>
             </ConfigProvider>
           </Space>

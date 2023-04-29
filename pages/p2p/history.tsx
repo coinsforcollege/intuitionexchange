@@ -110,7 +110,7 @@ export function HistoryScreen() {
         style={{ width: "100%", border: 0, overflow: "hidden" }}
         bodyStyle={{ padding: 0 }}
       >
-        <div className={style["container"]}>
+        <div className={style["container"]} style={{ paddingBottom: "24px" }}>
           <div className={`${style["toggle-group"]} ${style["full-width"]}`}>
             <label
               onClick={() => setMode(OrderState.Open)}
