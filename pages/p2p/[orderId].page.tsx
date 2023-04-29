@@ -1,13 +1,17 @@
 import {
+  ArrowLeftOutlined,
   CheckCircleOutlined,
   CheckOutlined,
+  InfoCircleFilled,
   LoadingOutlined,
 } from "@ant-design/icons";
-import { Card, Result, Space, Typography } from "antd";
+import { Button, Card, Result, Space, Typography } from "antd";
+import { AxiosError } from "axios";
 import Footer from "components/footer";
 import Header from "components/header";
 import LoadingScreen from "components/loading-screen";
 import { ExchangeContextProvider } from "context/exchange-context";
+import { NotificationContext } from "context/notification";
 import { UserAuthContextProvider } from "context/protect-route-user";
 import dayjs from "dayjs";
 import Head from "next/head";
@@ -23,11 +27,37 @@ import {
 import { axiosInstance } from "util/axios";
 
 function ViewOrder(props: { orderId: string }) {
-  const { data, error } = useSWR(`/p2p-order/${props.orderId}`, (url: string) =>
-    axiosInstance.user
-      .get<{ order: P2POrderRecord; transactions: P2PTransaction[] }>(url)
-      .then((res) => res.data)
+  const router = useRouter();
+  const { api: notification } = React.useContext(NotificationContext);
+
+  const { data, error, mutate } = useSWR(
+    `/p2p-order/${props.orderId}`,
+    (url: string) =>
+      axiosInstance.user
+        .get<{ order: P2POrderRecord; transactions: P2PTransaction[] }>(url)
+        .then((res) => res.data),
+    { refreshInterval: 15_000 }
   );
+
+  const RequestCancel = async () => {
+    await axiosInstance.user
+      .delete(`/p2p-order/${props.orderId}`)
+      .then((res) => {
+        notification.success({ content: res.data.message });
+        setTimeout(() => {
+          mutate();
+        }, 3_000);
+      })
+      .catch((err: AxiosError<{ errors?: string[] }>) => {
+        if (err.response?.data.errors?.length) {
+          err.response.data.errors.forEach((err) => notification.error(err));
+        } else {
+          notification.error({
+            content: err.message ?? "An error occurred, please try again later",
+          });
+        }
+      });
+  };
 
   if (error) {
     return <Result status="error" title="Unable to load order details" />;
@@ -40,6 +70,22 @@ function ViewOrder(props: { orderId: string }) {
   return (
     <div style={{ maxWidth: "800px", margin: "auto" }}>
       <Space direction="vertical" size="large" style={{ width: "100%" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Button type="text" onClick={() => router.push("/p2p")}>
+            <ArrowLeftOutlined /> Go back
+          </Button>
+          {data.order.status === OrderState.Open && (
+            <Button type="text" danger onClick={RequestCancel}>
+              Cancel Order
+            </Button>
+          )}
+        </div>
         <div style={{ display: "flex", alignItems: "center" }}>
           <Typography style={{ flexGrow: 1, fontSize: "12px" }}>
             {data.order.orderType}{" "}
@@ -68,6 +114,11 @@ function ViewOrder(props: { orderId: string }) {
               </div>
             )}
             {data.order.status === OrderState.Closed && (
+              <div style={{ fontSize: "64px", color: "#777777" }}>
+                <InfoCircleFilled />
+              </div>
+            )}
+            {data.order.status === OrderState.Completed && (
               <div style={{ fontSize: "64px", color: "#00B81D" }}>
                 <CheckCircleOutlined />
               </div>
@@ -75,8 +126,15 @@ function ViewOrder(props: { orderId: string }) {
             <Typography.Title level={4}>
               {data.order.status === OrderState.Open
                 ? "Matching your order"
+                : data.order.status === OrderState.Closed
+                ? "Order Closed"
                 : "Trade completed!"}
             </Typography.Title>
+            {data.order.reason && (
+              <Typography style={{ color: "orange" }}>
+                {data.order.reason}
+              </Typography>
+            )}
             <Typography style={{ fontSize: "12px" }}>
               On {dayjs(data.order.timestamp).format("MMMM DD, YYYY")} at{" "}
               {dayjs(data.order.timestamp).format("hh:mm A")}

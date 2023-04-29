@@ -120,6 +120,7 @@ export enum OrderType {
 
 export enum OrderState {
   Closed = "CLOSED",
+  Completed = "COMPLETED",
   Open = "OPEN",
 }
 
@@ -163,6 +164,7 @@ export interface P2POrderRecord {
   price: number;
   quantity: number;
   quantityRemaining: number;
+  reason?: string;
   status: OrderState;
   timestamp: string;
 }
