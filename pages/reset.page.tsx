@@ -1,4 +1,4 @@
-import { Button, Card, Form, Input } from "antd";
+import { Button, Card, Form, Input, Space } from "antd";
 import { AxiosError } from "axios";
 import Footer from "components/footer";
 import Header from "components/header";
@@ -12,6 +12,7 @@ import { useUserStore } from "store/user-store";
 import { axiosInstance } from "util/axios";
 
 function Page() {
+  const [form] = Form.useForm();
   const router = useRouter();
   const userStore = useUserStore();
   const [otpSent, setOtpSent] = React.useState(false);
@@ -29,20 +30,19 @@ function Page() {
     }
   }, [isLoading]);
 
-  const onFinish = (values: {
+  const onFinish = async (values: {
     email: string;
     password: string;
     remember: boolean;
   }) => {
     setLoading(true);
 
-    axiosInstance.default
+    await axiosInstance.default
       .post<{
         message: string;
-      }>("/api/account/reset", values)
+      }>(otpSent ? "/api/account/reset/verify" : "/api/account/reset", values)
       .then((res) => {
         notification.success({ content: res.data.message });
-        setLoading(false);
         if (!otpSent) {
           setOtpSent(true);
         } else {
@@ -57,8 +57,35 @@ function Page() {
             content: err.message ?? "An error occurred, please try again later",
           });
         }
-        setLoading(false);
       });
+
+    setLoading(false);
+  };
+
+  const resendEmailOTP = async () => {
+    setLoading(true);
+
+    await axiosInstance.default
+      .post<{
+        message: string;
+      }>("/otp/resend/email", {
+        email: form.getFieldValue("email"),
+        type: "RESET",
+      })
+      .then((res) => {
+        notification.success({ content: res.data.message });
+      })
+      .catch((err: AxiosError<{ errors?: string[] }>) => {
+        if (err.response?.data.errors?.length) {
+          err.response.data.errors.forEach((err) => notification.error(err));
+        } else {
+          notification.error({
+            content: err.message ?? "An error occurred, please try again later",
+          });
+        }
+      });
+
+    setLoading(false);
   };
 
   return (
@@ -74,6 +101,7 @@ function Page() {
         >
           <Card title="Forget your account password">
             <Form
+              form={form}
               layout="vertical"
               disabled={loading}
               initialValues={{ remember: true }}
@@ -97,23 +125,6 @@ function Page() {
                   />
                 </Form.Item>
 
-                <Form.Item
-                  label="New Password"
-                  required
-                  name="password"
-                  rules={[
-                    {
-                      required: true,
-                      message: "Please enter your new password!",
-                    },
-                  ]}
-                >
-                  <Input
-                    type="password"
-                    placeholder="Please enter your new password"
-                  />
-                </Form.Item>
-
                 <Form.Item>
                   <Button loading={loading} type="primary" htmlType="submit">
                     Continue
@@ -129,6 +140,31 @@ function Page() {
               {otpSent && (
                 <div>
                   <Form.Item
+                    label="New Password"
+                    required
+                    name="password"
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please enter your new password!",
+                      },
+                    ]}
+                  >
+                    <Input
+                      type="password"
+                      placeholder="Please enter your new password"
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    extra={
+                      <div
+                        style={{ padding: "4px 0", cursor: "pointer" }}
+                        onClick={() => resendEmailOTP()}
+                      >
+                        Click here to resend verification code
+                      </div>
+                    }
                     label="Verification code"
                     required
                     name="otp"
@@ -143,9 +179,16 @@ function Page() {
                   </Form.Item>
 
                   <Form.Item>
-                    <Button loading={loading} type="primary" htmlType="submit">
-                      Verify
-                    </Button>
+                    <Space>
+                      <Button onClick={() => setOtpSent(false)}>Back</Button>
+                      <Button
+                        loading={loading}
+                        type="primary"
+                        htmlType="submit"
+                      >
+                        Verify
+                      </Button>
+                    </Space>
                   </Form.Item>
 
                   <Form.Item>

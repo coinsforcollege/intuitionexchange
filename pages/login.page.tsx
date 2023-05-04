@@ -1,4 +1,4 @@
-import { Button, Card, Checkbox, Form, Input } from "antd";
+import { Button, Card, Checkbox, Form, Input, Space } from "antd";
 import { AxiosError } from "axios";
 import Footer from "components/footer";
 import Header from "components/header";
@@ -13,6 +13,7 @@ import { ApiUserInfo } from "types";
 import { axiosInstance } from "util/axios";
 
 function Page() {
+  const [form] = Form.useForm();
   const router = useRouter();
   const userStore = useUserStore();
   const [otpSent, setOtpSent] = React.useState(false);
@@ -30,14 +31,14 @@ function Page() {
     }
   }, [isLoading]);
 
-  const onFinish = (values: {
+  const onFinish = async (values: {
     email: string;
     password: string;
     remember: boolean;
   }) => {
     setLoading(true);
 
-    axiosInstance.default
+    await axiosInstance.default
       .post<{
         message: string;
         otp: string;
@@ -51,7 +52,6 @@ function Page() {
           notification.success({ content: res.data.message });
           userStore.setUser({ id: res.data.user.id, token: res.data.token });
         }
-        setLoading(false);
       })
       .catch((err: AxiosError<{ errors?: string[] }>) => {
         if (err.response?.data.errors?.length) {
@@ -61,8 +61,35 @@ function Page() {
             content: err.message ?? "An error occurred, please try again later",
           });
         }
-        setLoading(false);
       });
+
+    setLoading(false);
+  };
+
+  const resendEmailOTP = async () => {
+    setLoading(true);
+
+    await axiosInstance.default
+      .post<{
+        message: string;
+      }>("/otp/resend/email", {
+        email: form.getFieldValue("email"),
+        type: "LOGIN",
+      })
+      .then((res) => {
+        notification.success({ content: res.data.message });
+      })
+      .catch((err: AxiosError<{ errors?: string[] }>) => {
+        if (err.response?.data.errors?.length) {
+          err.response.data.errors.forEach((err) => notification.error(err));
+        } else {
+          notification.error({
+            content: err.message ?? "An error occurred, please try again later",
+          });
+        }
+      });
+
+    setLoading(false);
   };
 
   return (
@@ -80,6 +107,7 @@ function Page() {
             title={otpSent ? "Verification code" : "Sign in to your account"}
           >
             <Form
+              form={form}
               layout="vertical"
               disabled={loading}
               initialValues={{ remember: true }}
@@ -142,6 +170,14 @@ function Page() {
               {otpSent && (
                 <div>
                   <Form.Item
+                    extra={
+                      <div
+                        style={{ padding: "4px 0", cursor: "pointer" }}
+                        onClick={() => resendEmailOTP()}
+                      >
+                        Click here to resend verification code
+                      </div>
+                    }
                     label="Verification code"
                     required
                     name="otp"
@@ -154,11 +190,17 @@ function Page() {
                   >
                     <Input placeholder="Enter the verification code sent to your email address" />
                   </Form.Item>
-
                   <Form.Item>
-                    <Button loading={loading} type="primary" htmlType="submit">
-                      Verify & sign in
-                    </Button>
+                    <Space>
+                      <Button onClick={() => setOtpSent(false)}>Back</Button>
+                      <Button
+                        loading={loading}
+                        type="primary"
+                        htmlType="submit"
+                      >
+                        Verify & sign in
+                      </Button>
+                    </Space>
                   </Form.Item>
                 </div>
               )}

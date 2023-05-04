@@ -70,6 +70,59 @@ function Page() {
       });
   };
 
+  const resendEmailOTP = async () => {
+    setLoading(true);
+
+    await axiosInstance.default
+      .post<{
+        message: string;
+      }>("/otp/resend/email", {
+        email: form.getFieldValue("email"),
+        type: "REGISTER",
+      })
+      .then((res) => {
+        notification.success({ content: res.data.message });
+      })
+      .catch((err: AxiosError<{ errors?: string[] }>) => {
+        if (err.response?.data.errors?.length) {
+          err.response.data.errors.forEach((err) => notification.error(err));
+        } else {
+          notification.error({
+            content: err.message ?? "An error occurred, please try again later",
+          });
+        }
+      });
+
+    setLoading(false);
+  };
+
+  const resendPhoneOTP = async () => {
+    setLoading(true);
+
+    await axiosInstance.default
+      .post<{
+        message: string;
+      }>("/otp/resend/phone", {
+        phoneCountry: form.getFieldValue("phoneCountry"),
+        phone: form.getFieldValue("phone"),
+        type: "REGISTER",
+      })
+      .then((res) => {
+        notification.success({ content: res.data.message });
+      })
+      .catch((err: AxiosError<{ errors?: string[] }>) => {
+        if (err.response?.data.errors?.length) {
+          err.response.data.errors.forEach((err) => notification.error(err));
+        } else {
+          notification.error({
+            content: err.message ?? "An error occurred, please try again later",
+          });
+        }
+      });
+
+    setLoading(false);
+  };
+
   return (
     <>
       <div className="container">
@@ -310,6 +363,14 @@ function Page() {
               {otpSent && (
                 <div>
                   <Form.Item
+                    extra={
+                      <div
+                        style={{ padding: "4px 0", cursor: "pointer" }}
+                        onClick={resendEmailOTP}
+                      >
+                        Click here to resend verification code
+                      </div>
+                    }
                     label="Verify email"
                     required
                     name="otpEmail"
@@ -324,6 +385,14 @@ function Page() {
                   </Form.Item>
 
                   <Form.Item
+                    extra={
+                      <div
+                        style={{ padding: "4px 0", cursor: "pointer" }}
+                        onClick={resendPhoneOTP}
+                      >
+                        Click here to resend verification code
+                      </div>
+                    }
                     label="Verify phone"
                     required
                     name="otpPhone"
