@@ -128,7 +128,6 @@ export function Page() {
         >
           <Card
             className={css({
-              padding: "1rem !important",
               [mq.md]: {
                 padding: "2rem !important",
               },
@@ -138,8 +137,10 @@ export function Page() {
               level={3}
               className={css({
                 fontSize: "1.5rem !important",
+                textAlign: "start",
                 [mq.md]: {
-                  fontSize: "2rem !important",
+                  textAlign: "center",
+                  fontSize: "1.75rem !important",
                 },
               })}
             >
