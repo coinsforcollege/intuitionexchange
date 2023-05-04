@@ -4,6 +4,7 @@ import {
   LogoutOutlined,
   UserOutlined,
 } from "@ant-design/icons";
+import { css } from "@emotion/css";
 import { Icon } from "@iconify/react";
 import {
   Avatar,
@@ -109,20 +110,24 @@ export default function Header({ fullWidth }: { fullWidth?: boolean }) {
     <>
       <div className="container" style={fullWidth ? { maxWidth: "100%" } : {}}>
         <div
-          style={{
+          className={css({
             display: "flex",
             padding: "1rem 0",
             justifyContent: "space-between",
             alignItems: "center",
-          }}
+          })}
         >
-          <div style={{ paddingRight: "1rem" }}>
+          <div className={css({ paddingRight: "1rem" })}>
             <Space>
               <Link href="/" style={{ textDecoration: "none" }}>
                 <Image
                   alt="InTuition Exchange Logo"
                   src={LogoImg}
-                  style={{ maxWidth: "200px", width: "100%" }}
+                  className={css({
+                    maxWidth: "200px",
+                    width: "100%",
+                    minHeight: 36,
+                  })}
                 />
               </Link>
             </Space>
@@ -146,7 +151,9 @@ export default function Header({ fullWidth }: { fullWidth?: boolean }) {
                     <Link href="/wallet">
                       <Button type="text">Wallet</Button>
                     </Link>
-                    <Typography style={{ opacity: 0.8, padding: "4px 15px" }}>
+                    <Typography
+                      className={css({ opacity: 0.8, padding: "4px 15px" })}
+                    >
                       |
                     </Typography>
                   </>

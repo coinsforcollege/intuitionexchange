@@ -35,7 +35,7 @@ export function Page() {
             xs={{ span: 24, order: 2 }}
             md={{ span: 14, order: 1 }}
             className={css({
-              paddingTop: "4rem",
+              paddingTop: "4rem !important",
               textAlign: "center",
               [mq.md]: {
                 textAlign: "start",
@@ -72,17 +72,17 @@ export function Page() {
             </Link>
           </Col>
           <Col xs={{ span: 24, order: 1 }} md={{ span: 10, order: 1 }}>
-            <div style={{ position: "relative", height: "6rem" }}>
+            <div className={css({ position: "relative", height: "6rem" })}>
               <div
-                style={{
+                className={css({
                   margin: "auto",
                   position: "absolute",
                   left: 0,
                   right: 0,
-                }}
+                })}
               >
                 <div
-                  style={{
+                  className={css({
                     display: "flex",
                     borderRadius: "8px",
                     alignItems: "center",
@@ -90,24 +90,24 @@ export function Page() {
                     justifyContent: "center",
                     width: "fit-content",
                     margin: "auto",
-                  }}
+                  })}
                 >
                   <div
-                    style={{
+                    className={css({
                       background: "#1668DC",
                       borderRadius: "8px 0 0 8px",
                       padding: "1rem",
                       display: "flex",
                       alignContent: "center",
-                    }}
+                    })}
                   >
                     <Image
                       alt="logo"
                       src={tuitLogo}
-                      style={{
+                      className={css({
                         width: "3rem",
                         height: "auto",
-                      }}
+                      })}
                     />
                   </div>
                   <div>
@@ -122,11 +122,14 @@ export function Page() {
           </Col>
         </Row>
         <Row
-          style={{
-            paddingTop: "10rem",
+          className={css({
+            paddingTop: "4rem",
             textAlign: "center",
             margin: "auto",
-          }}
+            [mq.md]: {
+              paddingTop: "10rem",
+            },
+          })}
           gutter={[16, 16]}
         >
           <Card
@@ -283,11 +286,11 @@ export function Page() {
           </Col>
           <Col xs={24} md={12}>
             <div
-              style={{
+              className={css({
                 textAlign: "center",
                 padding: "4rem",
                 maxWidth: "600px",
-              }}
+              })}
             >
               <Image
                 alt="Intuition Exchange"
