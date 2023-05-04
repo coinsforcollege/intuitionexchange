@@ -1,10 +1,10 @@
 export interface ApiUserInfo {
   email: string;
-  firstName: string;
+  firstName?: string;
   flags: number;
   id: string;
   kyc: boolean;
-  lastName: string;
+  lastName?: string;
   phone: string;
   phoneCountry: string;
   primeTrustAccountStatus: boolean;

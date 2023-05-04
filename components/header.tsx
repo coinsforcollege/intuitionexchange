@@ -151,7 +151,9 @@ export default function Header({ fullWidth }: { fullWidth?: boolean }) {
                     </Typography>
                   </>
                 )}
-                <Typography.Text>Hello, {user.firstName}</Typography.Text>
+                <Typography.Text>
+                  Hello, {user.firstName ?? "User"}
+                </Typography.Text>
                 {!isPhone && (
                   <div>
                     <Dropdown
@@ -169,7 +171,7 @@ export default function Header({ fullWidth }: { fullWidth?: boolean }) {
                             backgroundColor: "#fde3cf",
                           }}
                         >
-                          {user.firstName.charAt(0).toUpperCase()}
+                          {user.firstName?.charAt(0).toUpperCase() ?? "U"}
                         </Avatar>
                       </div>
                     </Dropdown>

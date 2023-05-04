@@ -24,6 +24,7 @@ import { useUserStore } from "store/user-store";
 import { axiosInstance } from "util/axios";
 
 function Page() {
+  const [form] = Form.useForm();
   const router = useRouter();
   const userStore = useUserStore();
   const [otpSent, setOtpSent] = React.useState(false);
@@ -92,68 +93,10 @@ function Page() {
               disabled={loading}
               initialValues={{ remember: true }}
               onFinish={onFinish}
+              form={form}
             >
               <div style={{ display: otpSent ? "none" : "block" }}>
                 <Row justify="space-between" gutter={8}>
-                  <Col xs={24} md={12}>
-                    <Form.Item
-                      label="First name"
-                      required
-                      name="firstName"
-                      rules={[
-                        {
-                          required: true,
-                          message: "Please enter your first name!",
-                        },
-                        {
-                          pattern: /^[a-zA-Z]+$/,
-                          message:
-                            "Special characters (including numbers) not allowed",
-                        },
-                      ]}
-                    >
-                      <Input placeholder="Please enter your first name" />
-                    </Form.Item>
-                  </Col>
-                  <Col xs={24} md={12}>
-                    <Form.Item
-                      label="Middle name"
-                      name="middleName"
-                      rules={[
-                        {
-                          required: false,
-                          message: "Please enter your middle name!",
-                        },
-                        {
-                          pattern: /^[a-zA-Z]+$/,
-                          message:
-                            "Special characters (including numbers) not allowed",
-                        },
-                      ]}
-                    >
-                      <Input placeholder="Please enter your middle name" />
-                    </Form.Item>
-                  </Col>
-                  <Col xs={12}>
-                    <Form.Item
-                      label="Last name"
-                      required
-                      name="lastName"
-                      rules={[
-                        {
-                          required: true,
-                          message: "Please enter your last name!",
-                        },
-                        {
-                          pattern: /^[a-zA-Z]+$/,
-                          message:
-                            "Special characters (including numbers) not allowed",
-                        },
-                      ]}
-                    >
-                      <Input placeholder="Please enter your last name" />
-                    </Form.Item>
-                  </Col>
                   <Col xs={24}>
                     <Form.Item
                       label="Email"
@@ -398,7 +341,11 @@ function Page() {
                     <Space>
                       <Button
                         loading={loading}
-                        onClick={() => setOtpSent(false)}
+                        onClick={() => {
+                          form.setFieldValue("otpEmail", "");
+                          form.setFieldValue("otpPhone", "");
+                          setOtpSent(false);
+                        }}
                       >
                         Back
                       </Button>

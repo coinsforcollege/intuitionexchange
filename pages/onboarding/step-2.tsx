@@ -13,16 +13,37 @@ export default function OnboardingStep1({
   onFinish: () => void;
 }) {
   const [agree, setAgree] = React.useState(false);
+  const [read, setRead] = React.useState(false);
+
+  React.useEffect(() => {
+    const agreementDiv = document.getElementById("agreement");
+
+    if (agreementDiv) {
+      agreementDiv.addEventListener("scroll", () => {
+        if (
+          agreementDiv.scrollTop + agreementDiv.clientHeight >=
+          agreementDiv.scrollHeight
+        ) {
+          if (!read) {
+            setRead(true);
+          }
+        }
+      });
+    }
+  }, []);
 
   return (
     <>
       <Row>
         <div
+          id="agreement"
           style={{
             background: "white",
             color: "black",
             padding: "1rem",
             borderRadius: "8px",
+            maxHeight: 600,
+            overflowY: "auto",
           }}
           dangerouslySetInnerHTML={{ __html: agreement }}
         />
@@ -30,7 +51,11 @@ export default function OnboardingStep1({
       <Row style={{ paddingTop: "2rem" }}>
         <Col>
           <Row style={{ paddingTop: "2rem", paddingBottom: "2rem" }}>
-            <Checkbox checked={agree} onChange={() => setAgree(!agree)}>
+            <Checkbox
+              checked={agree}
+              onChange={() => setAgree(!agree)}
+              disabled={!read}
+            >
               I have read and accept the Prime Trust user agreement.
             </Checkbox>
           </Row>
