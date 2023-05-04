@@ -1,14 +1,15 @@
+import { css } from "@emotion/css";
 import { Button, Card, Col, Row, Space, Typography } from "antd";
 import Footer from "components/footer";
 import MarketQuote from "components/graphs/MarketQuote";
 import Header from "components/header";
 import { TuitCoinCounter } from "components/tuit-coin-counter";
-import useMediaQuery from "components/useMediaQuery";
 import { ResponsiveContext } from "context/responsive";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 import React, { ReactElement } from "react";
+import mq from "util/breakpoints";
 
 import AccessImage from "../public/Access.png";
 import LockImage from "../public/Lock.png";
@@ -19,31 +20,44 @@ import tuitLogo from "../public/tuit-white.svg";
 
 export function Page() {
   const { isDarkMode } = React.useContext(ResponsiveContext);
-  const [isPhone, setIsPhone] = React.useState(false);
-
-  const isPhoneCheck = useMediaQuery("(max-width: 768px)");
-
-  React.useEffect(() => {
-    setIsPhone(isPhoneCheck);
-  }, [isPhoneCheck]);
 
   return (
     <>
       <div className="container">
         <Row
-          gutter={[32, 32]}
+          gutter={[16, 16]}
           style={{ alignItems: "center", padding: "4rem 0" }}
         >
-          <Col xs={{ span: 24, order: 2 }} md={{ span: 14, order: 1 }}>
+          <Col
+            xs={{ span: 24, order: 2 }}
+            md={{ span: 14, order: 1 }}
+            className={css({
+              paddingTop: "4rem",
+              textAlign: "center",
+              [mq.md]: {
+                textAlign: "start",
+              },
+            })}
+          >
             <Typography.Title
               level={1}
-              style={{ fontSize: isPhone ? undefined : "4rem" }}
+              className={css({
+                fontSize: "2rem !important",
+                [mq.md]: {
+                  fontSize: "4rem !important",
+                },
+              })}
             >
               Investing in the Future
             </Typography.Title>
             <Typography.Title
               level={3}
-              style={{ fontSize: isPhone ? undefined : "2rem" }}
+              className={css({
+                fontSize: "1.25rem !important",
+                [mq.md]: {
+                  fontSize: "1.5rem !important",
+                },
+              })}
             >
               InTuition Exchange Gives 10% of Its Net Revenue to Support College
               Education for Students
@@ -112,8 +126,23 @@ export function Page() {
           }}
           gutter={[16, 16]}
         >
-          <Card style={{ width: "100%", padding: "2rem" }}>
-            <Typography.Title level={3}>
+          <Card
+            className={css({
+              padding: "1rem !important",
+              [mq.md]: {
+                padding: "2rem !important",
+              },
+            })}
+          >
+            <Typography.Title
+              level={3}
+              className={css({
+                fontSize: "1.5rem !important",
+                [mq.md]: {
+                  fontSize: "2rem !important",
+                },
+              })}
+            >
               Intuition Exchange, in partnership with Coins For College, is a
               social impact platform connecting the community to tackle high
               tuition costs and increase access to quality education.
