@@ -26,7 +26,10 @@ export function Page() {
       <div className="container">
         <Row
           gutter={[16, 16]}
-          style={{ alignItems: "center", padding: "4rem 0" }}
+          className={css({
+            alignItems: "center",
+            padding: "4rem 0",
+          })}
         >
           <Col
             xs={{ span: 24, order: 2 }}
