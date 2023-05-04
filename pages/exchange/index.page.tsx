@@ -20,7 +20,7 @@ export function Page() {
   return (
     <>
       <Row gutter={[12, 12]}>
-        <Col xs={24} md={5}>
+        <Col xs={24} md={5} xxl={3}>
           <PairsScreen
             base={baseAsset}
             setBase={setBaseAsset}
@@ -28,7 +28,7 @@ export function Page() {
             setAsset={setAsset}
           />
         </Col>
-        <Col xs={24} md={12}>
+        <Col xs={24} md={12} xxl={16}>
           <div>
             <AdvancedChart
               widgetProps={{
@@ -44,7 +44,7 @@ export function Page() {
             <HistoryScreen />
           </div>
         </Col>
-        <Col xs={24} md={7}>
+        <Col xs={24} md={7} xxl={5}>
           <div>
             <QuoteScreen asset={asset} base={baseAsset} />
           </div>

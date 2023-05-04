@@ -23,7 +23,7 @@ export function Page() {
   return (
     <>
       <Row gutter={[12, 12]}>
-        <Col xs={24} md={6}>
+        <Col xs={24} md={6} xxl={3}>
           <PairsScreen
             base={baseAsset}
             setBase={setBaseAsset}
@@ -31,7 +31,7 @@ export function Page() {
             setAsset={setAsset}
           />
         </Col>
-        <Col xs={24} md={10}>
+        <Col xs={24} md={10} xxl={16}>
           <div>
             <HistoryScreen />
           </div>
@@ -46,7 +46,7 @@ export function Page() {
             />
           </div>
         </Col>
-        <Col xs={24} md={8}>
+        <Col xs={24} md={8} xxl={5}>
           <div>
             <QuoteScreen
               asset={asset}
