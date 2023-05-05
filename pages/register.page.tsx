@@ -396,6 +396,7 @@ function Page() {
                             padding: "8px 0",
                           }}
                           inputStyle="inputStyle"
+                          inputType="number"
                           numInputs={6}
                           onChange={(otp) =>
                             form.setFieldValue("otpEmail", otp)
@@ -446,6 +447,7 @@ function Page() {
                             padding: "8px 0",
                           }}
                           inputStyle="inputStyle"
+                          inputType="number"
                           numInputs={6}
                           onChange={(otp) =>
                             form.setFieldValue("otpPhone", otp)
