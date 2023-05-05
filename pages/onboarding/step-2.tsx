@@ -51,11 +51,7 @@ export default function OnboardingStep1({
       <Row style={{ paddingTop: "2rem" }}>
         <Col>
           <Row style={{ paddingTop: "2rem", paddingBottom: "2rem" }}>
-            <Checkbox
-              checked={agree}
-              onChange={() => setAgree(!agree)}
-              disabled={!read}
-            >
+            <Checkbox checked={agree} onChange={() => setAgree(!agree)}>
               I have read and accept the Prime Trust user agreement.
             </Checkbox>
           </Row>
