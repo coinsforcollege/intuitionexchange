@@ -17,7 +17,7 @@ export default function OnboardingStep1({
   const agreementRef = React.useRef<HTMLDivElement | null>(null);
 
   const onScroll = () => {
-    if (agreementRef.current) {
+    if (!read && agreementRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = agreementRef.current;
 
       if (scrollTop + clientHeight >= scrollHeight - clientHeight) {
