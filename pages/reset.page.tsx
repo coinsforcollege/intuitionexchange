@@ -162,8 +162,8 @@ function Page() {
 
                   <Form.Item
                     extra={
-                      <div style={{ padding: "4px 0", cursor: "pointer" }}>
-                        Please check your email inbox for verification code
+                      <div style={{ padding: "4px 0" }}>
+                        Sent to {form.getFieldValue("email")}
                       </div>
                     }
                     label="Email verification code"
