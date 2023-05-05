@@ -36,3 +36,25 @@ form div.ant-form-item-explain .ant-form-item-explain-error:not(:first-child) {
 .scroll::-webkit-scrollbar-thumb {
   background-color: #abb1bf;
 }
+
+.inputStyle {
+  width: 3rem !important;
+  height: 3rem;
+  margin: 0 1rem;
+  font-size: 2rem;
+  border-radius: 4px;
+  border: 1px solid #777;
+  background: transparent;
+}
+
+@media screen and (max-width: 600px) {
+  .inputStyle {
+    width: 1.5rem !important;
+    height: 1.5rem;
+    margin: 0 0.5rem;
+    font-size: 1rem;
+    border-radius: 4px;
+    border: 1px solid;
+    background: transparent;
+  }
+}

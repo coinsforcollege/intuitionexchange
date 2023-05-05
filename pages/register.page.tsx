@@ -1,3 +1,5 @@
+import { ReloadOutlined } from "@ant-design/icons";
+import { css } from "@emotion/css";
 import {
   Button,
   Card,
@@ -10,6 +12,7 @@ import {
   Row,
   Select,
   Space,
+  Tooltip,
 } from "antd";
 import { AxiosError } from "axios";
 import Footer from "components/footer";
@@ -20,6 +23,7 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { ReactElement } from "react";
+import OtpInput from "react-otp-input";
 import { useUserStore } from "store/user-store";
 import { axiosInstance } from "util/axios";
 
@@ -70,6 +74,7 @@ function Page() {
       });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const resendEmailOTP = async () => {
     setLoading(true);
 
@@ -96,6 +101,7 @@ function Page() {
     setLoading(false);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const resendPhoneOTP = async () => {
     setLoading(true);
 
@@ -136,9 +142,7 @@ function Page() {
         >
           <Card
             title={
-              otpSent
-                ? "Verify your email address and phone"
-                : "Create an account"
+              otpSent ? "Verify your contact details" : "Create an account"
             }
           >
             <Form
@@ -364,46 +368,99 @@ function Page() {
                 <div>
                   <Form.Item
                     extra={
-                      <div
-                        style={{ padding: "4px 0", cursor: "pointer" }}
-                        onClick={resendEmailOTP}
-                      >
-                        Click here to resend verification code
+                      <div style={{ padding: "4px 0", cursor: "pointer" }}>
+                        Please check your email inbox for verification code
                       </div>
                     }
-                    label="Verify email"
+                    label="Email verification code"
                     required
-                    name="otpEmail"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Please enter verification code!",
-                      },
-                    ]}
                   >
-                    <Input placeholder="Enter the verification code sent to your email address" />
+                    <div
+                      className={css({
+                        display: "flex",
+                        alignItems: "center",
+                      })}
+                    >
+                      <Form.Item
+                        noStyle
+                        name="otpEmail"
+                        rules={[
+                          {
+                            required: true,
+                            message: "Please enter verification code!",
+                          },
+                        ]}
+                      >
+                        <OtpInput
+                          containerStyle={{
+                            padding: "8px 0",
+                          }}
+                          inputStyle="inputStyle"
+                          numInputs={6}
+                          onChange={(otp) =>
+                            form.setFieldValue("otpEmail", otp)
+                          }
+                          renderSeparator={<span>-</span>}
+                          renderInput={(props) => <input {...props} />}
+                          shouldAutoFocus
+                        />
+                      </Form.Item>
+                      <Tooltip title="Resend verification code">
+                        <Button
+                          shape="circle"
+                          icon={<ReloadOutlined />}
+                          onClick={resendEmailOTP}
+                        />
+                      </Tooltip>
+                    </div>
                   </Form.Item>
 
                   <Form.Item
                     extra={
-                      <div
-                        style={{ padding: "4px 0", cursor: "pointer" }}
-                        onClick={resendPhoneOTP}
-                      >
-                        Click here to resend verification code
+                      <div style={{ padding: "4px 0", cursor: "pointer" }}>
+                        Please check your phone for verification code
                       </div>
                     }
-                    label="Verify phone"
+                    label="Phone verification code"
                     required
-                    name="otpPhone"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Please enter verification code!",
-                      },
-                    ]}
                   >
-                    <Input placeholder="Enter the verification code sent to your phone" />
+                    <div
+                      className={css({
+                        display: "flex",
+                        alignItems: "center",
+                      })}
+                    >
+                      <Form.Item
+                        noStyle
+                        name="otpPhone"
+                        rules={[
+                          {
+                            required: true,
+                            message: "Please enter verification code!",
+                          },
+                        ]}
+                      >
+                        <OtpInput
+                          containerStyle={{
+                            padding: "8px 0",
+                          }}
+                          inputStyle="inputStyle"
+                          numInputs={6}
+                          onChange={(otp) =>
+                            form.setFieldValue("otpPhone", otp)
+                          }
+                          renderSeparator={<span>-</span>}
+                          renderInput={(props) => <input {...props} />}
+                        />
+                      </Form.Item>
+                      <Tooltip title="Resend verification code">
+                        <Button
+                          shape="circle"
+                          icon={<ReloadOutlined />}
+                          onClick={resendPhoneOTP}
+                        />
+                      </Tooltip>
+                    </div>
                   </Form.Item>
 
                   <Form.Item>
