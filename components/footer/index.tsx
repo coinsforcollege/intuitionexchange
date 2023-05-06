@@ -64,10 +64,11 @@ export default function Footer(props: { fullWidth?: boolean }) {
               </li>
               <li>
                 <Link
-                  href="mailto:contact@intuitionexchange.com"
+                  href="https://intuitionexchange.zendesk.com"
                   className="footer-link"
+                  target="_blank"
                 >
-                  Contact Support
+                  Help Center
                 </Link>
               </li>
             </ul>
