@@ -91,21 +91,17 @@ export function Page() {
     taxId: "",
   });
 
-  const updateRef = React.useRef<boolean>(false);
   useEffectOnce(() => {
     const data = localStorage.getItem("onboarding-form");
     if (data) {
       setForm(JSON.parse(data));
-      updateRef.current = true;
     }
 
     refreshStatus();
   });
 
   React.useEffect(() => {
-    if (updateRef.current) {
-      localStorage.setItem("onboarding-form", JSON.stringify(form));
-    }
+    localStorage.setItem("onboarding-form", JSON.stringify(form));
   }, [form]);
 
   const refreshStatus = () => {
