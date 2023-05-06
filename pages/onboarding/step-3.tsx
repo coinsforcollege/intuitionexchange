@@ -21,6 +21,7 @@ export default function OnboardingStep2({
   onFinish: () => void;
   setForm: React.Dispatch<React.SetStateAction<IOnboardingForm>>;
 }) {
+  const [error, setError] = React.useState("");
   const { user } = React.useContext(OnboardingAuthContext);
   const { api: notification } = React.useContext(NotificationContext);
 
@@ -42,6 +43,10 @@ export default function OnboardingStep2({
             ...prev,
             socureDocumentId: response.documentUuid,
           }));
+
+          setTimeout(() => {
+            onFinish();
+          }, 1000);
         }
       },
       // onError: console.log, //callback method to read the error response
@@ -54,7 +59,9 @@ export default function OnboardingStep2({
 
     window.SocureInitializer.init(token).then((lib: any) => {
       lib.init(token, "#main-socure", config).then(function () {
-        lib.start(2, input);
+        lib.start(2, input).catch((err: any) => {
+          setError(err?.status ?? "");
+        });
       });
     });
   };
@@ -108,12 +115,21 @@ export default function OnboardingStep2({
 
   return (
     <>
-      {isDocumentUploaded && (
+      {error.length > 0 && (
+        <Row style={{ justifyContent: "center" }}>
+          <Result
+            status="error"
+            title="Something went wrong!"
+            subTitle={error}
+          />
+        </Row>
+      )}
+      {error.length === 0 && isDocumentUploaded && (
         <Row style={{ justifyContent: "center" }}>
           <Result status="success" title="Documents Uploaded, continue!" />
         </Row>
       )}
-      {!isDocumentUploaded && (
+      {error.length === 0 && !isDocumentUploaded && (
         <Row>
           <div
             style={{

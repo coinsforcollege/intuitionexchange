@@ -9,6 +9,7 @@ import Head from "next/head";
 import Script from "next/script";
 import React, { ReactElement } from "react";
 import { axiosInstance } from "util/axios";
+import { useEffectOnce } from "util/effect-once";
 
 import OnboardingStep0 from "./step-0";
 import OnboardingStep1 from "./step-1";
@@ -90,9 +91,22 @@ export function Page() {
     taxId: "",
   });
 
-  React.useEffect(() => {
+  const updateRef = React.useRef<boolean>(false);
+  useEffectOnce(() => {
+    const data = localStorage.getItem("onboarding-form");
+    if (data) {
+      setForm(JSON.parse(data));
+      updateRef.current = true;
+    }
+
     refreshStatus();
-  }, []);
+  });
+
+  React.useEffect(() => {
+    if (updateRef.current) {
+      localStorage.setItem("onboarding-form", JSON.stringify(form));
+    }
+  }, [form]);
 
   const refreshStatus = () => {
     axiosInstance.user
@@ -134,7 +148,8 @@ export function Page() {
             err.response.data.errors.forEach((err) => notification.error(err));
           } else {
             notification.error({
-              content: err.message ?? "An error occurred, please try again later",
+              content:
+                err.message ?? "An error occurred, please try again later",
             });
           }
         });
@@ -152,7 +167,8 @@ export function Page() {
             err.response.data.errors.forEach((err) => notification.error(err));
           } else {
             notification.error({
-              content: err.message ?? "An error occurred, please try again later",
+              content:
+                err.message ?? "An error occurred, please try again later",
             });
           }
         });
@@ -172,7 +188,8 @@ export function Page() {
             err.response.data.errors.forEach((err) => notification.error(err));
           } else {
             notification.error({
-              content: err.message ?? "An error occurred, please try again later",
+              content:
+                err.message ?? "An error occurred, please try again later",
             });
           }
         });
