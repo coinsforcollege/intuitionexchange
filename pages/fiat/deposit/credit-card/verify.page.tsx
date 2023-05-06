@@ -1,14 +1,5 @@
 import { LeftOutlined } from "@ant-design/icons";
-import {
-  Alert,
-  Button,
-  Card,
-  Result,
-  Space,
-  Spin,
-  theme,
-  Typography,
-} from "antd";
+import { Alert, Button, Card, Result, Space, Spin, Typography } from "antd";
 import Footer from "components/footer";
 import Header from "components/header";
 import { UserAuthContextProvider } from "context/protect-route-user";
@@ -26,7 +17,6 @@ declare global {
 }
 
 function Page() {
-  const { token: ThemeToken } = theme.useToken();
   const router = useRouter();
   const { token } = router.query;
   const [completed, setCompleted] = React.useState(false);
@@ -47,11 +37,8 @@ function Page() {
         resourceTokenHash: token,
         theme: {
           //theme attributes
-          background: "inherit",
-          foreground: ThemeToken.colorTextBase.replaceAll(
-            /#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])(.+)?/g,
-            "#$1$1$2$2$3$3"
-          ),
+          background: "#ffffff",
+          foreground: "#000000",
         },
         events: {
           onContribution: function (
@@ -136,7 +123,11 @@ function Page() {
         id="primetrust"
         async={true}
         type="text/javascript"
-        src="https://bootstrapper.primetrust-cdn.com/bootstrap.js"
+        src={
+          process.env.NODE_ENV === "development"
+            ? "https://sandbox.bootstrapper.primetrust-cdn.com/bootstrap.js"
+            : "https://bootstrapper.primetrust-cdn.com/bootstrap.js"
+        }
       />
       <div className="container">
         <Space style={{ paddingBottom: "20px" }}>

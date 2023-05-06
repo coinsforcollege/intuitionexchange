@@ -1,5 +1,5 @@
 import { LeftOutlined } from "@ant-design/icons";
-import { Button, Card, Result, Space, Spin, theme, Typography } from "antd";
+import { Button, Card, Result, Space, Spin, Typography } from "antd";
 import { AxiosError } from "axios";
 import Footer from "components/footer";
 import Header from "components/header";
@@ -19,7 +19,6 @@ declare global {
 }
 
 function Page() {
-  const { token: ThemeToken } = theme.useToken();
   const [completed, setCompleted] = React.useState(false);
   const [hash, setHash] = React.useState<string>();
   const { api: notification } = React.useContext(NotificationContext);
@@ -53,11 +52,8 @@ function Page() {
       resourceTokenHash: token,
       theme: {
         //theme attributes
-        background: "inherit",
-        foreground: ThemeToken.colorTextBase.replaceAll(
-          /#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])(.+)?/g,
-          "#$1$1$2$2$3$3"
-        ),
+        background: "#ffffff",
+        foreground: "#000000",
       },
       events: {
         cardVerified: function (
@@ -108,7 +104,11 @@ function Page() {
         id="primetrust"
         async={true}
         type="text/javascript"
-        src="https://bootstrapper.primetrust-cdn.com/bootstrap.js"
+        src={
+          process.env.NODE_ENV === "development"
+            ? "https://sandbox.bootstrapper.primetrust-cdn.com/bootstrap.js"
+            : "https://bootstrapper.primetrust-cdn.com/bootstrap.js"
+        }
       />
       <div className="container">
         <Space style={{ paddingBottom: "20px" }}>
