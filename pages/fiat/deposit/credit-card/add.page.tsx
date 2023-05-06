@@ -135,7 +135,9 @@ Page.GetLayout = function GetLayout(page: ReactElement) {
       </Head>
       <UserAuthContextProvider>
         <Header />
-        <div className="container">{page}</div>
+        <div className="container" style={{ maxWidth: "800px" }}>
+          {page}
+        </div>
         <Footer />
       </UserAuthContextProvider>
     </>
