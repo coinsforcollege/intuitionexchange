@@ -94,6 +94,11 @@ class MyDocument extends Document {
               __html: blockingSetInitialColorMode,
             }}
           />
+          <script
+            async
+            id="ze-snippet"
+            src="https://static.zdassets.com/ekr/snippet.js?key=6928fb7c-3031-448a-8510-336c15e7a88e"
+          />
           <Main />
           <NextScript />
         </body>
