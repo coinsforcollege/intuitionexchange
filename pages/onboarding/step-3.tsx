@@ -45,8 +45,10 @@ export default function OnboardingStep2({
           }));
 
           setTimeout(() => {
-            onFinish();
-          }, 1000);
+            if (isDocumentUploaded) {
+              onFinish();
+            }
+          }, 5_000);
         }
       },
       // onError: console.log, //callback method to read the error response

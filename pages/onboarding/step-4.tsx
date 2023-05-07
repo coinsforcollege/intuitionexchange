@@ -115,7 +115,7 @@ export default function OnboardingStep3({
       <GetScreen />
       <div style={{ textAlign: "center" }}>
         <Typography.Title level={5}>
-          Please write to us at compliance@intuitionexchange.com with the above
+          Please write to us at support@intuitionexchange.com with the above
           details for more help.
         </Typography.Title>
       </div>
