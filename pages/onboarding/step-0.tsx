@@ -125,10 +125,10 @@ export default function OnboardingStep0({
                       },
                       {
                         type: "number",
-                        min: 1950,
+                        min: 1900,
                         max: 2050,
                         transform: (value) => Number(value),
-                        message: "The year should be between 1950 to 2050",
+                        message: "The year should be between 1900 to 2050",
                       },
                     ]}
                     initialValue={form.birthday.year}
