@@ -6,7 +6,10 @@ import Footer from "components/footer";
 import Header from "components/header";
 import { SettingsLayout, SettingsSidebar } from "components/settings-layout";
 import { NotificationContext } from "context/notification";
-import { UserAuthContextProvider } from "context/protect-route-user";
+import {
+  UserAuthContext,
+  UserAuthContextProvider,
+} from "context/protect-route-user";
 import Head from "next/head";
 import React from "react";
 import OtpInput from "react-otp-input";
@@ -17,6 +20,7 @@ function Page() {
   const [otpSent, setOtpSent] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const { api: notification } = React.useContext(NotificationContext);
+  const { refresh: refreshUser } = React.useContext(UserAuthContext);
 
   const onFinish = async (values: { password: string }) => {
     setLoading(true);
@@ -32,6 +36,7 @@ function Page() {
         } else {
           setOtpSent(false);
           form.resetFields();
+          refreshUser();
         }
       })
       .catch((err: AxiosError<{ errors?: string[] }>) => {
