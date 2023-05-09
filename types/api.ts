@@ -5,6 +5,7 @@ export interface ApiUserInfo {
   id: string;
   kyc: boolean;
   lastName?: string;
+  middleName?: string;
   phone: string;
   phoneCountry: string;
   primeTrustAccountStatus: boolean;

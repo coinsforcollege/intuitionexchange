@@ -203,6 +203,10 @@
 }
 
 [data-theme="dark"] {
+  --color-primary: var(--palette-blue-main);
+  --color-brand: var(--palette-blue-main);
+  --color-primary-gradient: var(--palette-blue-70);
+  --color-primary-30: var(--palette-blue-30);
   --color-green: var(--palette-green-50);
   --color-red: var(--palette-red-50);
   --color-background-danger-icon-bg: var(--palette-red-100);
