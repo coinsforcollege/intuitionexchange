@@ -74,3 +74,10 @@ input[type="number"] {
 iframe.pt-bootstrap-iframe {
   border-radius: 1rem;
 }
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  background: var(--color-background-default);
+}

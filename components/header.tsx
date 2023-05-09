@@ -108,7 +108,10 @@ export default function Header({ fullWidth }: { fullWidth?: boolean }) {
 
   return (
     <>
-      <div className="container" style={fullWidth ? { maxWidth: "100%" } : {}}>
+      <div
+        className="container header"
+        style={fullWidth ? { maxWidth: "100%" } : {}}
+      >
         <div
           className={css({
             display: "flex",
