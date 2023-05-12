@@ -104,6 +104,10 @@ export function Page() {
     localStorage.setItem("onboarding-form", JSON.stringify(form));
   }, [form]);
 
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [step]);
+
   const refreshStatus = () => {
     axiosInstance.user
       .get<IOnboardingStatus>("/api/onboarding/status")
@@ -238,7 +242,7 @@ export function Page() {
       />
       <div className="container">
         <Row style={{ paddingTop: "2vw", paddingBottom: "12vw" }}>
-          <Col xs={24} md={6}>
+          <Col xs={0} md={6}>
             <Steps
               direction="vertical"
               current={step}

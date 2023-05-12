@@ -148,6 +148,7 @@ function Page() {
               <Tooltip title="Resend verification code">
                 <Button
                   shape="circle"
+                  type="link"
                   icon={<ReloadOutlined />}
                   onClick={resendEmailOTP}
                 />

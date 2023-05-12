@@ -60,14 +60,14 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-@media screen and (max-width: 600px) {
+@media screen and (max-width: 800px) {
   .inputStyle {
-    width: 1.5rem !important;
-    height: 1.5rem;
+    width: 2rem !important;
+    height: 2rem;
     margin: 0 0.5rem;
-    font-size: 1rem;
+    font-size: 0.725rem;
     border-radius: 4px;
-    border: 1px solid;
+    border: 1px solid #777;
     background: transparent;
   }
 }
@@ -79,7 +79,7 @@ iframe.pt-bootstrap-iframe {
 .header {
   position: sticky;
   top: 0;
-  z-index: 999;
+  z-index: 999999;
   border-bottom: 1px solid var(--color-header-border);
   background-color: var(--color-inner-header-background);
 }

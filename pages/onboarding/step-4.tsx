@@ -1,4 +1,4 @@
-import { Button, List, Result, Space, Spin, Tooltip, Typography } from "antd";
+import { Button, List, Result, Space, Tooltip, Typography } from "antd";
 import { OnboardingAuthContext } from "context/protect-route-onboarding";
 import { useRouter } from "next/router";
 import React from "react";
@@ -44,8 +44,8 @@ export default function OnboardingStep3({
   const PendingScreen = () => (
     <>
       <Result
-        icon={status.pending ? <Spin /> : undefined}
-        status={!isError && !status.maxLimitReached ? "info" : "error"}
+        style={{ padding: "1rem 0" }}
+        status={!isError && !status.maxLimitReached ? "info" : "warning"}
         title={
           isError || (status.maxLimitReached && status.success !== 0)
             ? "Account creation was unsuccessful!"
@@ -76,7 +76,15 @@ export default function OnboardingStep3({
                 />
               </div>
             )}
-            <Space>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "1rem",
+                justifyContent: "center",
+                padding: "1rem 0",
+              }}
+            >
               <Tooltip
                 title={
                   status.total >= 2
@@ -95,7 +103,7 @@ export default function OnboardingStep3({
                 </Button>
               </Tooltip>
               <Button onClick={refreshStatus}>Refresh</Button>
-            </Space>
+            </div>
           </Space>,
         ]}
       />

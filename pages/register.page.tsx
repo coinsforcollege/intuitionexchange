@@ -230,20 +230,16 @@ function Page() {
                           message: "Please enter your password!",
                         },
                         {
-                          min: 8,
-                          message: "Password should be 8 characters!",
-                        },
-                        {
                           pattern:
                             /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})/,
                           message:
-                            "Must Contain 8 Characters, One Uppercase, One Lowercase, One Number and One Special Case Character",
+                            "Must contain at least 8 characters with a combination of uppercase & lowercase letters, numbers, and special characters",
                         },
                       ]}
                     >
                       <Input
                         type="password"
-                        placeholder="Password length must be greater than 8 characters"
+                        placeholder="Create a strong password"
                       />
                     </Form.Item>
                   </Col>
@@ -360,7 +356,7 @@ function Page() {
 
                 <Form.Item>
                   Already have an account? Go to{" "}
-                  <Link href="/login">login</Link>!
+                  <Link href="/login">login!</Link>
                 </Form.Item>
               </div>
 
@@ -409,6 +405,7 @@ function Page() {
                       <Tooltip title="Resend verification code">
                         <Button
                           shape="circle"
+                          type="link"
                           icon={<ReloadOutlined />}
                           onClick={resendEmailOTP}
                         />
@@ -459,6 +456,7 @@ function Page() {
                       <Tooltip title="Resend verification code">
                         <Button
                           shape="circle"
+                          type="link"
                           icon={<ReloadOutlined />}
                           onClick={resendPhoneOTP}
                         />

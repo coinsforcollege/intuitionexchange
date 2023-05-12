@@ -128,7 +128,11 @@ export default function OnboardingStep2({
       )}
       {error.length === 0 && isDocumentUploaded && (
         <Row style={{ justifyContent: "center" }}>
-          <Result status="success" title="Documents Uploaded, continue!" />
+          <Result
+            status="success"
+            title="Documents Uploaded!"
+            subTitle="Click on finish to submit your application."
+          />
         </Row>
       )}
       {error.length === 0 && !isDocumentUploaded && (
@@ -151,13 +155,6 @@ export default function OnboardingStep2({
         <Space>
           <Button disabled={loading} type="dashed" onClick={onBack}>
             Back
-          </Button>
-          <Button
-            onClick={() => {
-              startSocure();
-            }}
-          >
-            Restart Document Upload
           </Button>
           <Button
             disabled={loading || !isDocumentUploaded}
