@@ -1,6 +1,5 @@
 import {
-  BulbFilled,
-  BulbOutlined,
+  BgColorsOutlined,
   LogoutOutlined,
   UserOutlined,
 } from "@ant-design/icons";
@@ -13,6 +12,7 @@ import {
   Dropdown,
   MenuProps,
   Space,
+  Tooltip,
   Typography,
 } from "antd";
 import { AxiosError } from "axios";
@@ -77,10 +77,6 @@ export default function Header({ fullWidth }: { fullWidth?: boolean }) {
       router.push("/settings/profile");
     }
 
-    if (e.key === "theme") {
-      switchTheme();
-    }
-
     if (e.key === "logout") {
       logout();
     }
@@ -92,11 +88,6 @@ export default function Header({ fullWidth }: { fullWidth?: boolean }) {
       label: "Manage Account",
       icon: <UserOutlined />,
       disabled: false,
-    },
-    {
-      key: "theme",
-      label: responsive.isDarkMode ? "Light mode" : "Dark mode",
-      icon: responsive.isDarkMode ? <BulbOutlined /> : <BulbFilled />,
     },
     { type: "divider" },
     {
@@ -136,124 +127,138 @@ export default function Header({ fullWidth }: { fullWidth?: boolean }) {
               </Space>
             </div>
             <div>
-              {!user && (
-                <Link href="/login">
-                  <Button type="primary">Login</Button>
-                </Link>
-              )}
-              {user && (
-                <Space>
-                  {!isPhone && (
-                    <>
-                      <Link href="/exchange">
-                        <Button type="text">Exchange</Button>
-                      </Link>
-                      <Link href="/p2p">
-                        <Button type="text">P2P</Button>
-                      </Link>
-                      <Link href="/wallet">
-                        <Button type="text">Wallet</Button>
-                      </Link>
-                      <Typography
-                        className={css({ opacity: 0.8, padding: "4px 15px" })}
-                      >
-                        |
-                      </Typography>
-                    </>
-                  )}
-                  <Typography.Text>
-                    Hello, {user.firstName ?? "User"}
-                  </Typography.Text>
-                  {!isPhone && (
-                    <div>
-                      <Dropdown
-                        menu={{ items, onClick: handleMenuClick }}
-                        placement="bottomRight"
-                      >
-                        <div
-                          style={{
-                            cursor: "pointer",
-                          }}
+              <Space>
+                {user && !isPhone && (
+                  <>
+                    <Link href="/exchange">
+                      <Button type="text" style={{ color: "white" }}>
+                        Exchange
+                      </Button>
+                    </Link>
+                    <Link href="/p2p">
+                      <Button type="text" style={{ color: "white" }}>
+                        P2P
+                      </Button>
+                    </Link>
+                    <Link href="/wallet">
+                      <Button type="text" style={{ color: "white" }}>
+                        Wallet
+                      </Button>
+                    </Link>
+                  </>
+                )}
+                <Tooltip
+                  title={responsive.isDarkMode ? "Light mode" : "Dark mode"}
+                >
+                  <Button
+                    style={{ color: "white" }}
+                    type="text"
+                    onClick={switchTheme}
+                    shape="circle"
+                    icon={<BgColorsOutlined />}
+                  />
+                </Tooltip>
+                <Typography
+                  className={css({
+                    opacity: 0.8,
+                    padding: "4px 15px",
+                    color: "white",
+                  })}
+                >
+                  |
+                </Typography>
+                {!user && (
+                  <Link href="/login">
+                    <Button type="primary" style={{ color: "white" }}>
+                      Login
+                    </Button>
+                  </Link>
+                )}
+                {user && (
+                  <>
+                    <Typography.Text style={{ color: "white" }}>
+                      Hello, {user.firstName ?? "User"}
+                    </Typography.Text>
+                    {!isPhone && (
+                      <div>
+                        <Dropdown
+                          menu={{ items, onClick: handleMenuClick }}
+                          placement="bottomRight"
                         >
-                          <Avatar
+                          <div
                             style={{
-                              color: "#f56a00",
-                              backgroundColor: "#fde3cf",
+                              cursor: "pointer",
                             }}
                           >
-                            {user.firstName?.charAt(0).toUpperCase() ?? "U"}
-                          </Avatar>
-                        </div>
-                      </Dropdown>
-                    </div>
-                  )}
-                  {isPhone && (
-                    <Icon
-                      icon="material-symbols:menu-rounded"
-                      fontSize="24"
-                      onClick={() => setDrawer(true)}
-                      style={{ display: "flex", cursor: "pointer" }}
-                    />
-                  )}
-                  <Drawer
-                    title="Intuition Exchange"
-                    placement="right"
-                    onClose={() => setDrawer(false)}
-                    open={isDrawerOpen}
-                  >
-                    <Space direction="vertical" style={{ width: "100%" }}>
-                      <Link href="/exchange">
+                            <Avatar
+                              style={{
+                                color: "#f56a00",
+                                backgroundColor: "#fde3cf",
+                              }}
+                            >
+                              {user.firstName?.charAt(0).toUpperCase() ?? "U"}
+                            </Avatar>
+                          </div>
+                        </Dropdown>
+                      </div>
+                    )}
+                    {isPhone && (
+                      <Icon
+                        icon="material-symbols:menu-rounded"
+                        fontSize="24"
+                        onClick={() => setDrawer(true)}
+                        style={{ display: "flex", cursor: "pointer" }}
+                      />
+                    )}
+                    <Drawer
+                      title="Intuition Exchange"
+                      placement="right"
+                      onClose={() => setDrawer(false)}
+                      open={isDrawerOpen}
+                    >
+                      <Space direction="vertical" style={{ width: "100%" }}>
+                        <Link href="/exchange">
+                          <Button
+                            type="text"
+                            style={{ width: "100%", textAlign: "start" }}
+                            onClick={() => setDrawer(false)}
+                          >
+                            Exchange
+                          </Button>
+                        </Link>
+                        <Link href="/p2p">
+                          <Button
+                            type="text"
+                            style={{ width: "100%", textAlign: "start" }}
+                            onClick={() => setDrawer(false)}
+                          >
+                            P2P
+                          </Button>
+                        </Link>
+                        <Link href="/wallet">
+                          <Button
+                            type="text"
+                            style={{ width: "100%", textAlign: "start" }}
+                            onClick={() => setDrawer(false)}
+                          >
+                            Wallet
+                          </Button>
+                        </Link>
                         <Button
                           type="text"
                           style={{ width: "100%", textAlign: "start" }}
-                          onClick={() => setDrawer(false)}
+                          onClick={() => {
+                            setDrawer(false);
+                            logout();
+                          }}
                         >
-                          Exchange
+                          Logout
                         </Button>
-                      </Link>
-                      <Link href="/p2p">
-                        <Button
-                          type="text"
-                          style={{ width: "100%", textAlign: "start" }}
-                          onClick={() => setDrawer(false)}
-                        >
-                          P2P
-                        </Button>
-                      </Link>
-                      <Link href="/wallet">
-                        <Button
-                          type="text"
-                          style={{ width: "100%", textAlign: "start" }}
-                          onClick={() => setDrawer(false)}
-                        >
-                          Wallet
-                        </Button>
-                      </Link>
-                      <Button
-                        type="text"
-                        style={{ width: "100%", textAlign: "start" }}
-                        onClick={() => {
-                          setDrawer(false);
-                          switchTheme();
-                        }}
-                      >
-                        {responsive.isDarkMode ? "Light mode" : "Dark mode"}
-                      </Button>
-
-                      <Button
-                        type="text"
-                        style={{ width: "100%", textAlign: "start" }}
-                        onClick={() => {
-                          setDrawer(false);
-                          logout();
-                        }}
-                      >
-                        Logout
-                      </Button>
-                    </Space>
-                  </Drawer>
-                </Space>
-              )}
+                      </Space>
+                    </Drawer>
+                  </>
+                )}
+              </Space>
             </div>
           </div>
         </div>
