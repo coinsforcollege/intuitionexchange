@@ -79,7 +79,7 @@ iframe.pt-bootstrap-iframe {
 .header {
   position: sticky;
   top: 0;
-  z-index: 999999;
+  z-index: 999;
   border-bottom: 1px solid var(--color-header-border);
   background-color: var(--color-inner-header-background);
 }
