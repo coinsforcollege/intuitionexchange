@@ -1,4 +1,4 @@
-import { Card, Col, Row, Steps } from "antd";
+import { Card, Col, Row, Steps, Typography } from "antd";
 import { AxiosError } from "axios";
 import Footer from "components/footer";
 import Header from "components/header";
@@ -242,7 +242,7 @@ export function Page() {
       />
       <div className="container">
         <Row style={{ paddingTop: "2vw", paddingBottom: "12vw" }}>
-          <Col xs={0} md={6}>
+          <Col xs={0} lg={6}>
             <Steps
               direction="vertical"
               current={step}
@@ -270,7 +270,7 @@ export function Page() {
               ]}
             />
           </Col>
-          <Col xs={24} md={18}>
+          <Col xs={24} lg={18}>
             <div
               style={{
                 maxWidth: step < 2 ? "800px" : undefined,
@@ -279,7 +279,14 @@ export function Page() {
             >
               <Card
                 title="Onboarding"
-                extra="Avoid closing or refreshing the window between each step"
+                actions={[
+                  <Typography
+                    key="note"
+                    style={{ display: "flex", padding: "0 1rem" }}
+                  >
+                    Avoid closing or refreshing the window between each step
+                  </Typography>,
+                ]}
               >
                 {step === 0 && (
                   <OnboardingStep0
