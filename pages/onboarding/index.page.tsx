@@ -278,7 +278,7 @@ export function Page() {
               }}
             >
               <Card
-                title="Onboarding"
+                title={`Onboarding (${step + 1}/5)`}
                 actions={[
                   <Typography
                     key="note"
