@@ -1,11 +1,11 @@
+import { css } from "@emotion/css";
 import { Col, Divider, Row, Typography } from "antd";
 import Image from "next/image";
 import Link from "next/link";
+import mq from "util/breakpoints";
 
 import LogoImg from "../../public/logo.svg";
 import styles from "./footer.module.css";
-import { css } from "@emotion/css";
-import mq from "util/breakpoints";
 
 const centerFooter = css({
   [mq.sm]: {
