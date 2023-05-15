@@ -1,8 +1,4 @@
-import {
-  BgColorsOutlined,
-  LogoutOutlined,
-  UserOutlined,
-} from "@ant-design/icons";
+import { BulbOutlined, LogoutOutlined, UserOutlined } from "@ant-design/icons";
 import { css } from "@emotion/css";
 import { Icon } from "@iconify/react";
 import {
@@ -155,7 +151,7 @@ export default function Header({ fullWidth }: { fullWidth?: boolean }) {
                     type="text"
                     onClick={switchTheme}
                     shape="circle"
-                    icon={<BgColorsOutlined />}
+                    icon={<BulbOutlined />}
                   />
                 </Tooltip>
                 <Typography
