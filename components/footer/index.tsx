@@ -64,7 +64,7 @@ export default function Footer(props: { fullWidth?: boolean }) {
               </li>
               <li>
                 <Link
-                  href="https://intuitionexchange.zendesk.com"
+                  href="https://support.intuitionexchange.com"
                   className="footer-link"
                   target="_blank"
                 >
