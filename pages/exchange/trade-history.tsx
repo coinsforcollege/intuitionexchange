@@ -40,10 +40,10 @@ export function TradeHistory(props: { asset: string }) {
               <h6>Price (USD)</h6>
             </th>
             <th>
-              <h6>Volume</h6>
+              <h6>Volume ({props.asset})</h6>
             </th>
             <th>
-              <h6>Value</h6>
+              <h6>Value (USD)</h6>
             </th>
             <th>
               <h6>Time</h6>

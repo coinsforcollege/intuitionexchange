@@ -43,13 +43,13 @@ export function MatchScreen(props: {
         <thead>
           <tr>
             <th>
-              <h6>Price</h6>
+              <h6>Price ({props.base})</h6>
             </th>
             <th>
-              <h6>Volume</h6>
+              <h6>Volume ({props.asset})</h6>
             </th>
             <th>
-              <h6>Value</h6>
+              <h6>Value ({props.base})</h6>
             </th>
             <th>
               <h6>Time</h6>
