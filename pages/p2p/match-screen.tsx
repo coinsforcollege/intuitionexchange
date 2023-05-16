@@ -53,6 +53,11 @@ export function MatchScreen(props: {
           </tr>
         </thead>
         <tbody>
+          {!data?.length && <tr>
+            <td colSpan={3} >
+              <Typography style={{ paddingTop: "2rem", opacity: 0.8 }}>No Records</Typography>
+            </td>
+          </tr>}
           {data &&
             data.map((d, _index) => (
               <tr
