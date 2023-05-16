@@ -67,82 +67,90 @@ export function QuoteScreen(props: {
   return (
     <>
       <Card
-        style={{ height: "100%", overflow: "hidden", border: 0 }}
-        bodyStyle={{ padding: 0 }}
+        style={{ height: "440px", overflow: "hidden", border: 0, }}
+        bodyStyle={{
+          padding: 0, height: "100%", display: "flex",
+          flexDirection: "column"
+        }}
       >
-        <div style={{ display: "flex" }}>
-          <div
-            onClick={() => props.setMode(OrderType.Buy)}
-            style={{
-              backgroundColor:
-                props.mode == OrderType.Buy
-                  ? "var(--color-background-l0)"
-                  : "var(--color-background-l1)",
-              boxShadow:
-                props.mode == OrderType.Buy
-                  ? "inset 0 4px 0 0 var(--color-green)"
-                  : "inset 0 -1px 0 0 var(--color-divider)",
-              padding: "10px 12px",
-              flexGrow: 1,
-              cursor: "pointer",
-            }}
-          >
-            <Typography
+        <div>
+          <div style={{ display: "flex" }}>
+            <div
+              onClick={() => props.setMode(OrderType.Buy)}
               style={{
-                display: "block",
-                color:
+                backgroundColor:
                   props.mode == OrderType.Buy
-                    ? "var(--color-text-l1)"
-                    : "var(--color-text-l2)",
-                fontSize: "12px",
-                letterSpacing: "0.4px",
-                textTransform: "uppercase",
-                textAlign: "center",
-                fontWeight: "bold",
-                lineHeight: 1.33,
+                    ? "var(--color-background-l0)"
+                    : "var(--color-background-l1)",
+                boxShadow:
+                  props.mode == OrderType.Buy
+                    ? "inset 0 4px 0 0 var(--color-green)"
+                    : "inset 0 -1px 0 0 var(--color-divider)",
+                padding: "10px 12px",
+                flexGrow: 1,
+                cursor: "pointer",
               }}
             >
-              Buy
-            </Typography>
-          </div>
-          <div
-            onClick={() => props.setMode(OrderType.Sell)}
-            style={{
-              borderLeft: "1px solid var(--color-divider)",
-              backgroundColor:
-                props.mode == OrderType.Sell
-                  ? "var(--color-background-l0)"
-                  : "var(--color-background-l1)",
-              boxShadow:
-                props.mode == OrderType.Sell
-                  ? "inset 0 4px 0 0 var(--color-red)"
-                  : "inset 0 -1px 0 0 var(--color-divider)",
-              padding: "10px 12px",
-              flexGrow: 1,
-              cursor: "pointer",
-            }}
-          >
-            <Typography
+              <Typography
+                style={{
+                  display: "block",
+                  color:
+                    props.mode == OrderType.Buy
+                      ? "var(--color-text-l1)"
+                      : "var(--color-text-l2)",
+                  fontSize: "12px",
+                  letterSpacing: "0.4px",
+                  textTransform: "uppercase",
+                  textAlign: "center",
+                  fontWeight: "bold",
+                  lineHeight: 1.33,
+                }}
+              >
+                Buy
+              </Typography>
+            </div>
+            <div
+              onClick={() => props.setMode(OrderType.Sell)}
               style={{
-                display: "block",
-                color:
+                borderLeft: "1px solid var(--color-divider)",
+                backgroundColor:
                   props.mode == OrderType.Sell
-                    ? "var(--color-text-l1)"
-                    : "var(--color-text-l2)",
-                fontSize: "12px",
-                letterSpacing: "0.4px",
-                textTransform: "uppercase",
-                textAlign: "center",
-                fontWeight: "bold",
-                lineHeight: 1.33,
+                    ? "var(--color-background-l0)"
+                    : "var(--color-background-l1)",
+                boxShadow:
+                  props.mode == OrderType.Sell
+                    ? "inset 0 4px 0 0 var(--color-red)"
+                    : "inset 0 -1px 0 0 var(--color-divider)",
+                padding: "10px 12px",
+                flexGrow: 1,
+                cursor: "pointer",
               }}
             >
-              Sell
-            </Typography>
+              <Typography
+                style={{
+                  display: "block",
+                  color:
+                    props.mode == OrderType.Sell
+                      ? "var(--color-text-l1)"
+                      : "var(--color-text-l2)",
+                  fontSize: "12px",
+                  letterSpacing: "0.4px",
+                  textTransform: "uppercase",
+                  textAlign: "center",
+                  fontWeight: "bold",
+                  lineHeight: 1.33,
+                }}
+              >
+                Sell
+              </Typography>
+            </div>
           </div>
         </div>
-        <div style={{ padding: "24px" }}>
-          <Space direction="vertical" style={{ width: "100%" }} size="large">
+        <div style={{ padding: "24px", flexGrow: 1 }}>
+          <Space direction="vertical" style={{
+            width: "100%", height: "100%",
+            justifyContent: "center"
+          }} size="large">
             <div>
               <InputNumber
                 prefix={

@@ -145,82 +145,90 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
         </div>
       </Modal>
       <Card
-        style={{ height: "100%", overflow: "hidden", border: 0 }}
-        bodyStyle={{ padding: 0 }}
+        style={{ height: "400px", overflow: "hidden", border: 0, }}
+        bodyStyle={{
+          padding: 0, height: "100%", display: "flex",
+          flexDirection: "column"
+        }}
       >
-        <div style={{ display: "flex" }}>
-          <div
-            onClick={() => setMode("buy")}
-            style={{
-              backgroundColor:
-                mode == "buy"
-                  ? "var(--color-background-l0)"
-                  : "var(--color-background-l1)",
-              boxShadow:
-                mode == "buy"
-                  ? "inset 0 4px 0 0 var(--color-green)"
-                  : "inset 0 -1px 0 0 var(--color-divider)",
-              padding: "10px 12px",
-              flexGrow: 1,
-              cursor: "pointer",
-            }}
-          >
-            <Typography
+        <div>
+          <div style={{ display: "flex" }}>
+            <div
+              onClick={() => setMode("buy")}
               style={{
-                display: "block",
-                color:
+                backgroundColor:
                   mode == "buy"
-                    ? "var(--color-text-l1)"
-                    : "var(--color-text-l2)",
-                fontSize: "12px",
-                letterSpacing: "0.4px",
-                textTransform: "uppercase",
-                textAlign: "center",
-                fontWeight: "bold",
-                lineHeight: 1.33,
+                    ? "var(--color-background-l0)"
+                    : "var(--color-background-l1)",
+                boxShadow:
+                  mode == "buy"
+                    ? "inset 0 4px 0 0 var(--color-green)"
+                    : "inset 0 -1px 0 0 var(--color-divider)",
+                padding: "10px 12px",
+                flexGrow: 1,
+                cursor: "pointer",
               }}
             >
-              Buy
-            </Typography>
-          </div>
-          <div
-            onClick={() => setMode("sell")}
-            style={{
-              borderLeft: "1px solid var(--color-divider)",
-              backgroundColor:
-                mode == "sell"
-                  ? "var(--color-background-l0)"
-                  : "var(--color-background-l1)",
-              boxShadow:
-                mode == "sell"
-                  ? "inset 0 4px 0 0 var(--color-red)"
-                  : "inset 0 -1px 0 0 var(--color-divider)",
-              padding: "10px 12px",
-              flexGrow: 1,
-              cursor: "pointer",
-            }}
-          >
-            <Typography
+              <Typography
+                style={{
+                  display: "block",
+                  color:
+                    mode == "buy"
+                      ? "var(--color-text-l1)"
+                      : "var(--color-text-l2)",
+                  fontSize: "12px",
+                  letterSpacing: "0.4px",
+                  textTransform: "uppercase",
+                  textAlign: "center",
+                  fontWeight: "bold",
+                  lineHeight: 1.33,
+                }}
+              >
+                Buy
+              </Typography>
+            </div>
+            <div
+              onClick={() => setMode("sell")}
               style={{
-                display: "block",
-                color:
+                borderLeft: "1px solid var(--color-divider)",
+                backgroundColor:
                   mode == "sell"
-                    ? "var(--color-text-l1)"
-                    : "var(--color-text-l2)",
-                fontSize: "12px",
-                letterSpacing: "0.4px",
-                textTransform: "uppercase",
-                textAlign: "center",
-                fontWeight: "bold",
-                lineHeight: 1.33,
+                    ? "var(--color-background-l0)"
+                    : "var(--color-background-l1)",
+                boxShadow:
+                  mode == "sell"
+                    ? "inset 0 4px 0 0 var(--color-red)"
+                    : "inset 0 -1px 0 0 var(--color-divider)",
+                padding: "10px 12px",
+                flexGrow: 1,
+                cursor: "pointer",
               }}
             >
-              Sell
-            </Typography>
+              <Typography
+                style={{
+                  display: "block",
+                  color:
+                    mode == "sell"
+                      ? "var(--color-text-l1)"
+                      : "var(--color-text-l2)",
+                  fontSize: "12px",
+                  letterSpacing: "0.4px",
+                  textTransform: "uppercase",
+                  textAlign: "center",
+                  fontWeight: "bold",
+                  lineHeight: 1.33,
+                }}
+              >
+                Sell
+              </Typography>
+            </div>
           </div>
         </div>
-        <div style={{ padding: "24px" }}>
-          <Space direction="vertical" style={{ width: "100%" }} size="large">
+        <div style={{ padding: "24px", flexGrow: 1 }}>
+          <Space direction="vertical" style={{
+            width: "100%", height: "100%",
+            justifyContent: "center"
+          }} size="large">
             <div>
               <InputNumber
                 prefix={
@@ -335,7 +343,7 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
             <Typography style={{ fontSize: "0.825rem", color: "var(--color-text-l3)", }}>0.5% Platform Fees | 0.5% Market Maker Fee</Typography>
           </Space>
         </div>
-      </Card>
+      </Card >
     </>
   );
 }

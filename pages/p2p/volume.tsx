@@ -30,24 +30,22 @@ export function VolumeScreen(props: {
   );
 
   return (
-    <Card style={{ minHeight: "400px" }} bodyStyle={{ padding: 0 }}>
+    <Card style={{ minHeight: "400px", overflow: 'hidden' }} bodyStyle={{ padding: 0, }}>
       <div className={style["container"]} style={{ paddingBottom: "24px" }}>
         <div className={`${style["toggle-group"]} ${style["full-width"]}`}>
           <label
             onClick={() => setMode(OrderType.Buy)}
-            className={`${style["btn"]} ${style["btn-primary"]} ${
-              mode === OrderType.Buy ? style["active"] : ""
-            }`}
+            className={`${style["btn"]} ${style["btn-primary"]} ${mode === OrderType.Buy ? style["active"] : ""
+              }`}
           >
             Buyers
           </label>
           <label
             onClick={() => setMode(OrderType.Sell)}
-            className={`${style["btn"]} ${style["btn-primary"]} ${
-              mode === OrderType.Sell
-                ? `${style["active"]} ${style["seller"]}`
-                : ""
-            }`}
+            className={`${style["btn"]} ${style["btn-primary"]} ${mode === OrderType.Sell
+              ? `${style["active"]} ${style["seller"]}`
+              : ""
+              }`}
           >
             Sellers
           </label>

@@ -156,7 +156,7 @@ export function HistoryScreen() {
 
   return (
     <>
-      <Card style={{ width: "100%", border: 0 }} bodyStyle={{ padding: 0 }}>
+      <Card style={{ width: "100%", border: 0, overflow: 'hidden' }} bodyStyle={{ padding: 0 }}>
         <div className={style["container"]} style={{ paddingBottom: "24px" }}>
           <div className={`${style["toggle-group"]} ${style["full-width"]}`}>
             <label
@@ -186,7 +186,7 @@ export function HistoryScreen() {
             rowKey={(t) => t.id}
             dataSource={data}
             columns={columns}
-            locale={{ emptyText: "No Records" }}
+            locale={{ emptyText: <Typography style={{ paddingTop: "2rem", opacity: 0.8 }}>No Records</Typography> }}
           />
         </div>
       </Card>
