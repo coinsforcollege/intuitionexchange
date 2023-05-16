@@ -142,7 +142,7 @@ function Page() {
         >
           <Card
             title={
-              otpSent ? "Verify your contact details" : "Create an account"
+              otpSent ? "Verify contact details" : "Create an account"
             }
           >
             <Form

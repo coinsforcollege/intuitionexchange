@@ -102,7 +102,7 @@ function Page() {
             paddingBottom: "12vw",
           }}
         >
-          <Card title="Forget your account password">
+          <Card title="Forget password">
             <Form
               form={form}
               layout="vertical"
@@ -241,7 +241,7 @@ Page.GetLayout = function GetLayout(page: ReactElement) {
   return (
     <>
       <Head>
-        <title>Forget your account password | Intuition Exchange</title>
+        <title>Forget password | Intuition Exchange</title>
       </Head>
       <Header />
       <>{page}</>

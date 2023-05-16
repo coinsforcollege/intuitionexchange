@@ -332,6 +332,7 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                 {mode.toUpperCase()} {asset.toUpperCase()}
               </Button>
             </ConfigProvider>
+            <Typography style={{ fontSize: "0.825rem", color: "var(--color-text-l3)", }}>0.5% Platform Fees | 0.5% Market Maker Fee</Typography>
           </Space>
         </div>
       </Card>
