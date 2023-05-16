@@ -227,7 +227,7 @@ function Page() {
                       rules={[
                         {
                           required: true,
-                          message: "Please enter your password!",
+                          message: "Please enter strong password here!",
                         },
                         {
                           pattern:
@@ -239,7 +239,7 @@ function Page() {
                     >
                       <Input
                         type="password"
-                        placeholder="Create a strong password"
+                        placeholder="Please enter strong password here"
                       />
                     </Form.Item>
                   </Col>
@@ -275,10 +275,10 @@ function Page() {
                         value
                           ? Promise.resolve()
                           : Promise.reject(
-                              new Error(
-                                "Should accept privacy policy and terms of use"
-                              )
-                            ),
+                            new Error(
+                              "Should accept privacy policy and terms of use"
+                            )
+                          ),
                     },
                   ]}
                 >
@@ -303,8 +303,8 @@ function Page() {
                         value
                           ? Promise.resolve()
                           : Promise.reject(
-                              new Error("Should accept U.S. Patriot Act")
-                            ),
+                            new Error("Should accept U.S. Patriot Act")
+                          ),
                     },
                   ]}
                 >
@@ -338,7 +338,7 @@ function Page() {
                               </a>
                             </div>
                           ),
-                          onOk() {},
+                          onOk() { },
                         });
                       }}
                     >
@@ -355,8 +355,8 @@ function Page() {
                 </Form.Item>
 
                 <Form.Item>
-                  Already have an account? Go to{" "}
-                  <Link href="/login">login!</Link>
+                  Already have an account?{" "}
+                  <Link href="/login">Login here!</Link>
                 </Form.Item>
               </div>
 
