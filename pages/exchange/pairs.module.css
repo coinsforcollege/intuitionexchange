@@ -267,3 +267,93 @@
 .table thead>tr>th::before {
   display: none;
 }
+
+.trade-history {
+  background-color: var(--color-background-l0);
+  color: var(--color-text-l1);
+  border-collapse: collapse;
+  border-spacing: 0;
+  margin-bottom: 0;
+  height: 100%;
+  width: 100%;
+}
+
+@media screen and (max-width: 767px) {
+  .trade-history {
+    overflow-y: auto;
+  }
+}
+
+@media screen and (max-width: 767px) {
+  .trade-history thead tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+  }
+}
+
+.trade-history thead tr th>h6 {
+  height: 20px;
+  color: var(--color-text-l3);
+  font-weight: 700;
+  font-size: 10px;
+  line-height: 1.2;
+  border-bottom: 1px solid var(--color-border);
+  padding: 4px 14px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.trade-history thead tr th>h6.right {
+  text-align: right;
+}
+
+.trade-history tbody>tr {
+  height: 30px;
+}
+
+@media screen and (max-width: 767px) {
+  .trade-history tbody>tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+  }
+}
+
+.trade-history tbody>tr:hover {
+  cursor: pointer;
+}
+
+.trade-history tbody>tr:hover td {
+  background-color: var(--color-table-row-hover);
+}
+
+.trade-history tbody>tr>td {
+  vertical-align: middle;
+  padding: 2px 4px !important;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  font-weight: 600;
+  line-height: 1.33;
+  text-align: center;
+  position: relative;
+  z-index: 5;
+}
+
+.trade-history tbody>tr.fadeInGreen {
+  animation: fadeInGreen 1s ease-out 1;
+  background-color: var(--color-table-row-green-overlay);
+}
+
+.trade-history tbody>tr.fadeInGreen td:first-child {
+  color: var(--color-green);
+}
+
+.trade-history tbody>tr.fadeInRed {
+  animation: fadeInRed 1s ease-out 1;
+  background-color: var(--color-table-row-red-overlay);
+}
+
+.trade-history tbody>tr.fadeInRed td:first-child {
+  color: var(--color-red);
+}

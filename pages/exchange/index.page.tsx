@@ -11,6 +11,7 @@ import { ExchangeContextProvider } from "../../context/exchange-context";
 import { HistoryScreen } from "./history";
 import { PairsScreen } from "./pairs";
 import { QuoteScreen } from "./quote";
+import { TradeHistory } from "./trade-history";
 
 export function Page() {
   const { isDarkMode } = React.useContext(ResponsiveContext);
@@ -47,6 +48,11 @@ export function Page() {
         <Col xs={24} lg={8} xxl={7}>
           <div>
             <QuoteScreen asset={asset} base={baseAsset} />
+            <div style={{ paddingTop: "1rem" }}>
+              <TradeHistory
+                asset={asset}
+              />
+            </div>
           </div>
         </Col>
       </Row>
