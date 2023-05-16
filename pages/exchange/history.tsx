@@ -11,12 +11,14 @@ import { FormatCurrency, FormatPrice } from "util/functions";
 import style from "./pairs.module.css";
 
 export function HistoryScreen() {
-  const [mode, setMode] = React.useState<OrderState>(OrderState.Open)
+  const [mode, setMode] = React.useState<OrderState>(OrderState.Closed);
   const { data: balances } = React.useContext(BalanceContext);
   const [receipt, setReceipt] = React.useState("");
 
-  const { data, error, isLoading, mutate } = useSWR(`/orders?state=${mode}`, (url: string) =>
-    axiosInstance.user.get<ApiOrder[]>(url).then((res) => res.data)
+  const { data, error, isLoading, mutate } = useSWR(
+    `/orders?state=${mode}`,
+    (url: string) =>
+      axiosInstance.user.get<ApiOrder[]>(url).then((res) => res.data)
   );
 
   React.useEffect(() => {
@@ -156,20 +158,25 @@ export function HistoryScreen() {
 
   return (
     <>
-      <Card style={{ width: "100%", border: 0, overflow: 'hidden' }} bodyStyle={{ padding: 0 }}>
+      <Card
+        style={{ width: "100%", border: 0, overflow: "hidden" }}
+        bodyStyle={{ padding: 0 }}
+      >
         <div className={style["container"]} style={{ paddingBottom: "24px" }}>
           <div className={`${style["toggle-group"]} ${style["full-width"]}`}>
             <label
               onClick={() => setMode(OrderState.Open)}
-              className={`${style["btn"]} ${style["btn-primary"]} ${mode === OrderState.Open ? style["active"] : ""
-                }`}
+              className={`${style["btn"]} ${style["btn-primary"]} ${
+                mode === OrderState.Open ? style["active"] : ""
+              }`}
             >
               Open Orders
             </label>
             <label
               onClick={() => setMode(OrderState.Closed)}
-              className={`${style["btn"]} ${style["btn-primary"]} ${mode === OrderState.Closed ? style["active"] : ""
-                }`}
+              className={`${style["btn"]} ${style["btn-primary"]} ${
+                mode === OrderState.Closed ? style["active"] : ""
+              }`}
             >
               Closed Orders
             </label>
@@ -186,7 +193,13 @@ export function HistoryScreen() {
             rowKey={(t) => t.id}
             dataSource={data}
             columns={columns}
-            locale={{ emptyText: <Typography style={{ paddingTop: "2rem", opacity: 0.8 }}>No Records</Typography> }}
+            locale={{
+              emptyText: (
+                <Typography style={{ paddingTop: "2rem", opacity: 0.8 }}>
+                  No Records
+                </Typography>
+              ),
+            }}
           />
         </div>
       </Card>
