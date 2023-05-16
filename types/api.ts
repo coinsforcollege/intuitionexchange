@@ -83,6 +83,7 @@ export interface ApiAssetTransaction {
 
 export interface ApiAssetSummary {
   code: string;
+  currentValue: number;
   id: string;
   name: string;
   settled: number;

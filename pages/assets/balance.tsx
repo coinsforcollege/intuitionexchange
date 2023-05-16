@@ -74,6 +74,7 @@ export function AssetBalance() {
 
   const columns: ColumnsType<ApiAssetSummary> = [
     {
+      width: '25%',
       title: "Assets",
       dataIndex: "name",
       key: "name",
@@ -92,24 +93,24 @@ export function AssetBalance() {
       ),
     },
     {
+      width: '25%',
       title: "Balance",
       dataIndex: "balance",
       key: "balance",
-      render: (_, t) => FormatPrice(t.settled),
+      render: (_, t) => `${FormatPrice(t.settled)} ${t.code}`,
+      align: 'center' as 'center',
     },
     {
-      title: "Balance Cold",
-      dataIndex: "balanceCold",
-      key: "balanceCold",
-      render: (_, t) => FormatPrice(t.settledCold),
+      width: '25%',
+      title: "Current Value",
+      dataIndex: "currentValue",
+      key: "currentValue",
+      render: (_, t) => t.currentValue === 0 ? "-" : `${FormatPrice(t.currentValue, 2)} USD`,
+      align: 'center' as 'center',
     },
     {
-      title: "Balance Hot",
-      dataIndex: "balanceHot",
-      key: "balanceHot",
-      render: (_, t) => FormatPrice(t.settledHot),
-    },
-    {
+      width: '25%',
+      align: 'center' as 'center',
       title: "Actions",
       dataIndex: "actions",
       key: "actions",
