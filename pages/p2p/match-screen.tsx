@@ -10,6 +10,7 @@ interface Response {
   price: number;
   quantity: number;
   timestamp: string;
+  value: number;
 }
 
 export function MatchScreen(props: {
@@ -48,16 +49,23 @@ export function MatchScreen(props: {
               <h6>Volume</h6>
             </th>
             <th>
+              <h6>Value</h6>
+            </th>
+            <th>
               <h6>Time</h6>
             </th>
           </tr>
         </thead>
         <tbody>
-          {!data?.length && <tr>
-            <td colSpan={3} >
-              <Typography style={{ paddingTop: "2rem", opacity: 0.8 }}>No Records</Typography>
-            </td>
-          </tr>}
+          {!data?.length && (
+            <tr>
+              <td colSpan={3}>
+                <Typography style={{ paddingTop: "2rem", opacity: 0.8 }}>
+                  No Records
+                </Typography>
+              </td>
+            </tr>
+          )}
           {data &&
             data.map((d, _index) => (
               <tr
@@ -81,6 +89,7 @@ export function MatchScreen(props: {
                   )}
                 </td>
                 <td>{d.quantity}</td>
+                <td>{d.value}</td>
                 <td>{dayjs(d.timestamp).format("HH:mm:ss")}</td>
               </tr>
             ))}
