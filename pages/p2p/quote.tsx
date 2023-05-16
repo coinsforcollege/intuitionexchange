@@ -28,6 +28,7 @@ export function QuoteScreen(props: {
   setUnit: React.Dispatch<React.SetStateAction<number>>;
   unit: number;
 }) {
+  const [loading, setLoading] = React.useState(false);
   const { api: notification } = React.useContext(NotificationContext);
   const { data: balances, refresh } = React.useContext(BalanceContext);
 
@@ -38,8 +39,10 @@ export function QuoteScreen(props: {
     props.setPrice(0);
   }, [props.asset, props.base]);
 
-  const handle = () => {
-    axiosInstance.user
+  const handle = async () => {
+    setLoading(true);
+
+    await axiosInstance.user
       .post("/p2p-order", {
         base: props.base,
         asset: props.asset,
@@ -62,6 +65,8 @@ export function QuoteScreen(props: {
         }
         refresh();
       });
+
+    setLoading(false);
   };
 
   return (
@@ -278,6 +283,7 @@ export function QuoteScreen(props: {
               }}
             >
               <Button
+                loading={loading}
                 style={{
                   width: "100%",
                   textTransform: "uppercase",

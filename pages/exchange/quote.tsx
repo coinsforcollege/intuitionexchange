@@ -19,6 +19,7 @@ import { ExchangeContext } from "../../context/exchange-context";
 import style from "./pairs.module.css";
 
 export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
+  const [loading, setLoading] = React.useState(false);
   const { pairs } = React.useContext(ExchangeContext);
   const { api: notification } = React.useContext(NotificationContext);
   const { data: balances, refresh } = React.useContext(BalanceContext);
@@ -38,8 +39,10 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
   const quoteMakerFee = quoteTotalValue * 0.005;
   const quotePlatformFee = quoteTotalValue * 0.0049;
 
-  const trade = () => {
-    axiosInstance.user
+  const trade = async () => {
+    setLoading(true);
+
+    await axiosInstance.user
       .post("/trade", {
         base: base,
         asset: asset,
@@ -61,6 +64,8 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
         }
         refresh();
       });
+
+    setLoading(false);
   };
 
   return (
@@ -341,6 +346,7 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
               }}
             >
               <Button
+                loading={loading}
                 style={{
                   width: "100%",
                   textTransform: "uppercase",
