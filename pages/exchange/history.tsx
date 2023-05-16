@@ -56,6 +56,7 @@ export function HistoryScreen() {
               src={`/asset/${t.assetCode.toLowerCase()}.png`}
               width={24}
               height={24}
+              style={{ marginRight: "8px" }}
             />
             {t.assetName}
           </Typography>

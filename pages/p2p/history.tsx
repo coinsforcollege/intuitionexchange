@@ -55,6 +55,7 @@ export function HistoryScreen() {
               src={`/asset/${t.assetCode.toLowerCase()}.png`}
               width={24}
               height={24}
+              style={{ marginRight: "8px" }}
             />
             {t.assetName}
           </Typography>
@@ -109,15 +110,17 @@ export function HistoryScreen() {
           <div className={`${style["toggle-group"]} ${style["full-width"]}`}>
             <label
               onClick={() => setMode(OrderState.Open)}
-              className={`${style["btn"]} ${style["btn-primary"]} ${mode === OrderState.Open ? style["active"] : ""
-                }`}
+              className={`${style["btn"]} ${style["btn-primary"]} ${
+                mode === OrderState.Open ? style["active"] : ""
+              }`}
             >
               Open Orders
             </label>
             <label
               onClick={() => setMode(OrderState.Closed)}
-              className={`${style["btn"]} ${style["btn-primary"]} ${mode === OrderState.Closed ? style["active"] : ""
-                }`}
+              className={`${style["btn"]} ${style["btn-primary"]} ${
+                mode === OrderState.Closed ? style["active"] : ""
+              }`}
             >
               Closed Orders
             </label>
@@ -141,7 +144,13 @@ export function HistoryScreen() {
             }}
             dataSource={data}
             columns={columns}
-            locale={{ emptyText: <Typography style={{ paddingTop: "2rem", opacity: 0.8 }}>No Records</Typography> }}
+            locale={{
+              emptyText: (
+                <Typography style={{ paddingTop: "2rem", opacity: 0.8 }}>
+                  No Records
+                </Typography>
+              ),
+            }}
           />
         </div>
       </Card>

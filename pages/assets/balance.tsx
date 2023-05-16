@@ -74,8 +74,10 @@ export function AssetBalance() {
 
   const columns: ColumnsType<ApiAssetSummary> = [
     {
-      sorter: (a, b) => { return a.code.localeCompare(b.code) },
-      width: '25%',
+      sorter: (a, b) => {
+        return a.code.localeCompare(b.code);
+      },
+      width: "25%",
       title: "Assets",
       dataIndex: "name",
       key: "name",
@@ -87,33 +89,39 @@ export function AssetBalance() {
               src={`/asset/${t.code.toLowerCase()}.png`}
               width={24}
               height={24}
+              style={{ marginRight: "8px" }}
             />
-            <Typography style={{ paddingLeft: "8px" }}>{t.code}</Typography>
+            <Typography>{t.code}</Typography>
           </div>
         </>
       ),
     },
     {
-      sorter: (a, b) => { return a.code.localeCompare(b.code) },
-      width: '25%',
+      sorter: (a, b) => {
+        return a.code.localeCompare(b.code);
+      },
+      width: "25%",
       title: "Balance",
       dataIndex: "balance",
       key: "balance",
       render: (_, t) => `${FormatPrice(t.settled)} ${t.code}`,
-      align: 'center' as 'center',
+      align: "center" as "center",
     },
     {
-      sorter: (a, b) => { return a.code.localeCompare(b.code) },
-      width: '25%',
+      sorter: (a, b) => {
+        return a.code.localeCompare(b.code);
+      },
+      width: "25%",
       title: "Current Value",
       dataIndex: "currentValue",
       key: "currentValue",
-      render: (_, t) => t.currentValue === 0 ? "-" : `${FormatPrice(t.currentValue, 2)} USD`,
-      align: 'center' as 'center',
+      render: (_, t) =>
+        t.currentValue === 0 ? "-" : `${FormatPrice(t.currentValue, 2)} USD`,
+      align: "center" as "center",
     },
     {
-      width: '25%',
-      align: 'center' as 'center',
+      width: "25%",
+      align: "center" as "center",
       title: "Actions",
       dataIndex: "actions",
       key: "actions",
