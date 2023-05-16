@@ -12,6 +12,7 @@ import { BalanceContext } from "context/balance";
 import { NotificationContext } from "context/notification";
 import React from "react";
 import { axiosInstance } from "util/axios";
+import { PreciseCalculation } from "util/calculation";
 import { FormatCurrency, FormatPrice } from "util/functions";
 
 import { ExchangeContext } from "../../context/exchange-context";
@@ -145,10 +146,12 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
         </div>
       </Modal>
       <Card
-        style={{ height: "400px", overflow: "hidden", border: 0, }}
+        style={{ height: "400px", overflow: "hidden", border: 0 }}
         bodyStyle={{
-          padding: 0, height: "100%", display: "flex",
-          flexDirection: "column"
+          padding: 0,
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <div>
@@ -225,10 +228,15 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
           </div>
         </div>
         <div style={{ padding: "24px", flexGrow: 1 }}>
-          <Space direction="vertical" style={{
-            width: "100%", height: "100%",
-            justifyContent: "center"
-          }} size="large">
+          <Space
+            direction="vertical"
+            style={{
+              width: "100%",
+              height: "100%",
+              justifyContent: "center",
+            }}
+            size="large"
+          >
             <div>
               <InputNumber
                 prefix={
@@ -251,7 +259,12 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                 onChange={(val: number | null) => {
                   const value = val ?? 0;
                   setUnit(value);
-                  setTotal(FormatPrice(value * price));
+                  setTotal(
+                    FormatPrice(
+                      PreciseCalculation.multiplication(value, price),
+                      base === "USD" ? 2 : 6
+                    )
+                  );
                 }}
               />
               <Typography
@@ -340,10 +353,14 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                 {mode.toUpperCase()} {asset.toUpperCase()}
               </Button>
             </ConfigProvider>
-            <Typography style={{ fontSize: "0.825rem", color: "var(--color-text-l3)", }}>0.5% Platform Fees | 0.5% Market Maker Fee</Typography>
+            <Typography
+              style={{ fontSize: "0.825rem", color: "var(--color-text-l3)" }}
+            >
+              0.5% Platform Fees | 0.5% Market Maker Fee
+            </Typography>
           </Space>
         </div>
-      </Card >
+      </Card>
     </>
   );
 }

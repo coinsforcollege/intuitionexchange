@@ -67,10 +67,12 @@ export function QuoteScreen(props: {
   return (
     <>
       <Card
-        style={{ height: "440px", overflow: "hidden", border: 0, }}
+        style={{ height: "440px", overflow: "hidden", border: 0 }}
         bodyStyle={{
-          padding: 0, height: "100%", display: "flex",
-          flexDirection: "column"
+          padding: 0,
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <div>
@@ -147,10 +149,15 @@ export function QuoteScreen(props: {
           </div>
         </div>
         <div style={{ padding: "24px", flexGrow: 1 }}>
-          <Space direction="vertical" style={{
-            width: "100%", height: "100%",
-            justifyContent: "center"
-          }} size="large">
+          <Space
+            direction="vertical"
+            style={{
+              width: "100%",
+              height: "100%",
+              justifyContent: "center",
+            }}
+            size="large"
+          >
             <div>
               <InputNumber
                 prefix={
@@ -237,7 +244,7 @@ export function QuoteScreen(props: {
                   </div>
                 }
                 className={style["antd-input"]}
-                value={FormatCurrency(total)}
+                value={FormatCurrency(total, props.base === "USD" ? 2 : 6)}
                 style={{ padding: 0, paddingInlineStart: "11px" }}
                 placeholder="0"
               />
