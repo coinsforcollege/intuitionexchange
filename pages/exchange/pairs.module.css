@@ -196,8 +196,8 @@
 }
 
 .ticker-item .currency-logo .img {
-  height: 16px;
-  width: 16px;
+  height: 24px;
+  width: 24px;
 }
 
 .ticker-item .change {
@@ -255,16 +255,16 @@
   font-weight: bold;
 }
 
-.table thead>tr>th {
+.table thead > tr > th {
   background: none !important;
   border: none !important;
 }
 
-.table tbody>tr:hover {
+.table tbody > tr:hover {
   cursor: pointer;
 }
 
-.table thead>tr>th::before {
+.table thead > tr > th::before {
   display: none;
 }
 
@@ -292,7 +292,7 @@
   }
 }
 
-.trade-history thead tr th>h6 {
+.trade-history thead tr th > h6 {
   height: 20px;
   color: var(--color-text-l3);
   font-weight: 700;
@@ -304,31 +304,31 @@
   text-transform: uppercase;
 }
 
-.trade-history thead tr th>h6.right {
+.trade-history thead tr th > h6.right {
   text-align: right;
 }
 
-.trade-history tbody>tr {
+.trade-history tbody > tr {
   height: 30px;
 }
 
 @media screen and (max-width: 767px) {
-  .trade-history tbody>tr {
+  .trade-history tbody > tr {
     display: table;
     width: 100%;
     table-layout: fixed;
   }
 }
 
-.trade-history tbody>tr:hover {
+.trade-history tbody > tr:hover {
   cursor: pointer;
 }
 
-.trade-history tbody>tr:hover td {
+.trade-history tbody > tr:hover td {
   background-color: var(--color-table-row-hover);
 }
 
-.trade-history tbody>tr>td {
+.trade-history tbody > tr > td {
   vertical-align: middle;
   padding: 2px 4px !important;
   font-size: 12px;
@@ -340,20 +340,20 @@
   z-index: 5;
 }
 
-.trade-history tbody>tr.fadeInGreen {
+.trade-history tbody > tr.fadeInGreen {
   animation: fadeInGreen 1s ease-out 1;
   background-color: var(--color-table-row-green-overlay);
 }
 
-.trade-history tbody>tr.fadeInGreen td:first-child {
+.trade-history tbody > tr.fadeInGreen td:first-child {
   color: var(--color-green);
 }
 
-.trade-history tbody>tr.fadeInRed {
+.trade-history tbody > tr.fadeInRed {
   animation: fadeInRed 1s ease-out 1;
   background-color: var(--color-table-row-red-overlay);
 }
 
-.trade-history tbody>tr.fadeInRed td:first-child {
+.trade-history tbody > tr.fadeInRed td:first-child {
   color: var(--color-red);
 }

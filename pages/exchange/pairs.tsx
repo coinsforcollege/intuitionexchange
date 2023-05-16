@@ -110,6 +110,9 @@ export function PairsScreen({
                 >
                   <div className={style["currency-logo"]}>
                     <img
+                      onError={(e) =>
+                        (e.currentTarget.src = "/asset/no-image.png")
+                      }
                       src={`/asset/${pair.toLowerCase()}.png`}
                       alt={pair}
                       className={style["img"]}
