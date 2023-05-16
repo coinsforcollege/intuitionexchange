@@ -4,17 +4,18 @@ import { ColumnsType } from "antd/es/table";
 import { BalanceContext } from "context/balance";
 import React from "react";
 import useSWR from "swr";
-import { ApiOrder } from "types";
+import { ApiOrder, OrderState } from "types";
 import { axiosInstance } from "util/axios";
 import { FormatCurrency, FormatPrice } from "util/functions";
 
 import style from "./pairs.module.css";
 
 export function HistoryScreen() {
+  const [mode, setMode] = React.useState<OrderState>(OrderState.Open)
   const { data: balances } = React.useContext(BalanceContext);
   const [receipt, setReceipt] = React.useState("");
 
-  const { data, error, isLoading, mutate } = useSWR("/orders", (url) =>
+  const { data, error, isLoading, mutate } = useSWR(`/orders?state=${mode}`, (url: string) =>
     axiosInstance.user.get<ApiOrder[]>(url).then((res) => res.data)
   );
 
@@ -156,18 +157,27 @@ export function HistoryScreen() {
   return (
     <>
       <Card style={{ width: "100%", border: 0 }} bodyStyle={{ padding: 0 }}>
-        <Typography
-          style={{
-            padding: "12px",
-            fontSize: "12px",
-            letterSpacing: "0.4px",
-            textTransform: "uppercase",
-          }}
-        >
-          Order History
-        </Typography>
+        <div className={style["container"]} style={{ paddingBottom: "24px" }}>
+          <div className={`${style["toggle-group"]} ${style["full-width"]}`}>
+            <label
+              onClick={() => setMode(OrderState.Open)}
+              className={`${style["btn"]} ${style["btn-primary"]} ${mode === OrderState.Open ? style["active"] : ""
+                }`}
+            >
+              Open Orders
+            </label>
+            <label
+              onClick={() => setMode(OrderState.Closed)}
+              className={`${style["btn"]} ${style["btn-primary"]} ${mode === OrderState.Closed ? style["active"] : ""
+                }`}
+            >
+              Closed Orders
+            </label>
+          </div>
+        </div>
         <div>
           <Table
+            className={style["table"]}
             size="small"
             style={{ width: "100%", height: "400px", overflowY: "auto" }}
             pagination={{

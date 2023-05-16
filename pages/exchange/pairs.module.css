@@ -254,3 +254,16 @@
   text-align: right;
   font-weight: bold;
 }
+
+.table thead>tr>th {
+  background: none !important;
+  border: none !important;
+}
+
+.table tbody>tr:hover {
+  cursor: pointer;
+}
+
+.table thead>tr>th::before {
+  display: none;
+}
