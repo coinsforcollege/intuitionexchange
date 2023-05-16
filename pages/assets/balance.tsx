@@ -74,6 +74,7 @@ export function AssetBalance() {
 
   const columns: ColumnsType<ApiAssetSummary> = [
     {
+      sorter: (a, b) => { return a.code.localeCompare(b.code) },
       width: '25%',
       title: "Assets",
       dataIndex: "name",
@@ -93,6 +94,7 @@ export function AssetBalance() {
       ),
     },
     {
+      sorter: (a, b) => { return a.code.localeCompare(b.code) },
       width: '25%',
       title: "Balance",
       dataIndex: "balance",
@@ -101,6 +103,7 @@ export function AssetBalance() {
       align: 'center' as 'center',
     },
     {
+      sorter: (a, b) => { return a.code.localeCompare(b.code) },
       width: '25%',
       title: "Current Value",
       dataIndex: "currentValue",
