@@ -61,7 +61,7 @@ export function MatchScreen(props: {
             <tr>
               <td colSpan={3}>
                 <Typography style={{ paddingTop: "2rem", opacity: 0.8 }}>
-                  No Records
+                  No records to display
                 </Typography>
               </td>
             </tr>

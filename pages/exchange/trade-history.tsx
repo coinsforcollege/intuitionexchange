@@ -55,7 +55,7 @@ export function TradeHistory(props: { asset: string }) {
             <tr>
               <td colSpan={4}>
                 <Typography style={{ paddingTop: "2rem", opacity: 0.8 }}>
-                  No Records
+                  No records to display
                 </Typography>
               </td>
             </tr>

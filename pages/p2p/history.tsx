@@ -147,7 +147,7 @@ export function HistoryScreen() {
             locale={{
               emptyText: (
                 <Typography style={{ paddingTop: "2rem", opacity: 0.8 }}>
-                  No Records
+                  No records to display
                 </Typography>
               ),
             }}
