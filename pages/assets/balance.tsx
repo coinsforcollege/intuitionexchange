@@ -98,7 +98,7 @@ export function AssetBalance() {
     },
     {
       sorter: (a, b) => {
-        return a.code.localeCompare(b.code);
+        return a.settled - b.settled;
       },
       width: "25%",
       title: "Balance",
@@ -109,10 +109,11 @@ export function AssetBalance() {
     },
     {
       sorter: (a, b) => {
-        return a.code.localeCompare(b.code);
+        return a.currentValue - b.currentValue;
       },
       width: "25%",
       title: "Current Value",
+      defaultSortOrder: "descend",
       dataIndex: "currentValue",
       key: "currentValue",
       render: (_, t) =>
