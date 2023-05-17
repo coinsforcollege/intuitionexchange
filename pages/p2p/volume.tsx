@@ -1,4 +1,4 @@
-import { Card } from "antd";
+import { Card, Typography } from "antd";
 import React from "react";
 import useSWR from "swr";
 import { OrderType } from "types";
@@ -30,22 +30,27 @@ export function VolumeScreen(props: {
   );
 
   return (
-    <Card style={{ minHeight: "400px", overflow: 'hidden' }} bodyStyle={{ padding: 0, }}>
+    <Card
+      style={{ minHeight: "400px", overflow: "hidden" }}
+      bodyStyle={{ padding: 0 }}
+    >
       <div className={style["container"]} style={{ paddingBottom: "24px" }}>
         <div className={`${style["toggle-group"]} ${style["full-width"]}`}>
           <label
             onClick={() => setMode(OrderType.Buy)}
-            className={`${style["btn"]} ${style["btn-primary"]} ${mode === OrderType.Buy ? style["active"] : ""
-              }`}
+            className={`${style["btn"]} ${style["btn-primary"]} ${
+              mode === OrderType.Buy ? style["active"] : ""
+            }`}
           >
             Buyers
           </label>
           <label
             onClick={() => setMode(OrderType.Sell)}
-            className={`${style["btn"]} ${style["btn-primary"]} ${mode === OrderType.Sell
-              ? `${style["active"]} ${style["seller"]}`
-              : ""
-              }`}
+            className={`${style["btn"]} ${style["btn-primary"]} ${
+              mode === OrderType.Sell
+                ? `${style["active"]} ${style["seller"]}`
+                : ""
+            }`}
           >
             Sellers
           </label>
@@ -66,6 +71,15 @@ export function VolumeScreen(props: {
           </tr>
         </thead>
         <tbody>
+          {!data?.length && (
+            <tr>
+              <td colSpan={3}>
+                <Typography style={{ paddingTop: "2rem", opacity: 0.8 }}>
+                  No records to display
+                </Typography>
+              </td>
+            </tr>
+          )}
           {data &&
             data.map((d, _index) => (
               <tr
