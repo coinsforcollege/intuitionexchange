@@ -8,25 +8,27 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { ReactElement } from "react";
-import { useUserStore } from "store/user-store";
 import { ApiUserInfo } from "types";
 import { axiosInstance } from "util/axios";
 
 function Page() {
   const [form] = Form.useForm();
   const router = useRouter();
-  const userStore = useUserStore();
   const [loading, setLoading] = React.useState(false);
   const { api: notification } = React.useContext(NotificationContext);
-  const { loading: isLoading, user } = React.useContext(AuthContext);
+  const {
+    loading: isLoading,
+    user,
+    SetToken,
+    RemoveToken,
+  } = React.useContext(AuthContext);
 
   React.useEffect(() => {
     if (isLoading) return;
-
     if (user) {
-      router.replace("/exchange");
+      router.replace(router.query.redirect?.toString() ?? "/exchange");
     } else {
-      userStore.setUser(null);
+      RemoveToken();
     }
   }, [isLoading]);
 
@@ -44,9 +46,9 @@ function Page() {
         token: string;
         user: ApiUserInfo;
       }>("/api/account/login", values)
-      .then((res) => {
+      .then(async (res) => {
         notification.success({ content: res.data.message });
-        userStore.setUser({ id: res.data.user.id, token: res.data.token });
+        SetToken(res.data.token);
       })
       .catch((err: AxiosError<{ errors?: string[] }>) => {
         if (err.response?.data.errors?.length) {

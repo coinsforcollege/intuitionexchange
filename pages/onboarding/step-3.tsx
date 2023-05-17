@@ -3,8 +3,8 @@ import { AxiosError } from "axios";
 import { NotificationContext } from "context/notification";
 import { OnboardingAuthContext } from "context/protect-route-onboarding";
 import React from "react";
+import { useEffectOnce } from "usehooks-ts";
 import { axiosInstance } from "util/axios";
-import { useEffectOnce } from "util/effect-once";
 
 import { IOnboardingForm } from "./index.page";
 

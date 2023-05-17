@@ -11,17 +11,19 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { ReactElement } from "react";
 import OtpInput from "react-otp-input";
-import { useUserStore } from "store/user-store";
 import { axiosInstance } from "util/axios";
 
 function Page() {
   const [form] = Form.useForm();
   const router = useRouter();
-  const userStore = useUserStore();
   const [otpSent, setOtpSent] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const { api: notification } = React.useContext(NotificationContext);
-  const { loading: isLoading, user } = React.useContext(AuthContext);
+  const {
+    loading: isLoading,
+    user,
+    RemoveToken,
+  } = React.useContext(AuthContext);
 
   React.useEffect(() => {
     if (isLoading) return;
@@ -29,7 +31,7 @@ function Page() {
     if (user) {
       router.replace("/");
     } else {
-      userStore.setUser(null);
+      RemoveToken();
     }
   }, [isLoading]);
 

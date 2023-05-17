@@ -1,6 +1,5 @@
 import axios, { AxiosError } from "axios";
 
-import { useUserStore } from "../../store/user-store";
 import { apiUrl } from "./common";
 
 // Create instance
@@ -10,7 +9,7 @@ const axiosUserInstance = axios.create({
 
 // Set the AUTH token for any request
 axiosUserInstance.interceptors.request.use((config: any) => {
-  const token = useUserStore.getState().user?.token;
+  const token = localStorage.getItem("token");
   if (token) {
     config.headers = config.headers ?? {};
     config.headers.Authorization = token ? `Bearer ${token}` : "";
@@ -27,7 +26,7 @@ axiosUserInstance.interceptors.response.use(
 
   function (error: AxiosError) {
     if (error.response?.status === 401) {
-      useUserStore.getState().setUser(null);
+      localStorage.removeItem("token");
     }
 
     throw error;

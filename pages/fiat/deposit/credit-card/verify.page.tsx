@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import Script from "next/script";
 import React, { ReactElement } from "react";
-import { useEffectOnce } from "util/effect-once";
+import { useEffectOnce } from "usehooks-ts";
 
 declare global {
   interface Window {

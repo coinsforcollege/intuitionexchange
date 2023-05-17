@@ -1,10 +1,12 @@
 import React from "react";
+import { useEffectOnce } from "usehooks-ts";
 
-import { useUserStore } from "../store/user-store";
 import { ApiUserInfo } from "../types";
 import { axiosInstance } from "../util/axios";
 
 type AuthContext = {
+  RemoveToken(): Promise<void>;
+  SetToken(token: string): Promise<void>;
   loading: boolean;
   refresh: () => Promise<void>;
   user?: ApiUserInfo;
@@ -13,16 +15,13 @@ type AuthContext = {
 export const AuthContext = React.createContext<AuthContext>({} as AuthContext);
 
 export const AuthContextProvider = ({ children }: { children: any }) => {
-  const userStore = useUserStore();
-  const [initialLoad, setInitialLoad] = React.useState(false);
-  const [loading, setLoading] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
   const [user, setUser] = React.useState<ApiUserInfo | undefined>(undefined);
 
   const refresh = async () => {
-    if (!userStore._hasHydrated || loading) return;
     setLoading(true);
-
-    if (userStore.user) {
+    const token = localStorage.getItem("token");
+    if (token) {
       await axiosInstance.user
         .get<ApiUserInfo>("/api/account/me")
         .then((res) => setUser(res.data))
@@ -31,29 +30,29 @@ export const AuthContextProvider = ({ children }: { children: any }) => {
       setUser(undefined);
     }
 
-    if (!initialLoad) {
-      setInitialLoad(true);
-    }
-
     setLoading(false);
   };
 
-  React.useEffect(() => {
-    if (userStore._hasHydrated && !initialLoad) {
-      refresh();
-    }
-  }, [userStore._hasHydrated]);
+  async function SetToken(token: string) {
+    localStorage.setItem("token", token);
+    await refresh();
+  }
 
-  React.useEffect(() => {
-    if (initialLoad) {
-      refresh();
-    }
-  }, [userStore.user]);
+  async function RemoveToken() {
+    localStorage.removeItem("token");
+    setUser(undefined);
+  }
+
+  useEffectOnce(() => {
+    refresh();
+  });
 
   return (
     <AuthContext.Provider
       value={{
-        loading: !userStore._hasHydrated || loading || !initialLoad,
+        RemoveToken,
+        SetToken,
+        loading: loading,
         refresh,
         user,
       }}

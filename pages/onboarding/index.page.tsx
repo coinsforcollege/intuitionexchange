@@ -8,8 +8,8 @@ import { OnboardingAuthContextProvider } from "context/protect-route-onboarding"
 import Head from "next/head";
 import Script from "next/script";
 import React, { ReactElement } from "react";
+import { useEffectOnce } from "usehooks-ts";
 import { axiosInstance } from "util/axios";
-import { useEffectOnce } from "util/effect-once";
 
 import OnboardingStep0 from "./step-0";
 import OnboardingStep1 from "./step-1";

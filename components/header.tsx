@@ -19,7 +19,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React from "react";
-import { useUserStore } from "store/user-store";
 import { axiosInstance } from "util/axios";
 
 import LogoImg from "../public/logo.svg";
@@ -28,8 +27,7 @@ import useMediaQuery from "./useMediaQuery";
 export default function Header({ fullWidth }: { fullWidth?: boolean }) {
   const responsive = React.useContext(ResponsiveContext);
   const { api: notification } = React.useContext(NotificationContext);
-  const userStore = useUserStore();
-  const { user } = React.useContext(AuthContext);
+  const { user, RemoveToken } = React.useContext(AuthContext);
   const [isPhone, setIsPhone] = React.useState(false);
   const [drawer, setDrawer] = React.useState(false);
   const router = useRouter();
@@ -47,7 +45,7 @@ export default function Header({ fullWidth }: { fullWidth?: boolean }) {
       .post("/api/account/logout")
       .then((res) => {
         notification.success({ content: res.data.message });
-        userStore.setUser(null);
+        RemoveToken();
       })
       .catch((err: AxiosError<{ errors?: string[] }>) => {
         if (err.response?.data.errors?.length) {
