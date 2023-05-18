@@ -134,13 +134,14 @@ export enum OrderBaseType {
 export interface IP2POrder {
   _id: string;
   assetId: string;
+  createdAt: Date;
   custodialAccountId: string;
   orderType: string;
   price: number;
   quantity: number;
   quantityRemaining: number;
   status: OrderState;
-  timestamp: Date;
+  updatedAt: Date;
   userId: string;
 }
 
@@ -161,6 +162,7 @@ export interface P2POrderRecord {
   assetId: string;
   assetName: string;
   base: P2POrderBaseCurrency | P2POrderBaseAsset;
+  createdAt: string;
   id: string;
   orderType: OrderType;
   price: number;
@@ -168,15 +170,16 @@ export interface P2POrderRecord {
   quantityRemaining: number;
   reason?: string;
   status: OrderState;
-  timestamp: string;
+  updatedAt: string;
 }
 
 export interface P2PTransaction {
   _id: string;
   buyOrderId: string;
+  createdAt: string;
   executedPrice: number;
   executedQuantity: number;
   sellOrderId: string;
-  timestamp: string;
   tradeId: string;
+  updatedAt: string;
 }

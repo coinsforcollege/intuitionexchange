@@ -7,8 +7,8 @@ import { axiosInstance } from "util/axios";
 import style from "./pairs.module.css";
 
 interface Response {
+  createdAt: string;
   price: number;
-  timestamp: string;
   value: number;
   volume: number;
 }
@@ -80,7 +80,7 @@ export function TradeHistory(props: { asset: string }) {
                 </td>
                 <td>{d.volume}</td>
                 <td>{d.value}</td>
-                <td>{dayjs(d.timestamp).format("HH:mm:ss")}</td>
+                <td>{dayjs(d.createdAt).format("HH:mm:ss")}</td>
               </tr>
             ))}
         </tbody>

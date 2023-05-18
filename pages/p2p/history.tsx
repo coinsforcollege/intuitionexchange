@@ -94,7 +94,7 @@ export function HistoryScreen() {
       key: "time",
       render: (_, t) => (
         <Typography style={{ fontSize: "12px" }}>
-          {dayjs(t.timestamp).fromNow()}
+          {dayjs(t.createdAt).fromNow()}
         </Typography>
       ),
     },

@@ -99,8 +99,8 @@ function ViewOrder(props: { orderId: string }) {
                 ? data.order.base.currency
                 : data.order.base.code}{" "}
             </b>
-            at {dayjs(data.order.timestamp).format("MMMM DD, YYYY")} at{" "}
-            {dayjs(data.order.timestamp).format("hh:mm A")}
+            at {dayjs(data.order.createdAt).format("MMMM DD, YYYY")} at{" "}
+            {dayjs(data.order.createdAt).format("hh:mm A")}
           </Typography>
           <Typography style={{ fontSize: "12px" }}>
             Order ID: {data.order.id}
@@ -136,8 +136,8 @@ function ViewOrder(props: { orderId: string }) {
               </Typography>
             )}
             <Typography style={{ fontSize: "12px" }}>
-              On {dayjs(data.order.timestamp).format("MMMM DD, YYYY")} at{" "}
-              {dayjs(data.order.timestamp).format("hh:mm A")}
+              On {dayjs(data.order.createdAt).format("MMMM DD, YYYY")} at{" "}
+              {dayjs(data.order.createdAt).format("hh:mm A")}
             </Typography>
           </Space>
         </Card>
@@ -168,8 +168,8 @@ function ViewOrder(props: { orderId: string }) {
                         : data.order.base.code}
                     </Typography>
                     <Typography style={{ fontSize: "12px" }}>
-                      {dayjs(tx.timestamp).format("MMMM DD, YYYY")} at{" "}
-                      {dayjs(tx.timestamp).format("hh:mm A")}
+                      {dayjs(tx.createdAt).format("MMMM DD, YYYY")} at{" "}
+                      {dayjs(tx.createdAt).format("hh:mm A")}
                     </Typography>
                   </div>
                 </div>
