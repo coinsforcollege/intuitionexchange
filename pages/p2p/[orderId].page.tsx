@@ -27,6 +27,7 @@ import {
 import { axiosInstance } from "util/axios";
 
 function ViewOrder(props: { orderId: string }) {
+  const [loading, setLoading] = React.useState(false);
   const router = useRouter();
   const { api: notification } = React.useContext(NotificationContext);
 
@@ -40,6 +41,7 @@ function ViewOrder(props: { orderId: string }) {
   );
 
   const RequestCancel = async () => {
+    setLoading(true);
     await axiosInstance.user
       .delete(`/p2p-order/${props.orderId}`)
       .then((res) => {
@@ -57,6 +59,8 @@ function ViewOrder(props: { orderId: string }) {
           });
         }
       });
+
+    setLoading(false);
   };
 
   if (error) {
@@ -78,10 +82,16 @@ function ViewOrder(props: { orderId: string }) {
           }}
         >
           <Button type="text" onClick={() => router.push("/p2p")}>
-            <ArrowLeftOutlined /> Go back
+            <ArrowLeftOutlined />
+            <span style={{ paddingLeft: "8px" }}>Go back</span>
           </Button>
           {data.order.status === OrderState.Open && (
-            <Button type="text" danger onClick={RequestCancel}>
+            <Button
+              type="text"
+              danger
+              loading={loading}
+              onClick={RequestCancel}
+            >
               Cancel Order
             </Button>
           )}
