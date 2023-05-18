@@ -21,7 +21,7 @@ import { useRouter } from "next/router";
 import React from "react";
 import { axiosInstance } from "util/axios";
 
-import LogoImg from "../public/logo.svg";
+import LogoImg from "../public/logo-white.svg";
 import useMediaQuery from "./useMediaQuery";
 
 export default function Header({ fullWidth }: { fullWidth?: boolean }) {
