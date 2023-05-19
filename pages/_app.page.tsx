@@ -32,6 +32,7 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
       colorBorderSecondary: isDarkMode ? "#ffffff10" : "#00000020",
       colorBorder: isDarkMode ? "#ffffff10" : "#00000020",
       colorText: "inherit",
+      colorLink: "inherit",
     },
     algorithm: [isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm],
   };

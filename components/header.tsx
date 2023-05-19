@@ -196,14 +196,12 @@ export default function Header(props: {
                 </Typography>
                 {!user && (
                   <Link href="/login">
-                    <Button type="primary" style={{ color: "white" }}>
-                      Login
-                    </Button>
+                    <Button type="primary">Login</Button>
                   </Link>
                 )}
                 {user && (
                   <>
-                    <Typography.Text style={{ color: "white" }}>
+                    <Typography.Text>
                       Hello, {user.firstName ?? "User"}
                     </Typography.Text>
                     {!isPhone && (
