@@ -232,13 +232,13 @@ export function Page() {
             </ul>
           </li>
           <li>
-            <strong>&ldquo;Restricted States&rdquo;</strong>means Hawaii (HI),
-            New York (NY), Texas (TX) and South Dakota (SD). The list of
-            Restricted States is subject to change at any time. In the event a
-            state becomes a Restricted State, INTUITION EXCHANGE will provide
-            users residing in that state with notice via email, a notification
-            on the Website, or other means deemed necessary regarding their
-            access to the Services.
+            <strong>&ldquo;Restricted States&rdquo;</strong>means Connecticut
+            (CT), Hawaii (HI), New York (NY), North Carolina (NC), South Dakota
+            (SD) and Texas (TX). The list of Restricted States is subject to
+            change at any time. In the event a state becomes a Restricted State,
+            INTUITION EXCHANGE will provide users residing in that state with
+            notice via email, a notification on the Website, or other means
+            deemed necessary regarding their access to the Services.
           </li>
           <li>
             <strong>Representations And Warranties</strong>. You agree that all

@@ -36,6 +36,7 @@ export const regions = [
     Division: "Mountain",
   },
   {
+    disabled: true,
     State: "Connecticut",
     StateCode: "CT",
     Region: "Northeast",
@@ -163,6 +164,7 @@ export const regions = [
     Division: "Mountain",
   },
   {
+    disabled: true,
     State: "North Carolina",
     StateCode: "NC",
     Region: "South",
