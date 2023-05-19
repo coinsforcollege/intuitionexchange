@@ -1,6 +1,6 @@
 import { Col, Row } from "antd";
 import Footer from "components/footer";
-import Header from "components/header";
+import Header, { HeaderKey } from "components/header";
 import { ExchangeContextProvider } from "context/exchange-context";
 import { UserAuthContextProvider } from "context/protect-route-user";
 import Head from "next/head";
@@ -83,7 +83,7 @@ Page.GetLayout = function GetLayout(page: ReactElement) {
         <title>P2P | Intuition Exchange</title>
       </Head>
       <UserAuthContextProvider>
-        <Header fullWidth />
+        <Header fullWidth active={HeaderKey.P2P} />
         <div className="container" style={{ maxWidth: "100%" }}>
           <ExchangeContextProvider>{page}</ExchangeContextProvider>
         </div>

@@ -1,5 +1,5 @@
 import Footer from "components/footer";
-import Header from "components/header";
+import Header, { HeaderKey } from "components/header";
 import { UserAuthContextProvider } from "context/protect-route-user";
 import Head from "next/head";
 import React, { ReactElement } from "react";
@@ -27,7 +27,7 @@ Page.GetLayout = function GetLayout(page: ReactElement) {
         <title>Funds | Intuition Exchange</title>
       </Head>
       <UserAuthContextProvider>
-        <Header />
+        <Header active={HeaderKey.Wallet} />
         <div className="container">{page}</div>
         <Footer />
       </UserAuthContextProvider>

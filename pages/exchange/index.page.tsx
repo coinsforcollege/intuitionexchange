@@ -1,7 +1,7 @@
 import { Col, Row } from "antd";
 import Footer from "components/footer";
 import AdvancedChart from "components/graphs/AdvancedChart";
-import Header from "components/header";
+import Header, { HeaderKey } from "components/header";
 import { UserAuthContextProvider } from "context/protect-route-user";
 import { ResponsiveContext } from "context/responsive";
 import Head from "next/head";
@@ -49,9 +49,7 @@ export function Page() {
           <div>
             <QuoteScreen asset={asset} base={baseAsset} />
             <div style={{ paddingTop: "1rem" }}>
-              <TradeHistory
-                asset={asset}
-              />
+              <TradeHistory asset={asset} />
             </div>
           </div>
         </Col>
@@ -67,7 +65,7 @@ Page.GetLayout = function GetLayout(page: ReactElement) {
         <title>Exchange | Intuition Exchange</title>
       </Head>
       <UserAuthContextProvider>
-        <Header fullWidth />
+        <Header fullWidth active={HeaderKey.Exchange} />
         <div className="container" style={{ maxWidth: "100%" }}>
           <ExchangeContextProvider>{page}</ExchangeContextProvider>
         </div>

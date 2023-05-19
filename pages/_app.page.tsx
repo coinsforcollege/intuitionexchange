@@ -9,6 +9,7 @@ import { ResponsiveContext } from "context/responsive";
 import { NextPage } from "next";
 import type { AppProps } from "next/app";
 import React, { ReactElement, ReactNode } from "react";
+import { useDarkMode, useEffectOnce } from "usehooks-ts";
 
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
   GetLayout?: (page: ReactElement) => ReactNode;
@@ -19,34 +20,39 @@ type AppPropsWithLayout = AppProps & {
 };
 
 export default function App({ Component, pageProps }: AppPropsWithLayout) {
-  const [darkMode, setDarkMode] = React.useState(true);
+  const { isDarkMode, enable, disable } = useDarkMode();
 
   // Use the layout defined at the page level, if available
   const GetLayout = Component.GetLayout ?? ((page) => page);
 
   const themeConfig: ThemeConfig = {
     token: {
-      colorBgContainer: darkMode ? "#1e2433" : "#ffffff",
-      colorBgElevated: darkMode ? "#1e2433" : "#ffffff",
-      colorBorderSecondary: darkMode ? "#ffffff10" : "#00000020",
-      colorBorder: darkMode ? "#ffffff10" : "#00000020",
+      colorBgContainer: isDarkMode ? "#1e2433" : "#ffffff",
+      colorBgElevated: isDarkMode ? "#1e2433" : "#ffffff",
+      colorBorderSecondary: isDarkMode ? "#ffffff10" : "#00000020",
+      colorBorder: isDarkMode ? "#ffffff10" : "#00000020",
     },
-    algorithm: [darkMode ? theme.darkAlgorithm : theme.defaultAlgorithm],
+    algorithm: [isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm],
   };
 
   function HandleThemeChange(e: MediaQueryListEvent) {
-    setDarkMode(e.matches);
+    if (e.matches) {
+      enable();
+    } else {
+      disable();
+    }
+
     document.documentElement.setAttribute(
       "data-theme",
       e.matches ? "dark" : "light"
     );
   }
 
-  React.useEffect(() => {
-    const val = document.documentElement.getAttribute("data-theme");
-    if (val === "light") {
-      setDarkMode(false);
-    }
+  useEffectOnce(() => {
+    document.documentElement.setAttribute(
+      "data-theme",
+      isDarkMode ? "dark" : "light"
+    );
 
     // MediaQueryList
     const darkModePreference = window.matchMedia(
@@ -59,11 +65,14 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
     return () => {
       darkModePreference.removeEventListener("change", HandleThemeChange);
     };
-  }, []);
+  });
 
   return (
     <ResponsiveContext.Provider
-      value={{ isDarkMode: darkMode, setDarkMode: setDarkMode }}
+      value={{
+        isDarkMode: isDarkMode,
+        setDarkMode: (state) => (state ? enable() : disable()),
+      }}
     >
       <ConfigProvider theme={themeConfig}>
         <NotificationProvider>

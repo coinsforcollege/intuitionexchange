@@ -8,7 +8,6 @@ import {
   Dropdown,
   MenuProps,
   Space,
-  Tooltip,
   Typography,
 } from "antd";
 import { AxiosError } from "axios";
@@ -24,7 +23,27 @@ import { axiosInstance } from "util/axios";
 import LogoImg from "../public/logo-white.svg";
 import useMediaQuery from "./useMediaQuery";
 
-export default function Header({ fullWidth }: { fullWidth?: boolean }) {
+const ActiveHeaderCss = (props: { activeKey?: HeaderKey; key: HeaderKey }) =>
+  css({
+    color: "white",
+    border: 0,
+    background:
+      props.key === props.activeKey
+        ? "var(--color-inner-header-btn-selected) !important"
+        : undefined,
+    ":hover": { color: "white !important" },
+  });
+
+export enum HeaderKey {
+  Exchange,
+  P2P,
+  Wallet,
+}
+
+export default function Header(props: {
+  active?: HeaderKey;
+  fullWidth?: boolean;
+}) {
   const responsive = React.useContext(ResponsiveContext);
   const { api: notification } = React.useContext(NotificationContext);
   const { user, RemoveToken } = React.useContext(AuthContext);
@@ -96,7 +115,7 @@ export default function Header({ fullWidth }: { fullWidth?: boolean }) {
       <div className="header">
         <div
           className="container"
-          style={fullWidth ? { maxWidth: "100%" } : {}}
+          style={props.fullWidth ? { maxWidth: "100%" } : {}}
         >
           <div
             className={css({
@@ -125,33 +144,47 @@ export default function Header({ fullWidth }: { fullWidth?: boolean }) {
                 {user && !isPhone && (
                   <>
                     <Link href="/exchange">
-                      <Button type="text" style={{ color: "white" }}>
+                      <Button
+                        type="text"
+                        className={ActiveHeaderCss({
+                          activeKey: props.active,
+                          key: HeaderKey.Exchange,
+                        })}
+                      >
                         Exchange
                       </Button>
                     </Link>
                     <Link href="/p2p">
-                      <Button type="text" style={{ color: "white" }}>
+                      <Button
+                        type="text"
+                        className={ActiveHeaderCss({
+                          activeKey: props.active,
+                          key: HeaderKey.P2P,
+                        })}
+                      >
                         P2P
                       </Button>
                     </Link>
                     <Link href="/wallet">
-                      <Button type="text" style={{ color: "white" }}>
+                      <Button
+                        type="text"
+                        className={ActiveHeaderCss({
+                          activeKey: props.active,
+                          key: HeaderKey.Wallet,
+                        })}
+                      >
                         Wallet
                       </Button>
                     </Link>
                   </>
                 )}
-                <Tooltip
-                  title={responsive.isDarkMode ? "Light mode" : "Dark mode"}
-                >
-                  <Button
-                    style={{ color: "white" }}
-                    type="text"
-                    onClick={switchTheme}
-                    shape="circle"
-                    icon={<BulbOutlined />}
-                  />
-                </Tooltip>
+                <Button
+                  style={{ color: "white" }}
+                  type="text"
+                  onClick={switchTheme}
+                  shape="circle"
+                  icon={<BulbOutlined />}
+                />
                 <Typography
                   className={css({
                     opacity: 0.8,
