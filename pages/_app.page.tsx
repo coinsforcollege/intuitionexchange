@@ -9,7 +9,7 @@ import { ResponsiveContext } from "context/responsive";
 import { NextPage } from "next";
 import type { AppProps } from "next/app";
 import React, { ReactElement, ReactNode } from "react";
-import { useDarkMode, useEffectOnce } from "usehooks-ts";
+import { useEffectOnce } from "usehooks-ts";
 
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
   GetLayout?: (page: ReactElement) => ReactNode;
@@ -20,7 +20,7 @@ type AppPropsWithLayout = AppProps & {
 };
 
 export default function App({ Component, pageProps }: AppPropsWithLayout) {
-  const { isDarkMode, enable, disable } = useDarkMode();
+  const [isDarkMode, setDarkMode] = React.useState(true);
 
   // Use the layout defined at the page level, if available
   const GetLayout = Component.GetLayout ?? ((page) => page);
@@ -31,17 +31,12 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
       colorBgElevated: isDarkMode ? "#1e2433" : "#ffffff",
       colorBorderSecondary: isDarkMode ? "#ffffff10" : "#00000020",
       colorBorder: isDarkMode ? "#ffffff10" : "#00000020",
+      colorText: "inherit",
     },
     algorithm: [isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm],
   };
 
   function HandleThemeChange(e: MediaQueryListEvent) {
-    if (e.matches) {
-      enable();
-    } else {
-      disable();
-    }
-
     document.documentElement.setAttribute(
       "data-theme",
       e.matches ? "dark" : "light"
@@ -49,10 +44,7 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
   }
 
   useEffectOnce(() => {
-    document.documentElement.setAttribute(
-      "data-theme",
-      isDarkMode ? "dark" : "light"
-    );
+    setDarkMode(document.documentElement.getAttribute("data-theme") === "dark");
 
     // MediaQueryList
     const darkModePreference = window.matchMedia(
@@ -67,11 +59,22 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
     };
   });
 
+  function ToggleTheme(state?: boolean) {
+    const mode = state ?? !isDarkMode;
+    setDarkMode(mode);
+    document.documentElement.setAttribute(
+      "data-theme",
+      mode ? "dark" : "light"
+    );
+
+    window.localStorage.setItem("theme", mode ? "dark" : "light");
+  }
+
   return (
     <ResponsiveContext.Provider
       value={{
         isDarkMode: isDarkMode,
-        setDarkMode: (state) => (state ? enable() : disable()),
+        setDarkMode: (state) => ToggleTheme(state),
       }}
     >
       <ConfigProvider theme={themeConfig}>
