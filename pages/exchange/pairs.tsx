@@ -101,6 +101,7 @@ export function PairsScreen({
                 (pair) =>
                   pair !== selectedBase &&
                   pair !== "USD" &&
+                  pair !== "TUIT" &&
                   pair.toLowerCase().startsWith(search)
               )
               .map((pair) => (
