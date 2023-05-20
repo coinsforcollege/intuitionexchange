@@ -7,11 +7,11 @@ import {
   Space,
   Typography,
 } from "antd";
-import { AxiosError } from "axios";
 import { BalanceContext } from "context/balance";
 import { NotificationContext } from "context/notification";
 import React from "react";
 import { axiosInstance } from "util/axios";
+import { HandleError } from "util/axios/error-handler";
 import { PreciseCalculation } from "util/calculation";
 import { FormatCurrency, FormatPrice } from "util/functions";
 
@@ -50,20 +50,14 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
         isBuyOrder: mode === "buy",
       })
       .then(() => {
-        notification.success("order executed");
-        refresh();
+        notification.success({
+          message: "order executed",
+          placement: "bottomLeft",
+        });
       })
-      .catch((err: AxiosError<{ errors?: string[] }>) => {
-        if (err.response?.data.errors?.length) {
-          err.response.data.errors.forEach((err) => notification.error(err, 8));
-        } else {
-          notification.error({
-            content: err.message ?? "An error occurred, please try again later",
-            duration: 8,
-          });
-        }
-        refresh();
-      });
+      .catch(HandleError(notification));
+
+    refresh();
 
     setLoading(false);
   };

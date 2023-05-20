@@ -56,7 +56,10 @@ export function DepositScreen({
             <a
               onClick={() => {
                 window.navigator.clipboard.writeText(data.walletAddress);
-                notification.success("wallet address copied");
+                notification.success({
+                  message: "wallet address copied",
+                  placement: "bottomLeft",
+                });
               }}
             >
               <Tooltip title="copy">

@@ -1,6 +1,5 @@
 import { LeftOutlined } from "@ant-design/icons";
 import { Button, Card, Result, Space, Spin, Typography } from "antd";
-import { AxiosError } from "axios";
 import Footer from "components/footer";
 import Header from "components/header";
 import { NotificationContext } from "context/notification";
@@ -11,6 +10,7 @@ import Script from "next/script";
 import React, { ReactElement } from "react";
 import { useEffectOnce } from "usehooks-ts";
 import { axiosInstance } from "util/axios";
+import { HandleError } from "util/axios/error-handler";
 
 declare global {
   interface Window {
@@ -29,15 +29,7 @@ function Page() {
       .then((res) => {
         setHash(res.data.token);
       })
-      .catch((err: AxiosError<{ errors?: string[] }>) => {
-        if (err.response?.data.errors?.length) {
-          err.response.data.errors.forEach((err) => notification.error(err));
-        } else {
-          notification.error({
-            content: err.message ?? "An error occurred, please try again later",
-          });
-        }
-      });
+      .catch(HandleError(notification));
   });
 
   React.useEffect(() => {

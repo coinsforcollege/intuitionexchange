@@ -1,5 +1,4 @@
 import { Button, Card, Checkbox, Form, Input } from "antd";
-import { AxiosError } from "axios";
 import Footer from "components/footer";
 import Header from "components/header";
 import { NotificationContext } from "context/notification";
@@ -10,6 +9,7 @@ import { useRouter } from "next/router";
 import React, { ReactElement } from "react";
 import { ApiUserInfo } from "types";
 import { axiosInstance } from "util/axios";
+import { HandleError } from "util/axios/error-handler";
 
 function Page() {
   const [form] = Form.useForm();
@@ -47,18 +47,13 @@ function Page() {
         user: ApiUserInfo;
       }>("/api/account/login", values)
       .then(async (res) => {
-        notification.success({ content: res.data.message });
+        notification.success({
+          message: res.data.message,
+          placement: "bottomLeft",
+        });
         SetToken(res.data.token);
       })
-      .catch((err: AxiosError<{ errors?: string[] }>) => {
-        if (err.response?.data.errors?.length) {
-          err.response.data.errors.forEach((err) => notification.error(err));
-        } else {
-          notification.error({
-            content: err.message ?? "An error occurred, please try again later",
-          });
-        }
-      });
+      .catch(HandleError(notification));
 
     setLoading(false);
   };

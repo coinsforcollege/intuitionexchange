@@ -1,9 +1,9 @@
 import { CloseOutlined } from "@ant-design/icons";
 import { Button, Card, Form, Input, Result } from "antd";
-import { AxiosError } from "axios";
 import { NotificationContext } from "context/notification";
 import React from "react";
 import { axiosInstance } from "util/axios";
+import { HandleError } from "util/axios/error-handler";
 
 export function AddWalletScreen({
   asset,
@@ -16,10 +16,10 @@ export function AddWalletScreen({
   const [loading, setLoading] = React.useState(false);
   const { api: notification } = React.useContext(NotificationContext);
 
-  const onFinish = (data: { walletId: string }) => {
+  const onFinish = async (data: { walletId: string }) => {
     setLoading(true);
 
-    axiosInstance.user
+    await axiosInstance.user
       .post<{
         message: string;
       }>("/api/assets/withdraw/addresses", {
@@ -27,20 +27,16 @@ export function AddWalletScreen({
         walletId: data.walletId,
       })
       .then((res) => {
-        notification.success({ content: res.data.message });
+        notification.success({
+          message: res.data.message,
+          placement: "bottomLeft",
+        });
         setLoading(false);
         setStep(1);
       })
-      .catch((err: AxiosError<{ errors?: string[] }>) => {
-        if (err.response?.data.errors?.length) {
-          err.response.data.errors.forEach((err) => notification.error(err));
-        } else {
-          notification.error({
-            content: err.message ?? "An error occurred, please try again later",
-          });
-        }
-        setLoading(false);
-      });
+      .catch(HandleError(notification));
+
+    setLoading(false);
   };
 
   return (

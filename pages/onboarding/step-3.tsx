@@ -1,10 +1,10 @@
 import { Button, Result, Row, Space, Spin } from "antd";
-import { AxiosError } from "axios";
 import { NotificationContext } from "context/notification";
 import { OnboardingAuthContext } from "context/protect-route-onboarding";
 import React from "react";
 import { useEffectOnce } from "usehooks-ts";
 import { axiosInstance } from "util/axios";
+import { HandleError } from "util/axios/error-handler";
 
 import { IOnboardingForm } from "./index.page";
 
@@ -100,15 +100,7 @@ export default function OnboardingStep2({
           launchDevicer(res.data.token);
         }, 1000);
       })
-      .catch((err: AxiosError<{ errors?: string[] }>) => {
-        if (err.response?.data.errors?.length) {
-          err.response.data.errors.forEach((err) => notification.error(err));
-        } else {
-          notification.error({
-            content: err.message ?? "An error occurred, please try again later",
-          });
-        }
-      });
+      .catch(HandleError(notification));
   };
 
   useEffectOnce(() => {

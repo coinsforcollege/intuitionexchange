@@ -1,5 +1,4 @@
 import { Card, Col, Row, Steps, Typography } from "antd";
-import { AxiosError } from "axios";
 import Footer from "components/footer";
 import Header from "components/header";
 import LoadingScreen from "components/loading-screen";
@@ -10,6 +9,7 @@ import Script from "next/script";
 import React, { ReactElement } from "react";
 import { useEffectOnce } from "usehooks-ts";
 import { axiosInstance } from "util/axios";
+import { HandleError } from "util/axios/error-handler";
 
 import OnboardingStep0 from "./step-0";
 import OnboardingStep1 from "./step-1";
@@ -121,19 +121,12 @@ export function Page() {
           setStep(4);
         }
       })
-      .catch((err: AxiosError<{ errors?: string[] }>) => {
-        if (err.response?.data.errors?.length) {
-          err.response.data.errors.forEach((err) => notification.error(err));
-        } else {
-          notification.error({
-            content: err.message ?? "An error occurred, please try again later",
-          });
-        }
-      });
+      .catch(HandleError(notification));
   };
 
   const onFinish = async () => {
     setLoading(true);
+
     if (step === 0) {
       setStep(1);
     } else if (step === 1) {
@@ -143,16 +136,7 @@ export function Page() {
           setAgreement(res.data.agreement);
           setStep(2);
         })
-        .catch((err: AxiosError<{ errors?: string[] }>) => {
-          if (err.response?.data.errors?.length) {
-            err.response.data.errors.forEach((err) => notification.error(err));
-          } else {
-            notification.error({
-              content:
-                err.message ?? "An error occurred, please try again later",
-            });
-          }
-        });
+        .catch(HandleError(notification));
     } else if (step === 2) {
       setStep(3);
     } else if (step === 3) {
@@ -162,38 +146,22 @@ export function Page() {
           setStep(4);
           refreshStatus();
         })
-        .catch((err: AxiosError<{ errors?: string[] }>) => {
-          if (err.response?.data.errors?.length) {
-            err.response.data.errors.forEach((err) => notification.error(err));
-          } else {
-            notification.error({
-              content:
-                err.message ?? "An error occurred, please try again later",
-            });
-          }
-        });
+        .catch(HandleError(notification));
     } else if (step === 4) {
       await axiosInstance.user
         .post<{ message: string }>("/api/onboarding/restart")
         .then((resp) => {
           notification.success({
-            content: resp.data.message,
+            message: resp.data.message,
+            placement: "bottomLeft",
           });
           resetForm();
           setStep(0);
           refreshStatus();
         })
-        .catch((err: AxiosError<{ errors?: string[] }>) => {
-          if (err.response?.data.errors?.length) {
-            err.response.data.errors.forEach((err) => notification.error(err));
-          } else {
-            notification.error({
-              content:
-                err.message ?? "An error occurred, please try again later",
-            });
-          }
-        });
+        .catch(HandleError(notification));
     }
+
     setLoading(false);
   };
 

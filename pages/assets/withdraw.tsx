@@ -10,12 +10,12 @@ import {
   Space,
   Typography,
 } from "antd";
-import { AxiosError } from "axios";
 import { NotificationContext } from "context/notification";
 import React from "react";
 import useSWR from "swr";
 import { ApiAssetWithdraw } from "types";
 import { axiosInstance } from "util/axios";
+import { HandleError } from "util/axios/error-handler";
 
 export function WithdrawScreen({
   asset,
@@ -64,13 +64,13 @@ export function WithdrawScreen({
     );
   }
 
-  const onFinish = (data: {
+  const onFinish = async (data: {
     assetTransferMethodId: string;
     unitCount: number;
   }) => {
     setLoading(true);
 
-    axiosInstance.user
+    await axiosInstance.user
       .post<{
         message: string;
       }>("/api/assets/withdraw", {
@@ -79,20 +79,16 @@ export function WithdrawScreen({
         unitCount: data.unitCount,
       })
       .then((res) => {
-        notification.success(res.data.message);
+        notification.success({
+          message: res.data.message,
+          placement: "bottomLeft",
+        });
         setCompleted(true);
         setLoading(false);
       })
-      .catch((err: AxiosError<{ errors?: string[] }>) => {
-        if (err.response?.data.errors?.length) {
-          err.response.data.errors.forEach((err) => notification.error(err));
-        } else {
-          notification.error({
-            content: err.message ?? "An error occurred, please try again later",
-          });
-        }
-        setLoading(false);
-      });
+      .catch(HandleError(notification));
+
+    setLoading(false);
   };
 
   return (

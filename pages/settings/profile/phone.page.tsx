@@ -9,7 +9,6 @@ import {
   Tooltip,
   Typography,
 } from "antd";
-import { AxiosError } from "axios";
 import Footer from "components/footer";
 import Header from "components/header";
 import { SettingsLayout, SettingsSidebar } from "components/settings-layout";
@@ -22,6 +21,7 @@ import Head from "next/head";
 import React from "react";
 import OtpInput from "react-otp-input";
 import { axiosInstance } from "util/axios";
+import { HandleError } from "util/axios/error-handler";
 
 function Page() {
   const [form] = Form.useForm();
@@ -38,7 +38,10 @@ function Page() {
         message: string;
       }>("/api/account/update/phone", values)
       .then((res) => {
-        notification.success({ content: res.data.message });
+        notification.success({
+          message: res.data.message,
+          placement: "bottomLeft",
+        });
         if (!otpSent) {
           setOtpSent(true);
         } else {
@@ -47,15 +50,7 @@ function Page() {
           refreshUser();
         }
       })
-      .catch((err: AxiosError<{ errors?: string[] }>) => {
-        if (err.response?.data.errors?.length) {
-          err.response.data.errors.forEach((err) => notification.error(err));
-        } else {
-          notification.error({
-            content: err.message ?? "An error occurred, please try again later",
-          });
-        }
-      });
+      .catch(HandleError(notification));
 
     setLoading(false);
   };
@@ -72,17 +67,12 @@ function Page() {
         type: "ACCOUNT_CHANGE_PHONE",
       })
       .then((res) => {
-        notification.success({ content: res.data.message });
+        notification.success({
+          message: res.data.message,
+          placement: "bottomLeft",
+        });
       })
-      .catch((err: AxiosError<{ errors?: string[] }>) => {
-        if (err.response?.data.errors?.length) {
-          err.response.data.errors.forEach((err) => notification.error(err));
-        } else {
-          notification.error({
-            content: err.message ?? "An error occurred, please try again later",
-          });
-        }
-      });
+      .catch(HandleError(notification));
 
     setLoading(false);
   };

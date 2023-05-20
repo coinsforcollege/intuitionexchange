@@ -6,7 +6,6 @@ import {
   LoadingOutlined,
 } from "@ant-design/icons";
 import { Button, Card, Result, Space, Typography } from "antd";
-import { AxiosError } from "axios";
 import Footer from "components/footer";
 import Header from "components/header";
 import LoadingScreen from "components/loading-screen";
@@ -25,6 +24,7 @@ import {
   P2PTransaction,
 } from "types";
 import { axiosInstance } from "util/axios";
+import { HandleError } from "util/axios/error-handler";
 
 function ViewOrder(props: { orderId: string }) {
   const [loading, setLoading] = React.useState(false);
@@ -45,20 +45,15 @@ function ViewOrder(props: { orderId: string }) {
     await axiosInstance.user
       .delete(`/p2p-order/${props.orderId}`)
       .then((res) => {
-        notification.success({ content: res.data.message });
+        notification.success({
+          message: res.data.message,
+          placement: "bottomLeft",
+        });
         setTimeout(() => {
           mutate();
         }, 3_000);
       })
-      .catch((err: AxiosError<{ errors?: string[] }>) => {
-        if (err.response?.data.errors?.length) {
-          err.response.data.errors.forEach((err) => notification.error(err));
-        } else {
-          notification.error({
-            content: err.message ?? "An error occurred, please try again later",
-          });
-        }
-      });
+      .catch(HandleError(notification));
 
     setLoading(false);
   };

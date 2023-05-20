@@ -10,7 +10,6 @@ import {
   Space,
   Typography,
 } from "antd";
-import { AxiosError } from "axios";
 import Footer from "components/footer";
 import Header from "components/header";
 import { NotificationContext } from "context/notification";
@@ -22,6 +21,7 @@ import React, { ReactElement } from "react";
 import useSWR from "swr";
 import { ApiFiatCreditCard } from "types";
 import { axiosInstance } from "util/axios";
+import { HandleError } from "util/axios/error-handler";
 
 export function Page() {
   const router = useRouter();
@@ -49,10 +49,10 @@ export function Page() {
     );
   }
 
-  const onFinish = (data: { amount: number; bank: string }) => {
+  const onFinish = async (data: { amount: number; bank: string }) => {
     setLoading(true);
 
-    axiosInstance.user
+    await axiosInstance.user
       .post<{
         token: string;
       }>("/api/fiat/credit-cards/deposit", data)
@@ -63,16 +63,9 @@ export function Page() {
         });
         setLoading(false);
       })
-      .catch((err: AxiosError<{ errors?: string[] }>) => {
-        if (err.response?.data.errors?.length) {
-          err.response.data.errors.forEach((err) => notification.error(err));
-        } else {
-          notification.error({
-            content: err.message ?? "An error occurred, please try again later",
-          });
-        }
-        setLoading(false);
-      });
+      .catch(HandleError(notification));
+
+    setLoading(false);
   };
 
   return (

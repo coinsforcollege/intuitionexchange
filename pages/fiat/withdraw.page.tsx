@@ -10,7 +10,6 @@ import {
   Space,
   Typography,
 } from "antd";
-import { AxiosError } from "axios";
 import Footer from "components/footer";
 import Header from "components/header";
 import { NotificationContext } from "context/notification";
@@ -21,6 +20,7 @@ import React, { ReactElement } from "react";
 import useSWR from "swr";
 import { ApiFiatBank } from "types";
 import { axiosInstance } from "util/axios";
+import { HandleError } from "util/axios/error-handler";
 
 export function Page() {
   const [step, setStep] = React.useState(0);
@@ -48,28 +48,23 @@ export function Page() {
     );
   }
 
-  const onFinish = (data: { amount: number; bank: string }) => {
+  const onFinish = async (data: { amount: number; bank: string }) => {
     setLoading(true);
 
-    axiosInstance.user
+    await axiosInstance.user
       .post<{
         message: string;
       }>("/api/fiat/withdraw", data)
       .then((res) => {
-        notification.success({ content: res.data.message });
-        setLoading(false);
+        notification.success({
+          message: res.data.message,
+          placement: "bottomLeft",
+        });
         setStep(1);
       })
-      .catch((err: AxiosError<{ errors?: string[] }>) => {
-        if (err.response?.data.errors?.length) {
-          err.response.data.errors.forEach((err) => notification.error(err));
-        } else {
-          notification.error({
-            content: err.message ?? "An error occurred, please try again later",
-          });
-        }
-        setLoading(false);
-      });
+      .catch(HandleError(notification));
+
+    setLoading(false);
   };
 
   return (

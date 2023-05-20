@@ -28,7 +28,7 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
   const themeConfig: ThemeConfig = {
     token: {
       colorBgContainer: isDarkMode ? "#1e2433" : "#ffffff",
-      colorBgElevated: isDarkMode ? "#1e2433" : "#ffffff",
+      colorBgElevated: isDarkMode ? "#454c5e" : "#ffffff",
       colorBorderSecondary: isDarkMode ? "#ffffff10" : "#00000020",
       colorBorder: isDarkMode ? "#ffffff10" : "#00000020",
       colorText: "inherit",

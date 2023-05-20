@@ -1,9 +1,9 @@
-import { message } from "antd";
-import { MessageInstance } from "antd/es/message/interface";
+import { notification } from "antd";
+import { NotificationInstance } from "antd/es/notification/interface";
 import React from "react";
 
 type AuthContext = {
-  api: MessageInstance;
+  api: NotificationInstance;
 };
 
 export const NotificationContext = React.createContext<AuthContext>(
@@ -11,7 +11,7 @@ export const NotificationContext = React.createContext<AuthContext>(
 );
 
 export function NotificationProvider({ children }: { children: any }) {
-  const [api, contextHolder] = message.useMessage();
+  const [api, contextHolder] = notification.useNotification();
 
   return (
     <>

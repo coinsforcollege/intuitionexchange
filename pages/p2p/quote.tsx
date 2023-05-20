@@ -7,12 +7,12 @@ import {
   Space,
   Typography,
 } from "antd";
-import { AxiosError } from "axios";
 import { BalanceContext } from "context/balance";
 import { NotificationContext } from "context/notification";
 import React from "react";
 import { OrderType } from "types";
 import { axiosInstance } from "util/axios";
+import { HandleError } from "util/axios/error-handler";
 import { PreciseCalculation } from "util/calculation";
 import { FormatCurrency, FormatPrice } from "util/functions";
 
@@ -43,7 +43,7 @@ export function QuoteScreen(props: {
     setLoading(true);
 
     await axiosInstance.user
-      .post("/p2p-order", {
+      .post("/p2p-orders", {
         base: props.base,
         asset: props.asset,
         price: props.price,
@@ -51,20 +51,13 @@ export function QuoteScreen(props: {
         orderType: props.mode,
       })
       .then(() => {
-        notification.success("Order placed");
+        notification.success({
+          message: "Order placed",
+          placement: "bottomLeft",
+        });
         refresh();
       })
-      .catch((err: AxiosError<{ errors?: string[] }>) => {
-        if (err.response?.data.errors?.length) {
-          err.response.data.errors.forEach((err) => notification.error(err, 8));
-        } else {
-          notification.error({
-            content: err.message ?? "An error occurred, please try again later",
-            duration: 8,
-          });
-        }
-        refresh();
-      });
+      .catch(HandleError(notification));
 
     setLoading(false);
   };

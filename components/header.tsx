@@ -10,7 +10,6 @@ import {
   Space,
   Typography,
 } from "antd";
-import { AxiosError } from "axios";
 import { NotificationContext } from "context/notification";
 import { AuthContext } from "context/protect-route";
 import { ResponsiveContext } from "context/responsive";
@@ -19,6 +18,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import React from "react";
 import { axiosInstance } from "util/axios";
+import { HandleError } from "util/axios/error-handler";
 
 import LogoImg from "../public/logo-white.svg";
 import useMediaQuery from "./useMediaQuery";
@@ -63,18 +63,13 @@ export default function Header(props: {
     axiosInstance.user
       .post("/api/account/logout")
       .then((res) => {
-        notification.success({ content: res.data.message });
+        notification.success({
+          message: res.data.message,
+          placement: "bottomLeft",
+        });
         RemoveToken();
       })
-      .catch((err: AxiosError<{ errors?: string[] }>) => {
-        if (err.response?.data.errors?.length) {
-          err.response.data.errors.forEach((err) => notification.error(err));
-        } else {
-          notification.error({
-            content: err.message ?? "An error occurred, please try again later",
-          });
-        }
-      });
+      .catch(HandleError(notification));
   };
 
   function switchTheme() {
