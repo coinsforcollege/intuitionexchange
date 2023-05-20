@@ -62,12 +62,12 @@ export function PairsScreen({
               ETH
             </label>
             <label
-              onClick={() => setMode("ADA")}
+              onClick={() => setMode("USDT")}
               className={`${style["btn"]} ${style["btn-primary"]} ${
-                mode === "ADA" ? style["active"] : ""
+                mode === "USDT" ? style["active"] : ""
               }`}
             >
-              ADA
+              USDT
             </label>
           </div>
         </div>

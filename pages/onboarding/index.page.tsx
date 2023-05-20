@@ -51,7 +51,6 @@ export interface IOnboardingForm {
 
 export interface IOnboardingStatus {
   errors: { code?: string; description: string }[];
-  maxLimitReached: boolean;
   pending: number;
   rejected: number;
   success: number;
@@ -64,6 +63,7 @@ export function Page() {
   const [status, setStatus] = React.useState<IOnboardingStatus | undefined>(
     undefined
   );
+  const isFormLoaded = React.useRef(false);
   const [loading, setLoading] = React.useState(false);
   const [step, setStep] = React.useState(0);
   const [agreement, setAgreement] = React.useState("");
@@ -93,15 +93,19 @@ export function Page() {
 
   useEffectOnce(() => {
     const data = localStorage.getItem("onboarding-form");
+    console.log(data);
     if (data) {
       setForm(JSON.parse(data));
+      isFormLoaded.current = true;
     }
 
     refreshStatus();
   });
 
   React.useEffect(() => {
-    localStorage.setItem("onboarding-form", JSON.stringify(form));
+    if (isFormLoaded.current && status !== undefined) {
+      localStorage.setItem("onboarding-form", JSON.stringify(form));
+    }
   }, [form]);
 
   React.useEffect(() => {
@@ -113,11 +117,7 @@ export function Page() {
       .get<IOnboardingStatus>("/api/onboarding/status")
       .then((res) => {
         setStatus(res.data);
-        if (
-          res.data.success > 0 ||
-          res.data.pending !== 0 ||
-          res.data.maxLimitReached
-        ) {
+        if (res.data.success > 0 || res.data.pending !== 0) {
           setStep(4);
         }
       })

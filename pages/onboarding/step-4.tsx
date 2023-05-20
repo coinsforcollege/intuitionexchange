@@ -45,14 +45,14 @@ export default function OnboardingStep3({
     <>
       <Result
         style={{ padding: "1rem 0" }}
-        status={!isError && !status.maxLimitReached ? "info" : "warning"}
+        status={!isError ? "info" : "warning"}
         title={
-          isError || (status.maxLimitReached && status.success !== 0)
+          isError || status.success !== 0
             ? "Account creation was unsuccessful!"
             : "Onboarding complete!"
         }
         subTitle={
-          isError || (status.maxLimitReached && status.success !== 0)
+          isError || status.success !== 0
             ? "We were unable to authenticate the information provided by you. Please try again with correct identity details."
             : "It can take upto 5 minutes to process the information you provided. You can refresh the page to check status of your account."
         }
@@ -93,9 +93,7 @@ export default function OnboardingStep3({
                 }
               >
                 <Button
-                  disabled={
-                    !isError || status.success !== 0 || status.maxLimitReached
-                  }
+                  disabled={!isError || status.success !== 0}
                   type="primary"
                   onClick={reApply}
                 >
