@@ -227,138 +227,150 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
           </div>
         </div>
         <div style={{ padding: "24px", flexGrow: 1 }}>
-          <Space
-            direction="vertical"
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setShowQuote(true);
+            }}
             style={{
               width: "100%",
               height: "100%",
-              justifyContent: "center",
             }}
-            size="large"
           >
-            <div>
-              <InputNumber
-                prefix={
-                  <div
-                    style={{
-                      fontSize: "10px",
-                      color: "var(--color-text-l2)",
-                      textAlign: "end",
-                      width: "48px",
-                      paddingRight: "8px",
-                    }}
-                  >
-                    <span>AMOUNT</span> <br />{" "}
-                    <span style={{ fontWeight: "bold" }}>{asset}</span>
-                  </div>
-                }
-                className={style["antd-input"]}
-                value={unit > 0 ? unit : null}
-                placeholder="0.0"
-                onChange={(val: number | null) => {
-                  const value = val ?? 0;
-                  setUnit(value);
-                  setTotal(
-                    FormatPrice(
-                      PreciseCalculation.multiplication(value, price),
-                      base === "USD" ? 2 : 6
-                    )
-                  );
-                }}
-              />
-              <Typography
-                style={{
-                  fontSize: "10px",
-                  color: "var(--color-text-l3)",
-                  display: "flex",
-                  marginTop: "8px",
-                }}
-              >
-                <span style={{ flexGrow: 1 }}>
-                  Balance:{" "}
-                  {FormatCurrency(
-                    FormatPrice(
-                      balances.find((bx) => bx.code === asset)?.unit ?? 0
-                    )
-                  )}{" "}
-                  {asset}
-                </span>
-              </Typography>
-            </div>
-            <div>
-              <InputNumber
-                prefix={
-                  <div
-                    style={{
-                      fontSize: "10px",
-                      color: "var(--color-text-l2)",
-                      textAlign: "end",
-                      width: "48px",
-                      paddingRight: "8px",
-                    }}
-                  >
-                    <span>TOTAL</span> <br />{" "}
-                    <span style={{ fontWeight: "bold" }}>{base}</span>
-                  </div>
-                }
-                className={style["antd-input"]}
-                value={total > 0 ? total : null}
-                placeholder="0"
-                onChange={(val: number | null) => {
-                  const value = val ?? 0;
-                  setTotal(value);
-                  setUnit(FormatPrice(value / price));
-                }}
-              />
-              <Typography
-                style={{
-                  fontSize: "10px",
-                  color: "var(--color-text-l3)",
-                  display: "flex",
-                  marginTop: "8px",
-                }}
-              >
-                <span style={{ flexGrow: 1 }}>
-                  Balance:{" "}
-                  {FormatCurrency(
-                    FormatPrice(
-                      balances.find((bx) => bx.code === base)?.unit ?? 0
-                    )
-                  )}{" "}
-                  {base}
-                </span>
-              </Typography>
-            </div>
-            <ConfigProvider
-              theme={{
-                token: {
-                  colorPrimary: "#55bd6c",
-                  colorPrimaryBg: "#55bd6c00",
-                  colorErrorBg: "#f6685e00",
-                  colorError: "#f6685e",
-                },
+            <Space
+              direction="vertical"
+              style={{
+                width: "100%",
+                height: "100%",
+                justifyContent: "center",
               }}
+              size="large"
             >
-              <Button
-                loading={loading}
-                style={{
-                  width: "100%",
-                  textTransform: "uppercase",
-                  fontWeight: 700,
+              <div>
+                <InputNumber
+                  required
+                  prefix={
+                    <div
+                      style={{
+                        fontSize: "10px",
+                        color: "var(--color-text-l2)",
+                        textAlign: "end",
+                        width: "48px",
+                        paddingRight: "8px",
+                      }}
+                    >
+                      <span>AMOUNT</span> <br />{" "}
+                      <span style={{ fontWeight: "bold" }}>{asset}</span>
+                    </div>
+                  }
+                  className={style["antd-input"]}
+                  value={unit > 0 ? unit : null}
+                  placeholder="0.0"
+                  onChange={(val: number | null) => {
+                    const value = val ?? 0;
+                    setUnit(value);
+                    setTotal(
+                      FormatPrice(
+                        PreciseCalculation.multiplication(value, price),
+                        base === "USD" ? 2 : 6
+                      )
+                    );
+                  }}
+                />
+                <Typography
+                  style={{
+                    fontSize: "10px",
+                    color: "var(--color-text-l3)",
+                    display: "flex",
+                    marginTop: "8px",
+                  }}
+                >
+                  <span style={{ flexGrow: 1 }}>
+                    Balance:{" "}
+                    {FormatCurrency(
+                      FormatPrice(
+                        balances.find((bx) => bx.code === asset)?.unit ?? 0
+                      )
+                    )}{" "}
+                    {asset}
+                  </span>
+                </Typography>
+              </div>
+              <div>
+                <InputNumber
+                  prefix={
+                    <div
+                      style={{
+                        fontSize: "10px",
+                        color: "var(--color-text-l2)",
+                        textAlign: "end",
+                        width: "48px",
+                        paddingRight: "8px",
+                      }}
+                    >
+                      <span>TOTAL</span> <br />{" "}
+                      <span style={{ fontWeight: "bold" }}>{base}</span>
+                    </div>
+                  }
+                  className={style["antd-input"]}
+                  value={total > 0 ? total : null}
+                  placeholder="0"
+                  onChange={(val: number | null) => {
+                    const value = val ?? 0;
+                    setTotal(value);
+                    setUnit(FormatPrice(value / price));
+                  }}
+                />
+                <Typography
+                  style={{
+                    fontSize: "10px",
+                    color: "var(--color-text-l3)",
+                    display: "flex",
+                    marginTop: "8px",
+                  }}
+                >
+                  <span style={{ flexGrow: 1 }}>
+                    Balance:{" "}
+                    {FormatCurrency(
+                      FormatPrice(
+                        balances.find((bx) => bx.code === base)?.unit ?? 0
+                      )
+                    )}{" "}
+                    {base}
+                  </span>
+                </Typography>
+              </div>
+              <ConfigProvider
+                theme={{
+                  token: {
+                    colorPrimary: "#55bd6c",
+                    colorPrimaryBg: "#55bd6c00",
+                    colorErrorBg: "#f6685e00",
+                    colorError: "#f6685e",
+                  },
                 }}
-                type="primary"
-                danger={mode === "sell"}
-                onClick={() => setShowQuote(true)}
               >
-                {mode.toUpperCase()} {asset.toUpperCase()}
-              </Button>
-            </ConfigProvider>
-            <Typography
-              style={{ fontSize: "0.825rem", color: "var(--color-text-l3)" }}
-            >
-              0.5% Platform Fees | 0.5% Market Maker Fee
-            </Typography>
-          </Space>
+                <Button
+                  htmlType="submit"
+                  loading={loading}
+                  style={{
+                    width: "100%",
+                    textTransform: "uppercase",
+                    fontWeight: 700,
+                  }}
+                  type="primary"
+                  danger={mode === "sell"}
+                >
+                  {mode.toUpperCase()} {asset.toUpperCase()}
+                </Button>
+              </ConfigProvider>
+              <Typography
+                style={{ fontSize: "0.825rem", color: "var(--color-text-l3)" }}
+              >
+                0.5% Platform Fees | 0.5% Market Maker Fee
+              </Typography>
+            </Space>
+          </form>
         </div>
       </Card>
     </>
