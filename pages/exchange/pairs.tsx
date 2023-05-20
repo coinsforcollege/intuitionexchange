@@ -1,7 +1,8 @@
 import { SearchOutlined } from "@ant-design/icons";
 import { Card, Input } from "antd";
 import React from "react";
-import { FormatCurrency, FormatPrice } from "util/functions";
+import { PreciseCalculation } from "util/calculation";
+import { FormatCurrency } from "util/functions";
 
 import { ExchangeContext } from "../../context/exchange-context";
 import style from "./pairs.module.css";
@@ -136,7 +137,7 @@ export function PairsScreen({
                         className={style["change"]}
                       >
                         {average(pair) >= 0 ? "▲" : "▼"}{" "}
-                        {FormatPrice(average(pair), 2)}%
+                        {PreciseCalculation.round(average(pair), 2)}%
                       </span>
                     </div>
                   </div>
@@ -146,7 +147,9 @@ export function PairsScreen({
                         className={`${style["price-text"]} ${style["ticker-price"]}`}
                       >
                         {FormatCurrency(
-                          FormatPrice(pairs[pair]?.[mode]?.PRICE ?? 0),
+                          PreciseCalculation.round(
+                            pairs[pair]?.[mode]?.PRICE ?? 0
+                          ),
                           5
                         )}{" "}
                         {mode}
@@ -157,7 +160,7 @@ export function PairsScreen({
                         <span className={style["price-subtext"]}>
                           $
                           {FormatCurrency(
-                            FormatPrice(
+                            PreciseCalculation.round(
                               (pairs[pair]?.[mode]?.PRICE ?? 0) *
                                 (pairs[mode]?.["USD"]?.PRICE ?? 0)
                             )

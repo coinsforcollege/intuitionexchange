@@ -13,7 +13,7 @@ import React from "react";
 import { axiosInstance } from "util/axios";
 import { HandleError } from "util/axios/error-handler";
 import { PreciseCalculation } from "util/calculation";
-import { FormatCurrency, FormatPrice } from "util/functions";
+import { FormatCurrency } from "util/functions";
 
 import { ExchangeContext } from "../../context/exchange-context";
 import style from "./pairs.module.css";
@@ -83,29 +83,37 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
               <div className={style["quote-item"]}>
                 <span>You Receive</span>
                 <span>
-                  {FormatCurrency(FormatPrice(price * unit))} {base}
+                  {FormatCurrency(PreciseCalculation.round(price * unit))}{" "}
+                  {base}
                 </span>
               </div>
               <div className={style["quote-item"]}>
                 <span>Rate (per {asset})</span>
                 <span>
-                  {FormatCurrency(FormatPrice(price))} {base}
+                  {FormatCurrency(PreciseCalculation.round(price))} {base}
                 </span>
               </div>
               <div className={style["quote-item"]}>
                 <span>Total Value</span>
                 <span>
-                  {FormatCurrency(FormatPrice(quoteTotalValue, 2))} USD
+                  {FormatCurrency(PreciseCalculation.round(quoteTotalValue, 2))}{" "}
+                  USD
                 </span>
               </div>
               <div className={style["quote-item"]}>
                 <span>Maker Fee (0.50%)</span>
-                <span>{FormatCurrency(FormatPrice(quoteMakerFee, 2))} USD</span>
+                <span>
+                  {FormatCurrency(PreciseCalculation.round(quoteMakerFee, 2))}{" "}
+                  USD
+                </span>
               </div>
               <div className={style["quote-item"]}>
                 <span>Platform Fee (0.49%)</span>
                 <span>
-                  {FormatCurrency(FormatPrice(quotePlatformFee, 2))} USD
+                  {FormatCurrency(
+                    PreciseCalculation.round(quotePlatformFee, 2)
+                  )}{" "}
+                  USD
                 </span>
               </div>
               <div className={style["quote-item"]}>
@@ -271,7 +279,7 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                     setUnit(value);
                     setTotal(
                       Number(
-                        FormatPrice(
+                        PreciseCalculation.round(
                           PreciseCalculation.multiplication(value, price),
                           base === "USD" ? 2 : 6
                         )
@@ -290,7 +298,7 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                   <span style={{ flexGrow: 1 }}>
                     Balance:{" "}
                     {FormatCurrency(
-                      FormatPrice(
+                      PreciseCalculation.round(
                         balances.find((bx) => bx.code === asset)?.unit ?? 0
                       )
                     )}{" "}
@@ -322,7 +330,9 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                     setTotal(value);
                     setUnit(
                       Number(
-                        FormatPrice(PreciseCalculation.division(value, price))
+                        PreciseCalculation.round(
+                          PreciseCalculation.division(value, price)
+                        )
                       )
                     );
                   }}
@@ -338,7 +348,7 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                   <span style={{ flexGrow: 1 }}>
                     Balance:{" "}
                     {FormatCurrency(
-                      FormatPrice(
+                      PreciseCalculation.round(
                         balances.find((bx) => bx.code === base)?.unit ?? 0
                       )
                     )}{" "}

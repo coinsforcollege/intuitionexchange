@@ -6,7 +6,8 @@ import React from "react";
 import useSWR from "swr";
 import { ApiOrder, OrderState } from "types";
 import { axiosInstance } from "util/axios";
-import { FormatCurrency, FormatPrice } from "util/functions";
+import { PreciseCalculation } from "util/calculation";
+import { FormatCurrency } from "util/functions";
 
 import style from "./pairs.module.css";
 
@@ -81,7 +82,7 @@ export function HistoryScreen() {
       key: "rate",
       render: (_, t) => (
         <Typography style={{ fontSize: "12px" }}>
-          {FormatCurrency(FormatPrice(t.pricePerUnit, 2))} USD
+          {FormatCurrency(PreciseCalculation.round(t.pricePerUnit, 2))} USD
         </Typography>
       ),
     },
@@ -91,7 +92,7 @@ export function HistoryScreen() {
       key: "price",
       render: (_, t) => (
         <Typography style={{ fontSize: "12px" }}>
-          {FormatCurrency(FormatPrice(t.total, 2))} USD
+          {FormatCurrency(PreciseCalculation.round(t.total, 2))} USD
         </Typography>
       ),
     },

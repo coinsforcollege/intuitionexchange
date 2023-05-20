@@ -14,7 +14,7 @@ import { OrderType } from "types";
 import { axiosInstance } from "util/axios";
 import { HandleError } from "util/axios/error-handler";
 import { PreciseCalculation } from "util/calculation";
-import { FormatCurrency, FormatPrice } from "util/functions";
+import { FormatCurrency } from "util/functions";
 
 import style from "./pairs.module.css";
 
@@ -228,7 +228,7 @@ export function QuoteScreen(props: {
                   <span style={{ flexGrow: 1 }}>
                     Balance:{" "}
                     {FormatCurrency(
-                      FormatPrice(
+                      PreciseCalculation.round(
                         balances.find((bx) => bx.code === props.asset)?.unit ??
                           0
                       )
@@ -270,7 +270,7 @@ export function QuoteScreen(props: {
                   <span style={{ flexGrow: 1 }}>
                     Balance:{" "}
                     {FormatCurrency(
-                      FormatPrice(
+                      PreciseCalculation.round(
                         balances.find((bx) => bx.code === props.base)?.unit ?? 0
                       )
                     )}{" "}

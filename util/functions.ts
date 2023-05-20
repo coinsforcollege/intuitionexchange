@@ -12,9 +12,3 @@ export function FormatCurrency(value: number | string, digits = 3): string {
     Number(value)
   );
 }
-
-export function FormatPrice(value: number, digits = 6): string {
-  return Intl.NumberFormat("en-US", { maximumFractionDigits: digits }).format(
-    Number(value)
-  );
-}

@@ -4,7 +4,8 @@ import React from "react";
 import useSWR from "swr";
 import { ApiAssetSummary } from "types";
 import { axiosInstance } from "util/axios";
-import { FormatPrice } from "util/functions";
+import { PreciseCalculation } from "util/calculation";
+import { FormatCurrency } from "util/functions";
 
 import { AddWalletScreen } from "./add-wallet";
 import { DepositScreen } from "./deposit";
@@ -105,7 +106,8 @@ export function AssetBalance() {
       title: "Balance",
       dataIndex: "balance",
       key: "balance",
-      render: (_, t) => `${FormatPrice(t.settled)} ${t.code}`,
+      render: (_, t) =>
+        `${FormatCurrency(PreciseCalculation.round(t.settled))} ${t.code}`,
       align: "center" as "center",
     },
     {
@@ -118,7 +120,11 @@ export function AssetBalance() {
       dataIndex: "currentValue",
       key: "currentValue",
       render: (_, t) =>
-        t.currentValue === 0 ? "-" : `${FormatPrice(t.currentValue, 2)} USD`,
+        t.currentValue === 0
+          ? "-"
+          : `${FormatCurrency(
+              PreciseCalculation.round(t.currentValue, 2)
+            )} USD`,
       align: "center" as "center",
     },
     {
