@@ -270,9 +270,11 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                     const value = val ?? 0;
                     setUnit(value);
                     setTotal(
-                      FormatPrice(
-                        PreciseCalculation.multiplication(value, price),
-                        base === "USD" ? 2 : 6
+                      Number(
+                        FormatPrice(
+                          PreciseCalculation.multiplication(value, price),
+                          base === "USD" ? 2 : 6
+                        )
                       )
                     );
                   }}
@@ -318,7 +320,11 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                   onChange={(val: number | null) => {
                     const value = val ?? 0;
                     setTotal(value);
-                    setUnit(FormatPrice(value / price));
+                    setUnit(
+                      Number(
+                        FormatPrice(PreciseCalculation.division(value, price))
+                      )
+                    );
                   }}
                 />
                 <Typography

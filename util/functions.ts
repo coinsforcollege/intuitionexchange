@@ -13,7 +13,8 @@ export function FormatCurrency(value: number | string, digits = 3): string {
   );
 }
 
-export function FormatPrice(value: number, decimal = 5): number {
-  const rate = Math.pow(10, decimal);
-  return Math.floor(value * rate) / rate;
+export function FormatPrice(value: number, digits = 6): string {
+  return Intl.NumberFormat("en-US", { maximumFractionDigits: digits }).format(
+    Number(value)
+  );
 }
