@@ -87,6 +87,55 @@ export function PairsScreen({
             className="scroll"
             style={{ height: "750px", overflowY: "auto", paddingTop: "12px" }}
           >
+            <a
+              key={`TUIT${base}`}
+              className={`${style["ticker-item"]} ${
+                asset === "TUIT" && base === mode ? style["selected"] : ""
+              }`}
+              id={`ticker-TUIT`}
+              href="/p2p"
+              onClick={(e) => {
+                e.preventDefault();
+                setAsset("TUIT");
+                setBase(mode);
+              }}
+            >
+              <div className={style["currency-logo"]}>
+                <img
+                  onError={(e) => (e.currentTarget.src = "/asset/no-image.png")}
+                  src={`/asset/${"TUIT".toLowerCase()}.png`}
+                  alt={"TUIT"}
+                  className={style["img"]}
+                />
+              </div>
+              <div className={style["market"]}>
+                <div className={style["market-name"]}>
+                  <span className={style["market-name-text"]}>
+                    TUIT
+                    <span className={style["subtext"]}>/{mode}</span>
+                  </span>
+                </div>
+                <div className={style["market-change"]}>
+                  <span
+                    style={{
+                      color: "var(--color-green)",
+                    }}
+                    className={style["change"]}
+                  >
+                    {"▲"}
+                  </span>
+                </div>
+              </div>
+              <div className={style["price"]}>
+                <div className={style["price-box"]}>
+                  <span
+                    className={`${style["price-text"]} ${style["ticker-price"]}`}
+                  >
+                    -
+                  </span>
+                </div>
+              </div>
+            </a>
             {Object.keys(pairs)
               .filter(
                 (pair) =>
@@ -101,7 +150,7 @@ export function PairsScreen({
                     asset === pair && base === mode ? style["selected"] : ""
                   }`}
                   id={`ticker-${pair}`}
-                  href="/exchange"
+                  href="/p2p"
                   onClick={(e) => {
                     e.preventDefault();
                     setAsset(pair);
