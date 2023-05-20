@@ -5,6 +5,7 @@ import Header, { HeaderKey } from "components/header";
 import { UserAuthContextProvider } from "context/protect-route-user";
 import { ResponsiveContext } from "context/responsive";
 import Head from "next/head";
+import { useRouter } from "next/router";
 import React, { ReactElement } from "react";
 
 import { ExchangeContextProvider } from "../../context/exchange-context";
@@ -14,15 +15,32 @@ import { QuoteScreen } from "./quote";
 import { TradeHistory } from "./trade-history";
 
 export function Page() {
+  const router = useRouter();
   const { isDarkMode } = React.useContext(ResponsiveContext);
   const [asset, setAsset] = React.useState("BTC");
   const [baseAsset, setBaseAsset] = React.useState("USD");
+  const [selectedBase, setSelectedBase] = React.useState("USD");
+
+  React.useEffect(() => {
+    if (router.isReady) {
+      if (typeof router.query.pair === "string") {
+        const [asset, base] = router.query.pair.split("-");
+        if (asset !== undefined && base !== undefined) {
+          setAsset(asset.toUpperCase());
+          setBaseAsset(base.toUpperCase());
+          setSelectedBase(base.toUpperCase());
+        }
+      }
+    }
+  }, [router.isReady]);
 
   return (
     <>
       <Row gutter={[12, 12]}>
         <Col xs={24} lg={6} xxl={5}>
           <PairsScreen
+            selectedBase={selectedBase}
+            setSelectedBase={setSelectedBase}
             base={baseAsset}
             setBase={setBaseAsset}
             asset={asset}

@@ -33,8 +33,8 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
     setTotal(0);
   }, [asset, base]);
 
-  const price = pairs[asset]?.[base]?.PRICE ?? 0;
-  const priceInUSD = pairs[asset]?.["USD"]?.PRICE ?? 0;
+  const price = pairs[asset]?.[base]?.price ?? 0;
+  const priceInUSD = pairs[asset]?.["USD"]?.price ?? 0;
   const quoteTotalValue = priceInUSD * unit;
   const quoteMakerFee = quoteTotalValue * 0.005;
   const quotePlatformFee = quoteTotalValue * 0.0049;

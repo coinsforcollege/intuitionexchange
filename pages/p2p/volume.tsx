@@ -16,7 +16,7 @@ export function VolumeScreen(props: {
   asset: string;
   base: string;
   price: number;
-  setMode: React.Dispatch<React.SetStateAction<OrderType>>;
+  setOrderType: React.Dispatch<React.SetStateAction<OrderType>>;
   setPrice: React.Dispatch<React.SetStateAction<number>>;
   setUnit: React.Dispatch<React.SetStateAction<number>>;
   unit: number;
@@ -89,7 +89,7 @@ export function VolumeScreen(props: {
                 onClick={() => {
                   props.setPrice(d.price);
                   props.setUnit(d.volume);
-                  props.setMode(
+                  props.setOrderType(
                     mode === OrderType.Buy ? OrderType.Sell : OrderType.Buy
                   );
                 }}

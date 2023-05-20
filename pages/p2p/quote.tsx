@@ -21,9 +21,9 @@ import style from "./pairs.module.css";
 export function QuoteScreen(props: {
   asset: string;
   base: string;
-  mode: OrderType;
+  orderType: OrderType;
   price: number;
-  setMode: React.Dispatch<React.SetStateAction<OrderType>>;
+  setOrderType: React.Dispatch<React.SetStateAction<OrderType>>;
   setPrice: React.Dispatch<React.SetStateAction<number>>;
   setUnit: React.Dispatch<React.SetStateAction<number>>;
   unit: number;
@@ -48,7 +48,7 @@ export function QuoteScreen(props: {
         asset: props.asset,
         price: props.price,
         unit: props.unit,
-        orderType: props.mode,
+        orderType: props.orderType,
       })
       .then(() => {
         notification.success({
@@ -76,14 +76,14 @@ export function QuoteScreen(props: {
         <div>
           <div style={{ display: "flex" }}>
             <div
-              onClick={() => props.setMode(OrderType.Buy)}
+              onClick={() => props.setOrderType(OrderType.Buy)}
               style={{
                 backgroundColor:
-                  props.mode == OrderType.Buy
+                  props.orderType == OrderType.Buy
                     ? "var(--color-background-l0)"
                     : "var(--color-background-l1)",
                 boxShadow:
-                  props.mode == OrderType.Buy
+                  props.orderType == OrderType.Buy
                     ? "inset 0 4px 0 0 var(--color-green)"
                     : "inset 0 -1px 0 0 var(--color-divider)",
                 padding: "10px 12px",
@@ -95,7 +95,7 @@ export function QuoteScreen(props: {
                 style={{
                   display: "block",
                   color:
-                    props.mode == OrderType.Buy
+                    props.orderType == OrderType.Buy
                       ? "var(--color-text-l1)"
                       : "var(--color-text-l2)",
                   fontSize: "12px",
@@ -110,15 +110,15 @@ export function QuoteScreen(props: {
               </Typography>
             </div>
             <div
-              onClick={() => props.setMode(OrderType.Sell)}
+              onClick={() => props.setOrderType(OrderType.Sell)}
               style={{
                 borderLeft: "1px solid var(--color-divider)",
                 backgroundColor:
-                  props.mode == OrderType.Sell
+                  props.orderType == OrderType.Sell
                     ? "var(--color-background-l0)"
                     : "var(--color-background-l1)",
                 boxShadow:
-                  props.mode == OrderType.Sell
+                  props.orderType == OrderType.Sell
                     ? "inset 0 4px 0 0 var(--color-red)"
                     : "inset 0 -1px 0 0 var(--color-divider)",
                 padding: "10px 12px",
@@ -130,7 +130,7 @@ export function QuoteScreen(props: {
                 style={{
                   display: "block",
                   color:
-                    props.mode == OrderType.Sell
+                    props.orderType == OrderType.Sell
                       ? "var(--color-text-l1)"
                       : "var(--color-text-l2)",
                   fontSize: "12px",
@@ -297,9 +297,9 @@ export function QuoteScreen(props: {
                     fontWeight: 700,
                   }}
                   type="primary"
-                  danger={props.mode === OrderType.Sell}
+                  danger={props.orderType === OrderType.Sell}
                 >
-                  {props.mode.toUpperCase()} {props.asset.toUpperCase()}
+                  {props.orderType.toUpperCase()} {props.asset.toUpperCase()}
                 </Button>
               </ConfigProvider>
             </Space>

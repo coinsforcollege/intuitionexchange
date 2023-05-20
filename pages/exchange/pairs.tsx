@@ -1,33 +1,40 @@
 import { SearchOutlined } from "@ant-design/icons";
 import { Card, Input } from "antd";
+import { ExchangeContext } from "context/exchange-context";
+import { useRouter } from "next/router";
 import React from "react";
 import { PreciseCalculation } from "util/calculation";
 import { FormatCurrency } from "util/functions";
 
-import { ExchangeContext } from "../../context/exchange-context";
 import style from "./pairs.module.css";
 
 export function PairsScreen({
   asset,
   base,
+  selectedBase,
   setBase,
   setAsset,
+  setSelectedBase,
 }: {
   asset: string;
   base: string;
+  selectedBase: string;
   setAsset: React.Dispatch<React.SetStateAction<string>>;
   setBase: React.Dispatch<React.SetStateAction<string>>;
+  setSelectedBase: React.Dispatch<React.SetStateAction<string>>;
 }) {
+  const router = useRouter();
   const [search, setSearch] = React.useState("");
-  const [mode, setMode] = React.useState(base);
   const { pairs } = React.useContext(ExchangeContext);
 
   const average = (pair: string) => {
-    const price = pairs[pair]?.[mode]?.PRICE ?? 0;
-    const openDay = pairs[pair]?.[mode]?.OPENDAY ?? 0;
-
-    const difference = (price - openDay) / openDay;
-    return difference;
+    const price = pairs[pair]?.[selectedBase]?.price ?? 0;
+    const openDay = pairs[pair]?.[selectedBase]?.openDay ?? 0;
+    const difference = PreciseCalculation.division(
+      PreciseCalculation.subtraction(price, openDay),
+      openDay
+    );
+    return PreciseCalculation.round(difference, 2);
   };
 
   return (
@@ -39,33 +46,33 @@ export function PairsScreen({
         <div className={style["container"]}>
           <div className={`${style["toggle-group"]} ${style["full-width"]}`}>
             <label
-              onClick={() => setMode("USD")}
+              onClick={() => setSelectedBase("USD")}
               className={`${style["btn"]} ${style["btn-primary"]} ${
-                mode === "USD" ? style["active"] : ""
+                selectedBase === "USD" ? style["active"] : ""
               }`}
             >
               USD
             </label>
             <label
-              onClick={() => setMode("BTC")}
+              onClick={() => setSelectedBase("BTC")}
               className={`${style["btn"]} ${style["btn-primary"]} ${
-                mode === "BTC" ? style["active"] : ""
+                selectedBase === "BTC" ? style["active"] : ""
               }`}
             >
               BTC
             </label>
             <label
-              onClick={() => setMode("ETH")}
+              onClick={() => setSelectedBase("ETH")}
               className={`${style["btn"]} ${style["btn-primary"]} ${
-                mode === "ETH" ? style["active"] : ""
+                selectedBase === "ETH" ? style["active"] : ""
               }`}
             >
               ETH
             </label>
             <label
-              onClick={() => setMode("USDT")}
+              onClick={() => setSelectedBase("USDT")}
               className={`${style["btn"]} ${style["btn-primary"]} ${
-                mode === "USDT" ? style["active"] : ""
+                selectedBase === "USDT" ? style["active"] : ""
               }`}
             >
               USDT
@@ -89,9 +96,10 @@ export function PairsScreen({
             style={{ height: "750px", overflowY: "auto", paddingTop: "12px" }}
           >
             {Object.keys(pairs)
+              .sort((a, b) => a.localeCompare(b))
               .filter(
                 (pair) =>
-                  pair !== mode &&
+                  pair !== selectedBase &&
                   pair !== "USD" &&
                   pair.toLowerCase().startsWith(search)
               )
@@ -99,14 +107,21 @@ export function PairsScreen({
                 <a
                   key={`${pair}${base}`}
                   className={`${style["ticker-item"]} ${
-                    asset === pair && base === mode ? style["selected"] : ""
+                    asset === pair && base === selectedBase
+                      ? style["selected"]
+                      : ""
                   }`}
                   id={`ticker-${pair}`}
-                  href="/exchange"
+                  href="/p2p"
                   onClick={(e) => {
                     e.preventDefault();
                     setAsset(pair);
-                    setBase(mode);
+                    setBase(selectedBase);
+                    router.replace({
+                      query: {
+                        pair: `${pair}-${selectedBase}`,
+                      },
+                    });
                   }}
                 >
                   <div className={style["currency-logo"]}>
@@ -123,20 +138,22 @@ export function PairsScreen({
                     <div className={style["market-name"]}>
                       <span className={style["market-name-text"]}>
                         {pair}
-                        <span className={style["subtext"]}>/{mode}</span>
+                        <span className={style["subtext"]}>
+                          /{selectedBase}
+                        </span>
                       </span>
                     </div>
                     <div className={style["market-change"]}>
                       <span
                         style={{
                           color:
-                            average(pair) >= 0
-                              ? "var(--color-green)"
-                              : "var(--color-red)",
+                            average(pair) < 0
+                              ? "var(--color-red)"
+                              : "var(--color-green)",
                         }}
                         className={style["change"]}
                       >
-                        {average(pair) >= 0 ? "▲" : "▼"}{" "}
+                        {average(pair) < 0 ? "▼" : "▲"}{" "}
                         {PreciseCalculation.round(average(pair), 2)}%
                       </span>
                     </div>
@@ -148,21 +165,21 @@ export function PairsScreen({
                       >
                         {FormatCurrency(
                           PreciseCalculation.round(
-                            pairs[pair]?.[mode]?.PRICE ?? 0
+                            pairs[pair]?.[selectedBase]?.price ?? 0
                           ),
                           5
                         )}{" "}
-                        {mode}
+                        {selectedBase}
                       </span>
                     </div>
-                    {mode != "USD" && (
+                    {selectedBase != "USD" && (
                       <div className={style["price-box"]}>
                         <span className={style["price-subtext"]}>
                           $
                           {FormatCurrency(
                             PreciseCalculation.round(
-                              (pairs[pair]?.[mode]?.PRICE ?? 0) *
-                                (pairs[mode]?.["USD"]?.PRICE ?? 0)
+                              (pairs[pair]?.[selectedBase]?.price ?? 0) *
+                                (pairs[selectedBase]?.["USD"]?.price ?? 0)
                             )
                           )}
                         </span>

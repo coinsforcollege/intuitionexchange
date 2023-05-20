@@ -4,6 +4,7 @@ import Header, { HeaderKey } from "components/header";
 import { ExchangeContextProvider } from "context/exchange-context";
 import { UserAuthContextProvider } from "context/protect-route-user";
 import Head from "next/head";
+import { useRouter } from "next/router";
 import React, { ReactElement } from "react";
 import { OrderType } from "types";
 
@@ -14,17 +15,34 @@ import { QuoteScreen } from "./quote";
 import { VolumeScreen } from "./volume";
 
 export function Page() {
+  const router = useRouter();
   const [asset, setAsset] = React.useState("BTC");
+  const [selectedBase, setSelectedBase] = React.useState("USD");
   const [baseAsset, setBaseAsset] = React.useState("USD");
-  const [mode, setMode] = React.useState<OrderType>(OrderType.Buy);
+  const [orderType, setOrderType] = React.useState<OrderType>(OrderType.Buy);
   const [unit, setUnit] = React.useState(0);
   const [price, setPrice] = React.useState(0);
+
+  React.useEffect(() => {
+    if (router.isReady) {
+      if (typeof router.query.pair === "string") {
+        const [asset, base] = router.query.pair.split("-");
+        if (asset !== undefined && base !== undefined) {
+          setAsset(asset.toUpperCase());
+          setBaseAsset(base.toUpperCase());
+          setSelectedBase(base.toUpperCase());
+        }
+      }
+    }
+  }, [router.isReady]);
 
   return (
     <>
       <Row gutter={[12, 12]}>
         <Col xs={24} lg={6} xxl={5}>
           <PairsScreen
+            selectedBase={selectedBase}
+            setSelectedBase={setSelectedBase}
             base={baseAsset}
             setBase={setBaseAsset}
             asset={asset}
@@ -51,8 +69,8 @@ export function Page() {
             <QuoteScreen
               asset={asset}
               base={baseAsset}
-              mode={mode}
-              setMode={setMode}
+              orderType={orderType}
+              setOrderType={setOrderType}
               unit={unit}
               setUnit={setUnit}
               price={price}
@@ -63,7 +81,7 @@ export function Page() {
             <VolumeScreen
               asset={asset}
               base={baseAsset}
-              setMode={setMode}
+              setOrderType={setOrderType}
               unit={unit}
               setUnit={setUnit}
               price={price}
