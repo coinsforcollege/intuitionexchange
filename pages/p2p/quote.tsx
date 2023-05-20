@@ -43,7 +43,7 @@ export function QuoteScreen(props: {
     setLoading(true);
 
     await axiosInstance.user
-      .post("/p2p-orders", {
+      .post("/p2p-order", {
         base: props.base,
         asset: props.asset,
         price: props.price,
@@ -147,149 +147,163 @@ export function QuoteScreen(props: {
           </div>
         </div>
         <div style={{ padding: "24px", flexGrow: 1 }}>
-          <Space
-            direction="vertical"
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handle();
+            }}
             style={{
               width: "100%",
               height: "100%",
-              justifyContent: "center",
             }}
-            size="large"
           >
-            <div>
-              <InputNumber
-                prefix={
-                  <div
-                    style={{
-                      fontSize: "10px",
-                      color: "var(--color-text-l2)",
-                      textAlign: "end",
-                      width: "48px",
-                      paddingRight: "8px",
-                    }}
-                  >
-                    <span>PRICE</span> <br />{" "}
-                    <span style={{ fontWeight: "bold" }}>{props.base}</span>
-                  </div>
-                }
-                className={style["antd-input"]}
-                value={props.price > 0 ? props.price : null}
-                placeholder="0.0"
-                onChange={(val: number | null) => {
-                  const value = val ?? 0;
-                  props.setPrice(value);
-                }}
-              />
-            </div>
-            <div>
-              <InputNumber
-                prefix={
-                  <div
-                    style={{
-                      fontSize: "10px",
-                      color: "var(--color-text-l2)",
-                      textAlign: "end",
-                      width: "48px",
-                      paddingRight: "8px",
-                    }}
-                  >
-                    <span>VOLUME</span> <br />{" "}
-                    <span style={{ fontWeight: "bold" }}>{props.asset}</span>
-                  </div>
-                }
-                className={style["antd-input"]}
-                value={props.unit > 0 ? props.unit : null}
-                placeholder="0.0"
-                onChange={(val: number | null) => {
-                  const value = val ?? 0;
-                  props.setUnit(value);
-                }}
-              />
-              <Typography
-                style={{
-                  fontSize: "10px",
-                  color: "var(--color-text-l3)",
-                  display: "flex",
-                  marginTop: "8px",
-                }}
-              >
-                <span style={{ flexGrow: 1 }}>
-                  Balance:{" "}
-                  {FormatCurrency(
-                    FormatPrice(
-                      balances.find((bx) => bx.code === props.asset)?.unit ?? 0
-                    )
-                  )}{" "}
-                  {props.asset}
-                </span>
-              </Typography>
-            </div>
-            <div>
-              <Input
-                disabled
-                prefix={
-                  <div
-                    style={{
-                      fontSize: "10px",
-                      color: "var(--color-text-l2)",
-                      textAlign: "end",
-                      width: "48px",
-                      paddingRight: "8px",
-                    }}
-                  >
-                    <span>TOTAL</span> <br />{" "}
-                    <span style={{ fontWeight: "bold" }}>{props.base}</span>
-                  </div>
-                }
-                className={style["antd-input"]}
-                value={FormatCurrency(total, props.base === "USD" ? 2 : 6)}
-                style={{ padding: 0, paddingInlineStart: "11px" }}
-                placeholder="0"
-              />
-              <Typography
-                style={{
-                  fontSize: "10px",
-                  color: "var(--color-text-l3)",
-                  display: "flex",
-                  marginTop: "8px",
-                }}
-              >
-                <span style={{ flexGrow: 1 }}>
-                  Balance:{" "}
-                  {FormatCurrency(
-                    FormatPrice(
-                      balances.find((bx) => bx.code === props.base)?.unit ?? 0
-                    )
-                  )}{" "}
-                  {props.base}
-                </span>
-              </Typography>
-            </div>
-            <ConfigProvider
-              theme={{
-                token: {
-                  colorPrimary: "#55bd6c",
-                  colorPrimaryBg: "#55bd6c00",
-                  colorErrorBg: "#f6685e00",
-                  colorError: "#f6685e",
-                },
+            <Space
+              direction="vertical"
+              style={{
+                width: "100%",
+                height: "100%",
+                justifyContent: "center",
               }}
+              size="large"
             >
-              <Button
-                loading={loading}
-                style={{
-                  width: "100%",
-                  textTransform: "uppercase",
-                  fontWeight: 700,
+              <div>
+                <InputNumber
+                  required
+                  prefix={
+                    <div
+                      style={{
+                        fontSize: "10px",
+                        color: "var(--color-text-l2)",
+                        textAlign: "end",
+                        width: "48px",
+                        paddingRight: "8px",
+                      }}
+                    >
+                      <span>PRICE</span> <br />{" "}
+                      <span style={{ fontWeight: "bold" }}>{props.base}</span>
+                    </div>
+                  }
+                  className={style["antd-input"]}
+                  value={props.price > 0 ? props.price : null}
+                  placeholder="0.0"
+                  onChange={(val: number | null) => {
+                    const value = val ?? 0;
+                    props.setPrice(value);
+                  }}
+                />
+              </div>
+              <div>
+                <InputNumber
+                  required
+                  prefix={
+                    <div
+                      style={{
+                        fontSize: "10px",
+                        color: "var(--color-text-l2)",
+                        textAlign: "end",
+                        width: "48px",
+                        paddingRight: "8px",
+                      }}
+                    >
+                      <span>VOLUME</span> <br />{" "}
+                      <span style={{ fontWeight: "bold" }}>{props.asset}</span>
+                    </div>
+                  }
+                  className={style["antd-input"]}
+                  value={props.unit > 0 ? props.unit : null}
+                  placeholder="0.0"
+                  onChange={(val: number | null) => {
+                    const value = val ?? 0;
+                    props.setUnit(value);
+                  }}
+                />
+                <Typography
+                  style={{
+                    fontSize: "10px",
+                    color: "var(--color-text-l3)",
+                    display: "flex",
+                    marginTop: "8px",
+                  }}
+                >
+                  <span style={{ flexGrow: 1 }}>
+                    Balance:{" "}
+                    {FormatCurrency(
+                      FormatPrice(
+                        balances.find((bx) => bx.code === props.asset)?.unit ??
+                          0
+                      )
+                    )}{" "}
+                    {props.asset}
+                  </span>
+                </Typography>
+              </div>
+              <div>
+                <Input
+                  disabled
+                  prefix={
+                    <div
+                      style={{
+                        fontSize: "10px",
+                        color: "var(--color-text-l2)",
+                        textAlign: "end",
+                        width: "48px",
+                        paddingRight: "8px",
+                      }}
+                    >
+                      <span>TOTAL</span> <br />{" "}
+                      <span style={{ fontWeight: "bold" }}>{props.base}</span>
+                    </div>
+                  }
+                  className={style["antd-input"]}
+                  value={FormatCurrency(total, props.base === "USD" ? 2 : 6)}
+                  style={{ padding: 0, paddingInlineStart: "11px" }}
+                  placeholder="0"
+                />
+                <Typography
+                  style={{
+                    fontSize: "10px",
+                    color: "var(--color-text-l3)",
+                    display: "flex",
+                    marginTop: "8px",
+                  }}
+                >
+                  <span style={{ flexGrow: 1 }}>
+                    Balance:{" "}
+                    {FormatCurrency(
+                      FormatPrice(
+                        balances.find((bx) => bx.code === props.base)?.unit ?? 0
+                      )
+                    )}{" "}
+                    {props.base}
+                  </span>
+                </Typography>
+              </div>
+              <ConfigProvider
+                theme={{
+                  token: {
+                    colorPrimary: "#55bd6c",
+                    colorPrimaryBg: "#55bd6c00",
+                    colorErrorBg: "#f6685e00",
+                    colorError: "#f6685e",
+                  },
                 }}
-                type="primary"
-                danger={props.mode === OrderType.Sell}
-                onClick={() => handle()}
               >
-                {props.mode.toUpperCase()} {props.asset.toUpperCase()}
-              </Button>
-            </ConfigProvider>
-          </Space>
+                <Button
+                  htmlType="submit"
+                  loading={loading}
+                  style={{
+                    width: "100%",
+                    textTransform: "uppercase",
+                    fontWeight: 700,
+                  }}
+                  type="primary"
+                  danger={props.mode === OrderType.Sell}
+                >
+                  {props.mode.toUpperCase()} {props.asset.toUpperCase()}
+                </Button>
+              </ConfigProvider>
+            </Space>
+          </form>
         </div>
       </Card>
     </>
