@@ -74,7 +74,9 @@ export function VolumeScreen(props: {
           {!data?.length && (
             <tr>
               <td colSpan={3}>
-                <Typography style={{ paddingTop: "2rem", opacity: 0.8 }}>
+                <Typography
+                  style={{ paddingTop: "2rem", color: "var(--color-text-l3)" }}
+                >
                   No records to display
                 </Typography>
               </td>
