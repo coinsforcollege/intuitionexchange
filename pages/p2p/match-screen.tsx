@@ -59,7 +59,7 @@ export function MatchScreen(props: {
         <tbody>
           {!data?.length && (
             <tr>
-              <td colSpan={3}>
+              <td colSpan={4}>
                 <Typography style={{ paddingTop: "2rem", opacity: 0.8 }}>
                   No records to display
                 </Typography>
