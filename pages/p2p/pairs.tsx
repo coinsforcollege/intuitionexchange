@@ -30,9 +30,12 @@ export function PairsScreen({
   const average = (pair: string) => {
     const price = pairs[pair]?.[selectedBase]?.price ?? 0;
     const openDay = pairs[pair]?.[selectedBase]?.openDay ?? 0;
-    const difference = PreciseCalculation.division(
-      PreciseCalculation.subtraction(price, openDay),
-      openDay
+    const difference = PreciseCalculation.multiplication(
+      PreciseCalculation.division(
+        PreciseCalculation.subtraction(price, openDay),
+        openDay
+      ),
+      100
     );
     return PreciseCalculation.round(difference, 2);
   };
@@ -153,8 +156,7 @@ export function PairsScreen({
                         }}
                         className={style["change"]}
                       >
-                        {average(pair) < 0 ? "▼" : "▲"}{" "}
-                        {PreciseCalculation.round(average(pair), 2)}%
+                        {average(pair) < 0 ? "▼" : "▲"} {average(pair)}%
                       </span>
                     </div>
                   </div>
