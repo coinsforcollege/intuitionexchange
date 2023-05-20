@@ -1,4 +1,4 @@
-import { Button, List, Result, Space, Tooltip, Typography } from "antd";
+import { Button, List, Result, Space, Typography } from "antd";
 import { OnboardingAuthContext } from "context/protect-route-onboarding";
 import { useRouter } from "next/router";
 import React from "react";
@@ -10,10 +10,11 @@ export default function OnboardingStep3({
   status,
   reApply,
 }: {
-  reApply: () => void;
+  reApply: () => Promise<void>;
   refreshStatus: () => void;
   status: IOnboardingStatus;
 }) {
+  const [loading, setLoading] = React.useState(false);
   const router = useRouter();
   const { refresh } = React.useContext(OnboardingAuthContext);
 
@@ -85,21 +86,18 @@ export default function OnboardingStep3({
                 padding: "1rem 0",
               }}
             >
-              <Tooltip
-                title={
-                  status.total >= 2
-                    ? "You have reached the maximum number of applications you can make for an exchange account, please contact our support staff"
-                    : undefined
-                }
+              <Button
+                loading={loading}
+                disabled={!isError || status.success !== 0}
+                type="primary"
+                onClick={async () => {
+                  setLoading(true);
+                  await reApply();
+                  setLoading(false);
+                }}
               >
-                <Button
-                  disabled={!isError || status.success !== 0}
-                  type="primary"
-                  onClick={reApply}
-                >
-                  Close and Restart application
-                </Button>
-              </Tooltip>
+                Close and Restart application
+              </Button>
               <Button onClick={refreshStatus}>Refresh</Button>
             </div>
           </Space>,

@@ -136,7 +136,7 @@ export function Page() {
           setAgreement(res.data.agreement);
           setStep(2);
         })
-        .catch(HandleError(notification));
+        .catch(HandleError(notification, { duration: 10 }));
     } else if (step === 2) {
       setStep(3);
     } else if (step === 3) {
@@ -146,7 +146,7 @@ export function Page() {
           setStep(4);
           refreshStatus();
         })
-        .catch(HandleError(notification));
+        .catch(HandleError(notification, { duration: 10 }));
     } else if (step === 4) {
       await axiosInstance.user
         .post<{ message: string }>("/api/onboarding/restart")
@@ -159,7 +159,7 @@ export function Page() {
           setStep(0);
           refreshStatus();
         })
-        .catch(HandleError(notification));
+        .catch(HandleError(notification, { duration: 10 }));
     }
 
     setLoading(false);
@@ -302,7 +302,9 @@ export function Page() {
                 )}
                 {step === 4 && (
                   <OnboardingStep4
-                    reApply={() => onFinish()}
+                    reApply={async () => {
+                      await onFinish();
+                    }}
                     status={status}
                     refreshStatus={refreshStatus}
                   />
