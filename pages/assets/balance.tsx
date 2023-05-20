@@ -85,6 +85,7 @@ export function AssetBalance() {
         <>
           <div style={{ display: "flex" }}>
             <img
+              onError={(e) => (e.currentTarget.src = "/asset/no-image.png")}
               alt={t.code}
               src={`/asset/${t.code.toLowerCase()}.png`}
               width={24}
