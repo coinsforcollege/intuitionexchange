@@ -196,7 +196,7 @@ export default function Header(props: {
                 )}
                 {user && (
                   <>
-                    <Typography.Text>
+                    <Typography.Text style={{ color: "white" }}>
                       Hello, {user.firstName ?? "User"}
                     </Typography.Text>
                     {!isPhone && (
