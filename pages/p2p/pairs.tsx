@@ -122,7 +122,7 @@ export function PairsScreen({
                     }}
                     className={style["change"]}
                   >
-                    {"▲"}
+                    {"▲"} 0%
                   </span>
                 </div>
               </div>
