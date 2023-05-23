@@ -94,8 +94,12 @@ export function VolumeScreen(props: {
                   );
                 }}
               >
-                <td>{d.price}</td>
-                <td>{d.volume}</td>
+                <td>
+                  {d.price} {props.base}
+                </td>
+                <td>
+                  {d.volume} {props.asset}
+                </td>
                 <td>{d.orders}</td>
               </tr>
             ))}

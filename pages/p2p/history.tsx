@@ -68,13 +68,13 @@ export function HistoryScreen() {
       dataIndex: "amount",
       key: "amount",
       render: (_, t) => (
-        <Typography style={{ fontSize: "12px" }}>
+        <Typography style={{ fontSize: "12px", fontWeight: "bold" }}>
           <div
             style={{
               color: t.orderType === OrderType.Buy ? "#4ddc44" : "#dc4446",
             }}
           >
-            {t.quantity}
+            {t.quantity} {t.assetCode}
           </div>
         </Typography>
       ),

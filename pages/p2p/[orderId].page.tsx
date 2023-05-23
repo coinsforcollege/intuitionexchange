@@ -166,8 +166,8 @@ function ViewOrder(props: { orderId: string }) {
                       <CheckOutlined />
                     </div>
                     <Typography style={{ flexGrow: 1, fontWeight: "500" }}>
-                      {tx.executedQuantity} {data.order.assetCode} @{" "}
-                      {tx.executedPrice}{" "}
+                      {tx.executedQuantity} {data.order.assetCode} for a total
+                      of {tx.executedPrice}{" "}
                       {data.order.base.type === OrderBaseType.Fiat
                         ? data.order.base.currency
                         : data.order.base.code}

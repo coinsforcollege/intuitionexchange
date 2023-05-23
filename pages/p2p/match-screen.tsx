@@ -43,13 +43,13 @@ export function MatchScreen(props: {
         <thead>
           <tr>
             <th>
-              <h6>Price ({props.base})</h6>
+              <h6>Price</h6>
             </th>
             <th>
-              <h6>Volume ({props.asset})</h6>
+              <h6>Volume</h6>
             </th>
             <th>
-              <h6>Value ({props.base})</h6>
+              <h6>Value</h6>
             </th>
             <th>
               <h6>Time</h6>
@@ -83,15 +83,19 @@ export function MatchScreen(props: {
                 }}
               >
                 <td>
-                  {d.price}{" "}
+                  {`${d.price} ${props.base}`}{" "}
                   {(data[_index + 1]?.price ?? 0) <= d.price ? (
                     <CaretUpOutlined />
                   ) : (
                     <CaretDownOutlined />
                   )}
                 </td>
-                <td>{d.quantity}</td>
-                <td>{d.value}</td>
+                <td>
+                  {d.quantity} {props.asset}
+                </td>
+                <td>
+                  {d.value} {props.base}
+                </td>
                 <td>{dayjs(d.createdAt).format("HH:mm:ss")}</td>
               </tr>
             ))}
