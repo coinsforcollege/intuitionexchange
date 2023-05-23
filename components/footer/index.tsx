@@ -4,14 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import mq from "util/breakpoints";
 
-import LogoImg from "../../public/logo.svg";
+import LogoImg from "../../public/logo_bg_transparent.svg";
 import styles from "./footer.module.css";
 
 const centerFooter = css({
   [mq.sm]: {
     width: "fit-content",
     margin: "auto",
-  }
+  },
 });
 
 export default function Footer(props: { fullWidth?: boolean }) {
@@ -57,7 +57,6 @@ export default function Footer(props: { fullWidth?: boolean }) {
           </Col>
           <Col xs={12} sm={12} md={8}>
             <div className={centerFooter}>
-
               <Typography.Title level={4}>User Services</Typography.Title>
               <ul className={styles.footerList}>
                 <li>
@@ -129,6 +128,6 @@ export default function Footer(props: { fullWidth?: boolean }) {
           </Typography.Text>
         </div>
       </div>
-    </div >
+    </div>
   );
 }
