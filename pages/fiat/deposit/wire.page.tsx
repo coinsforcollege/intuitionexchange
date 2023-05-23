@@ -1,5 +1,6 @@
 import { LeftOutlined } from "@ant-design/icons";
 import {
+  Alert,
   Button,
   Card,
   Descriptions,
@@ -60,6 +61,14 @@ export function Page() {
             </Space>
           }
         >
+          <div style={{ paddingBottom: "1rem" }}>
+            <Alert
+              message="Please include the provided payment reference code in the comment or
+            memo section. An absence of this reference may prevent the deposit
+            from being processed automatically."
+              type="warning"
+            />
+          </div>
           <Descriptions bordered column={1}>
             <Descriptions.Item label="Account Number">
               {data.accountNumber}
@@ -83,7 +92,7 @@ export function Page() {
               {data.depositoryBankName}
             </Descriptions.Item>
             <Descriptions.Item label="Reference">
-              {data.reference}
+              <b>{data.reference}</b>
             </Descriptions.Item>
           </Descriptions>
         </Card>
