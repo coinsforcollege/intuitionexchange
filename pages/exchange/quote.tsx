@@ -60,6 +60,8 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
           message: "order executed",
           placement: "bottomLeft",
         });
+        setUnit(0);
+        setTotal(0);
       })
       .catch(HandleError(notification));
 

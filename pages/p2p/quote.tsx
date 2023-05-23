@@ -55,6 +55,8 @@ export function QuoteScreen(props: {
           message: "Order placed",
           placement: "bottomLeft",
         });
+        props.setUnit(0);
+        props.setPrice(0);
         refresh();
       })
       .catch(HandleError(notification));
