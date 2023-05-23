@@ -37,13 +37,13 @@ export function TradeHistory(props: { asset: string }) {
         <thead>
           <tr>
             <th>
-              <h6>Price (USD)</h6>
+              <h6>Price</h6>
             </th>
             <th>
-              <h6>Volume ({props.asset})</h6>
+              <h6>Volume</h6>
             </th>
             <th>
-              <h6>Value (USD)</h6>
+              <h6>Value</h6>
             </th>
             <th>
               <h6>Time</h6>
@@ -73,15 +73,17 @@ export function TradeHistory(props: { asset: string }) {
                 }
               >
                 <td>
-                  {d.price}{" "}
+                  {`${d.price} USD `}
                   {(data[_index + 1]?.price ?? 0) < d.price ? (
                     <CaretUpOutlined />
                   ) : (
                     <CaretDownOutlined />
                   )}
                 </td>
-                <td>{d.volume}</td>
-                <td>{d.value}</td>
+                <td>
+                  {d.volume} {props.asset}
+                </td>
+                <td>{d.value} USD</td>
                 <td>{dayjs(d.createdAt).format("HH:mm:ss")}</td>
               </tr>
             ))}

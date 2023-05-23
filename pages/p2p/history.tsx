@@ -90,6 +90,22 @@ export function HistoryScreen() {
       ),
     },
     {
+      title: "Type",
+      dataIndex: "type",
+      key: "type",
+      render: (_, t) => (
+        <Typography style={{ fontSize: "12px", fontWeight: "bold" }}>
+          <div
+            style={{
+              color: t.orderType === OrderType.Buy ? "#4ddc44" : "#dc4446",
+            }}
+          >
+            {t.orderType}
+          </div>
+        </Typography>
+      ),
+    },
+    {
       title: "Time",
       dataIndex: "time",
       key: "time",

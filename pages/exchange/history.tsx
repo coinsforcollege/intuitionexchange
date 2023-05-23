@@ -69,7 +69,7 @@ export function HistoryScreen() {
       dataIndex: "amount",
       key: "amount",
       render: (_, t) => (
-        <Typography style={{ fontSize: "12px" }}>
+        <Typography style={{ fontSize: "12px", fontWeight: "bold" }}>
           <div style={{ color: t.type === "buy" ? "#4ddc44" : "#dc4446" }}>
             {t.unit} {t.assetCode}
           </div>
@@ -93,6 +93,22 @@ export function HistoryScreen() {
       render: (_, t) => (
         <Typography style={{ fontSize: "12px" }}>
           {FormatCurrency(PreciseCalculation.round(t.total))} USD
+        </Typography>
+      ),
+    },
+    {
+      title: "Type",
+      dataIndex: "type",
+      key: "type",
+      render: (_, t) => (
+        <Typography style={{ fontSize: "12px", fontWeight: "bold" }}>
+          <div
+            style={{
+              color: t.type === "buy" ? "#4ddc44" : "#dc4446",
+            }}
+          >
+            {t.type.toUpperCase()}
+          </div>
         </Typography>
       ),
     },
