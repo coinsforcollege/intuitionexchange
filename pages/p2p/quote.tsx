@@ -179,32 +179,6 @@ export function QuoteScreen(props: {
                         paddingRight: "8px",
                       }}
                     >
-                      <span>PRICE</span> <br />{" "}
-                      <span style={{ fontWeight: "bold" }}>{props.base}</span>
-                    </div>
-                  }
-                  className={style["antd-input"]}
-                  value={props.price > 0 ? props.price : null}
-                  placeholder="0.0"
-                  onChange={(val: number | null) => {
-                    const value = val ?? 0;
-                    props.setPrice(value);
-                  }}
-                />
-              </div>
-              <div>
-                <InputNumber
-                  required
-                  prefix={
-                    <div
-                      style={{
-                        fontSize: "10px",
-                        color: "var(--color-text-l2)",
-                        textAlign: "end",
-                        width: "48px",
-                        paddingRight: "8px",
-                      }}
-                    >
                       <span>VOLUME</span> <br />{" "}
                       <span style={{ fontWeight: "bold" }}>{props.asset}</span>
                     </div>
@@ -238,6 +212,32 @@ export function QuoteScreen(props: {
                 </Typography>
               </div>
               <div>
+                <InputNumber
+                  required
+                  prefix={
+                    <div
+                      style={{
+                        fontSize: "10px",
+                        color: "var(--color-text-l2)",
+                        textAlign: "end",
+                        width: "48px",
+                        paddingRight: "8px",
+                      }}
+                    >
+                      <span>PRICE</span> <br />{" "}
+                      <span style={{ fontWeight: "bold" }}>{props.base}</span>
+                    </div>
+                  }
+                  className={style["antd-input"]}
+                  value={props.price > 0 ? props.price : null}
+                  placeholder="0.0"
+                  onChange={(val: number | null) => {
+                    const value = val ?? 0;
+                    props.setPrice(value);
+                  }}
+                />
+              </div>
+              <div>
                 <Input
                   disabled
                   prefix={
@@ -255,7 +255,7 @@ export function QuoteScreen(props: {
                     </div>
                   }
                   className={style["antd-input"]}
-                  value={FormatCurrency(total, props.base === "USD" ? 2 : 6)}
+                  value={FormatCurrency(total)}
                   style={{ padding: 0, paddingInlineStart: "11px" }}
                   placeholder="0"
                 />

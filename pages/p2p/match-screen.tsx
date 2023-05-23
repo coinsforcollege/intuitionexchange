@@ -73,7 +73,7 @@ export function MatchScreen(props: {
               <tr
                 key={`match-${_index}`}
                 className={
-                  (data[_index + 1]?.price ?? 0) < d.price
+                  (data[_index + 1]?.price ?? 0) <= d.price
                     ? style["fadeInGreen"]
                     : style["fadeInRed"]
                 }
@@ -84,7 +84,7 @@ export function MatchScreen(props: {
               >
                 <td>
                   {d.price}{" "}
-                  {(data[_index + 1]?.price ?? 0) < d.price ? (
+                  {(data[_index + 1]?.price ?? 0) <= d.price ? (
                     <CaretUpOutlined />
                   ) : (
                     <CaretDownOutlined />
