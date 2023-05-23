@@ -122,9 +122,7 @@ export function AssetBalance() {
       render: (_, t) =>
         t.currentValue === 0
           ? "-"
-          : `${FormatCurrency(
-              PreciseCalculation.round(t.currentValue, 2)
-            )} USD`,
+          : `${FormatCurrency(PreciseCalculation.round(t.currentValue))} USD`,
       align: "center" as "center",
     },
     {

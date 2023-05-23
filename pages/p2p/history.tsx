@@ -85,7 +85,7 @@ export function HistoryScreen() {
       key: "price",
       render: (_, t) => (
         <Typography style={{ fontSize: "12px" }}>
-          {FormatCurrency(PreciseCalculation.round(t.price, 2))} USD
+          {FormatCurrency(PreciseCalculation.round(t.price))} USD
         </Typography>
       ),
     },

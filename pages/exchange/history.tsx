@@ -82,7 +82,7 @@ export function HistoryScreen() {
       key: "rate",
       render: (_, t) => (
         <Typography style={{ fontSize: "12px" }}>
-          {FormatCurrency(PreciseCalculation.round(t.pricePerUnit, 2))} USD
+          {FormatCurrency(PreciseCalculation.round(t.pricePerUnit))} USD
         </Typography>
       ),
     },
@@ -92,7 +92,7 @@ export function HistoryScreen() {
       key: "price",
       render: (_, t) => (
         <Typography style={{ fontSize: "12px" }}>
-          {FormatCurrency(PreciseCalculation.round(t.total, 2))} USD
+          {FormatCurrency(PreciseCalculation.round(t.total))} USD
         </Typography>
       ),
     },

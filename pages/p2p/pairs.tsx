@@ -37,7 +37,7 @@ export function PairsScreen({
       ),
       100
     );
-    return PreciseCalculation.round(difference, 2);
+    return PreciseCalculation.round(difference);
   };
 
   return (
@@ -168,8 +168,7 @@ export function PairsScreen({
                         {FormatCurrency(
                           PreciseCalculation.round(
                             pairs[pair]?.[selectedBase]?.price ?? 0
-                          ),
-                          5
+                          )
                         )}{" "}
                         {selectedBase}
                       </span>

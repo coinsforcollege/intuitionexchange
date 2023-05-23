@@ -35,9 +35,15 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
 
   const price = pairs[asset]?.[base]?.price ?? 0;
   const priceInUSD = pairs[asset]?.["USD"]?.price ?? 0;
-  const quoteTotalValue = priceInUSD * unit;
-  const quoteMakerFee = quoteTotalValue * 0.005;
-  const quotePlatformFee = quoteTotalValue * 0.0049;
+  const quoteTotalValue = PreciseCalculation.multiplication(priceInUSD, unit);
+  const quoteMakerFee = PreciseCalculation.multiplication(
+    quoteTotalValue,
+    0.005
+  );
+  const quotePlatformFee = PreciseCalculation.multiplication(
+    quoteTotalValue,
+    0.0049
+  );
 
   const trade = async () => {
     setLoading(true);
@@ -83,7 +89,11 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
               <div className={style["quote-item"]}>
                 <span>You Receive</span>
                 <span>
-                  {FormatCurrency(PreciseCalculation.round(price * unit))}{" "}
+                  {FormatCurrency(
+                    PreciseCalculation.round(
+                      PreciseCalculation.multiplication(price, unit)
+                    )
+                  )}{" "}
                   {base}
                 </span>
               </div>
@@ -96,23 +106,20 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
               <div className={style["quote-item"]}>
                 <span>Total Value</span>
                 <span>
-                  {FormatCurrency(PreciseCalculation.round(quoteTotalValue, 2))}{" "}
+                  {FormatCurrency(PreciseCalculation.round(quoteTotalValue))}{" "}
                   USD
                 </span>
               </div>
               <div className={style["quote-item"]}>
                 <span>Maker Fee (0.50%)</span>
                 <span>
-                  {FormatCurrency(PreciseCalculation.round(quoteMakerFee, 2))}{" "}
-                  USD
+                  {FormatCurrency(PreciseCalculation.round(quoteMakerFee))} USD
                 </span>
               </div>
               <div className={style["quote-item"]}>
                 <span>Platform Fee (0.49%)</span>
                 <span>
-                  {FormatCurrency(
-                    PreciseCalculation.round(quotePlatformFee, 2)
-                  )}{" "}
+                  {FormatCurrency(PreciseCalculation.round(quotePlatformFee))}{" "}
                   USD
                 </span>
               </div>
@@ -280,8 +287,7 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                     setTotal(
                       Number(
                         PreciseCalculation.round(
-                          PreciseCalculation.multiplication(value, price),
-                          base === "USD" ? 2 : 6
+                          PreciseCalculation.multiplication(value, price)
                         )
                       )
                     );
