@@ -177,12 +177,12 @@ export function QuoteScreen(props: {
                         fontSize: "10px",
                         color: "var(--color-text-l2)",
                         textAlign: "end",
-                        width: "48px",
+                        width: "64px",
                         paddingRight: "8px",
+                        fontWeight: "bold",
                       }}
                     >
-                      <span>QUANTITY</span> <br />{" "}
-                      <span style={{ fontWeight: "bold" }}>{props.asset}</span>
+                      <span>QUANTITY</span> <br /> <span>{props.asset}</span>
                     </div>
                   }
                   className={style["antd-input"]}
@@ -222,12 +222,12 @@ export function QuoteScreen(props: {
                         fontSize: "10px",
                         color: "var(--color-text-l2)",
                         textAlign: "end",
-                        width: "48px",
+                        width: "64px",
                         paddingRight: "8px",
+                        fontWeight: "bold",
                       }}
                     >
-                      <span>AT PRICE</span> <br />{" "}
-                      <span style={{ fontWeight: "bold" }}>{props.base}</span>
+                      <span>AT PRICE</span> <br /> <span>{props.base}</span>
                     </div>
                   }
                   className={style["antd-input"]}
@@ -248,12 +248,12 @@ export function QuoteScreen(props: {
                         fontSize: "10px",
                         color: "var(--color-text-l2)",
                         textAlign: "end",
-                        width: "48px",
+                        width: "64px",
                         paddingRight: "8px",
+                        fontWeight: "bold",
                       }}
                     >
-                      <span>TOTAL</span> <br />{" "}
-                      <span style={{ fontWeight: "bold" }}>{props.base}</span>
+                      <span>TOTAL</span> <br /> <span>{props.base}</span>
                     </div>
                   }
                   className={style["antd-input"]}

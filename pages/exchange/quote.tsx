@@ -272,12 +272,12 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                         fontSize: "10px",
                         color: "var(--color-text-l2)",
                         textAlign: "end",
-                        width: "48px",
+                        width: "64px",
                         paddingRight: "8px",
+                        fontWeight: "bold",
                       }}
                     >
-                      <span>AMOUNT</span> <br />{" "}
-                      <span style={{ fontWeight: "bold" }}>{asset}</span>
+                      <span>AMOUNT</span> <br /> <span>{asset}</span>
                     </div>
                   }
                   className={style["antd-input"]}
@@ -322,12 +322,12 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                         fontSize: "10px",
                         color: "var(--color-text-l2)",
                         textAlign: "end",
-                        width: "48px",
+                        width: "64px",
                         paddingRight: "8px",
+                        fontWeight: "bold",
                       }}
                     >
-                      <span>TOTAL</span> <br />{" "}
-                      <span style={{ fontWeight: "bold" }}>{base}</span>
+                      <span>TOTAL</span> <br /> <span>{base}</span>
                     </div>
                   }
                   className={style["antd-input"]}
