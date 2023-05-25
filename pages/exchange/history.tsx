@@ -4,7 +4,7 @@ import { ColumnsType } from "antd/es/table";
 import { BalanceContext } from "context/balance";
 import React from "react";
 import useSWR from "swr";
-import { ApiOrder, OrderState } from "types";
+import { ApiOrder, OrderState, OrderType } from "types";
 import { axiosInstance } from "util/axios";
 import { PreciseCalculation } from "util/calculation";
 import { FormatCurrency } from "util/functions";
@@ -70,7 +70,9 @@ export function HistoryScreen() {
       key: "amount",
       render: (_, t) => (
         <Typography style={{ fontSize: "12px", fontWeight: "bold" }}>
-          <div style={{ color: t.type === "buy" ? "#4ddc44" : "#dc4446" }}>
+          <div
+            style={{ color: t.type === OrderType.Buy ? "#4ddc44" : "#dc4446" }}
+          >
             {t.unit} {t.assetCode}
           </div>
         </Typography>
@@ -104,7 +106,7 @@ export function HistoryScreen() {
         <Typography style={{ fontSize: "12px", fontWeight: "bold" }}>
           <div
             style={{
-              color: t.type === "buy" ? "#4ddc44" : "#dc4446",
+              color: t.type === OrderType.Buy ? "#4ddc44" : "#dc4446",
             }}
           >
             {t.type.toUpperCase()}
@@ -122,7 +124,9 @@ export function HistoryScreen() {
             width={"400px"}
             open={receipt === t.id}
             onCancel={() => setReceipt("")}
-            title={`${t.assetCode} ${t.type === "buy" ? "Purchased" : "Sold"}`}
+            title={`${t.assetCode} ${
+              t.type === OrderType.Buy ? "Purchased" : "Sold"
+            }`}
             footer={[]}
           >
             <div style={{ paddingTop: "2rem" }}>

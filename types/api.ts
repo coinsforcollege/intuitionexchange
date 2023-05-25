@@ -111,7 +111,7 @@ export interface ApiOrder {
   pricePerUnit: number;
   total: number;
   totalValue: number;
-  type: "buy" | "sell";
+  type: OrderType;
   unit: number;
 }
 

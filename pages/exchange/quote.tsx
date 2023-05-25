@@ -10,6 +10,7 @@ import {
 import { BalanceContext } from "context/balance";
 import { NotificationContext } from "context/notification";
 import React from "react";
+import { OrderType } from "types";
 import { axiosInstance } from "util/axios";
 import { HandleError } from "util/axios/error-handler";
 import { PreciseCalculation } from "util/calculation";
@@ -23,7 +24,7 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
   const { pairs } = React.useContext(ExchangeContext);
   const { api: notification } = React.useContext(NotificationContext);
   const { data: balances, refresh } = React.useContext(BalanceContext);
-  const [mode, setMode] = React.useState<"buy" | "sell">("buy");
+  const [orderType, setOrderType] = React.useState<OrderType>(OrderType.Buy);
   const [unit, setUnit] = React.useState(0);
   const [total, setTotal] = React.useState(0);
   const [showQuote, setShowQuote] = React.useState(false);
@@ -53,7 +54,7 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
         base: base,
         asset: asset,
         unit: unit,
-        isBuyOrder: mode === "buy",
+        orderType: orderType,
       })
       .then(() => {
         notification.success({
@@ -75,7 +76,9 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
       <Modal
         width={"400px"}
         open={showQuote}
-        title={`${mode === "buy" ? "Buy" : "Sell"} ${asset} for ${base}`}
+        title={`${
+          orderType === OrderType.Buy ? "Buy" : "Sell"
+        } ${asset} for ${base}`}
         onCancel={() => setShowQuote(false)}
         footer={[]}
       >
@@ -150,13 +153,13 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                 fontWeight: 700,
               }}
               type="primary"
-              danger={mode === "sell"}
+              danger={orderType === OrderType.Sell}
               onClick={() => {
                 setShowQuote(false);
                 trade();
               }}
             >
-              Confirm {mode.toUpperCase()}
+              Confirm {orderType}
             </Button>
           </ConfigProvider>
         </div>
@@ -173,14 +176,14 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
         <div>
           <div style={{ display: "flex" }}>
             <div
-              onClick={() => setMode("buy")}
+              onClick={() => setOrderType(OrderType.Buy)}
               style={{
                 backgroundColor:
-                  mode == "buy"
+                  orderType === OrderType.Buy
                     ? "var(--color-background-l0)"
                     : "var(--color-background-l1)",
                 boxShadow:
-                  mode == "buy"
+                  orderType === OrderType.Buy
                     ? "inset 0 4px 0 0 var(--color-green)"
                     : "inset 0 -1px 0 0 var(--color-divider)",
                 padding: "10px 12px",
@@ -192,7 +195,7 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                 style={{
                   display: "block",
                   color:
-                    mode == "buy"
+                    orderType === OrderType.Buy
                       ? "var(--color-text-l1)"
                       : "var(--color-text-l2)",
                   fontSize: "12px",
@@ -207,15 +210,15 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
               </Typography>
             </div>
             <div
-              onClick={() => setMode("sell")}
+              onClick={() => setOrderType(OrderType.Sell)}
               style={{
                 borderLeft: "1px solid var(--color-divider)",
                 backgroundColor:
-                  mode == "sell"
+                  orderType === OrderType.Sell
                     ? "var(--color-background-l0)"
                     : "var(--color-background-l1)",
                 boxShadow:
-                  mode == "sell"
+                  orderType === OrderType.Sell
                     ? "inset 0 4px 0 0 var(--color-red)"
                     : "inset 0 -1px 0 0 var(--color-divider)",
                 padding: "10px 12px",
@@ -227,7 +230,7 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                 style={{
                   display: "block",
                   color:
-                    mode == "sell"
+                    orderType === OrderType.Sell
                       ? "var(--color-text-l1)"
                       : "var(--color-text-l2)",
                   fontSize: "12px",
@@ -383,9 +386,9 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                     fontWeight: 700,
                   }}
                   type="primary"
-                  danger={mode === "sell"}
+                  danger={orderType === OrderType.Sell}
                 >
-                  {mode.toUpperCase()} {asset.toUpperCase()}
+                  {orderType} {asset.toUpperCase()}
                 </Button>
               </ConfigProvider>
               <Typography
