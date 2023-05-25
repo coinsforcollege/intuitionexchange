@@ -181,7 +181,7 @@ export function QuoteScreen(props: {
                         paddingRight: "8px",
                       }}
                     >
-                      <span>VOLUME</span> <br />{" "}
+                      <span>QUANTITY</span> <br />{" "}
                       <span style={{ fontWeight: "bold" }}>{props.asset}</span>
                     </div>
                   }
@@ -226,7 +226,7 @@ export function QuoteScreen(props: {
                         paddingRight: "8px",
                       }}
                     >
-                      <span>PRICE</span> <br />{" "}
+                      <span>AT PRICE</span> <br />{" "}
                       <span style={{ fontWeight: "bold" }}>{props.base}</span>
                     </div>
                   }
