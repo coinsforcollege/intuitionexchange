@@ -40,7 +40,7 @@ export function Page() {
               <Link href="/fiat/deposit/credit-card">
                 <Space direction="vertical">
                   <CreditCardOutlined style={{ fontSize: "3rem" }} />
-                  <Typography>Credit Card</Typography>
+                  <Typography>Credit / Debit Card</Typography>
                 </Space>
               </Link>
             </Col>

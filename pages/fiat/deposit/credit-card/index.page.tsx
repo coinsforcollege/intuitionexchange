@@ -74,17 +74,17 @@ export function Page() {
         <Card
           title={
             <Space>
-              <Link href="/wallet">
+              <Link href="/fiat/deposit">
                 <Button type="text">
                   <LeftOutlined />
                 </Button>
               </Link>
-              <Typography>Credit Card</Typography>
+              <Typography>Credit / Debit</Typography>
             </Space>
           }
           extra={
             <Link href="/fiat/deposit/credit-card/add">
-              <Button>Add Credit Card</Button>
+              <Button>Add Credit / Debit</Button>
             </Link>
           }
         >
@@ -93,10 +93,10 @@ export function Page() {
               <Space direction="vertical">
                 <Typography>
                   In order for you to deposit funds to your account, you will
-                  need to register your credit card details with us.
+                  need to register your credit / debit card details with us.
                 </Typography>
                 <Link href="/fiat/deposit/credit-card/add">
-                  Add Credit Card
+                  <Button>Add Credit / Debit</Button>
                 </Link>
               </Space>
             </div>

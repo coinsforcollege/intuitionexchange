@@ -109,7 +109,7 @@ function Page() {
               <LeftOutlined />
             </Button>
           </Link>
-          <Typography>Add Credit Card</Typography>
+          <Typography>Add Credit / Debit Card</Typography>
         </Space>
         <Card>
           <div id="verification" />
