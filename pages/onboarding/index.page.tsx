@@ -93,12 +93,11 @@ export function Page() {
 
   useEffectOnce(() => {
     const data = localStorage.getItem("onboarding-form");
-    console.log(data);
     if (data) {
       setForm(JSON.parse(data));
-      isFormLoaded.current = true;
     }
 
+    isFormLoaded.current = true;
     refreshStatus();
   });
 

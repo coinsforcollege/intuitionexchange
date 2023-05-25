@@ -1,4 +1,4 @@
-import { Button, Col, Form, Input, Row, Select, Space } from "antd";
+import { Alert, Button, Col, Form, Input, Row, Select, Space } from "antd";
 import { regions } from "util/regions";
 
 import { IOnboardingForm } from "./index.page";
@@ -18,6 +18,12 @@ export default function OnboardingStep0({
 }) {
   return (
     <>
+      <div style={{ paddingBottom: "1rem" }}>
+        <Alert
+          message=" The address you input should correspond with the one shown on your address verification document submitted during the KYC process."
+          type="warning"
+        />
+      </div>
       <Form
         layout="vertical"
         initialValues={{ remember: true }}

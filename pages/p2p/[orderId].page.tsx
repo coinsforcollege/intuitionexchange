@@ -141,7 +141,8 @@ function ViewOrder(props: { orderId: string }) {
               </Typography>
             )}
             <Typography style={{ fontSize: "12px" }}>
-              On {dayjs(data.order.createdAt).format("MMMM DD, YYYY")} at{" "}
+              Order created on{" "}
+              {dayjs(data.order.createdAt).format("MMMM DD, YYYY")} at{" "}
               {dayjs(data.order.createdAt).format("hh:mm A")}
             </Typography>
           </Space>
