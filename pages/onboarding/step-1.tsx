@@ -20,7 +20,7 @@ export default function OnboardingStep0({
     <>
       <div style={{ paddingBottom: "1rem" }}>
         <Alert
-          message=" The address you input should correspond with the one shown on your address verification document submitted during the KYC process."
+          message=" The address you input should correspond with the one shown on your address verification document you will submit during the KYC process."
           type="warning"
         />
       </div>
