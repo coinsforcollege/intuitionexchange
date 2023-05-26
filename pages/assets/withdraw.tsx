@@ -104,12 +104,18 @@ export function WithdrawScreen({
         >
           {data.length === 0 && (
             <div>
-              <Space direction="vertical">
+              <Space direction="vertical" size={16}>
                 <Typography>
                   In order for you to withdraw assets from your account, you
                   will need to register your external wallet details with us.
                 </Typography>
-                <a onClick={() => onAddWallet()}>Add wallet</a>
+                <Button
+                  htmlType="submit"
+                  style={{ width: "100%" }}
+                  onClick={() => onAddWallet()}
+                >
+                  Add Wallet
+                </Button>
               </Space>
             </div>
           )}
@@ -133,7 +139,6 @@ export function WithdrawScreen({
                         {item.walletAddress}
                       </Radio>
                     ))}
-                    <a onClick={() => onAddWallet()}>Add wallet</a>
                   </Space>
                 </Radio.Group>
               </Form.Item>
@@ -156,6 +161,15 @@ export function WithdrawScreen({
                   style={{ width: "100%" }}
                 >
                   Withdraw
+                </Button>
+              </Form.Item>
+              <Form.Item>
+                <Button
+                  htmlType="submit"
+                  style={{ width: "100%" }}
+                  onClick={() => onAddWallet()}
+                >
+                  Add Wallet
                 </Button>
               </Form.Item>
             </Form>
