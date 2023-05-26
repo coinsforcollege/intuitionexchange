@@ -1,5 +1,6 @@
 import { CloseOutlined } from "@ant-design/icons";
 import {
+  Alert,
   Button,
   Card,
   Form,
@@ -8,7 +9,6 @@ import {
   Result,
   Skeleton,
   Space,
-  Typography,
 } from "antd";
 import { NotificationContext } from "context/notification";
 import React from "react";
@@ -105,10 +105,10 @@ export function WithdrawScreen({
           {data.length === 0 && (
             <div>
               <Space direction="vertical" size={16}>
-                <Typography>
-                  In order for you to withdraw assets from your account, you
-                  will need to register your external wallet details with us.
-                </Typography>
+                <Alert
+                  message="In order for you to withdraw assets from your account, you will need to register your external wallet details with us."
+                  type="info"
+                />
                 <Button
                   htmlType="submit"
                   style={{ width: "100%" }}
