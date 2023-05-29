@@ -21,6 +21,7 @@ export default function OnboardingStep2({
   onFinish: () => void;
   setForm: React.Dispatch<React.SetStateAction<IOnboardingForm>>;
 }) {
+  const [autoSubmit, setAutoSubmit] = React.useState(false);
   const [error, setError] = React.useState("");
   const { user } = React.useContext(OnboardingAuthContext);
   const { api: notification } = React.useContext(NotificationContext);
@@ -43,6 +44,15 @@ export default function OnboardingStep2({
             ...prev,
             socureDocumentId: response.documentUuid,
           }));
+
+          if (!autoSubmit) {
+            setAutoSubmit(true);
+            setTimeout(() => {
+              if (isDocumentUploaded) {
+                onFinish();
+              }
+            }, 5_000);
+          }
         }
       },
       // onError: console.log, //callback method to read the error response
