@@ -153,7 +153,7 @@ export default function OnboardingStep2({
             Back
           </Button>
           <Button
-            disabled={loading || !isDocumentUploaded}
+            disabled={loading || !isDocumentUploaded || autoSubmit}
             type="primary"
             onClick={onFinish}
           >
