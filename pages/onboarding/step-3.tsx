@@ -43,12 +43,6 @@ export default function OnboardingStep2({
             ...prev,
             socureDocumentId: response.documentUuid,
           }));
-
-          setTimeout(() => {
-            if (isDocumentUploaded) {
-              onFinish();
-            }
-          }, 5_000);
         }
       },
       // onError: console.log, //callback method to read the error response
@@ -149,7 +143,8 @@ export default function OnboardingStep2({
             Back
           </Button>
           <Button
-            disabled={loading || !isDocumentUploaded}
+            loading={loading}
+            disabled={!isDocumentUploaded}
             type="primary"
             onClick={onFinish}
           >
