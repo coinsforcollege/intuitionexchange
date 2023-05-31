@@ -7,7 +7,7 @@ on:
       - main
 
 env:
-  IMAGE_NAME: exchange_web
+  ECR_REGISTRY: 998653631692.dkr.ecr.us-west-1.amazonaws.com/exchange_web
   KUBE_CONTAINER_NAME: web
   KUBE_DEPLOYMENT_NAME: web
   KUBE_NAMESPACE: exchange
@@ -17,7 +17,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.tag.outputs.current }}
+      image_uri: ${{ steps.tag.outputs.current }}
     steps:
       - name: check out code 🛎
         uses: actions/checkout@v3
@@ -31,46 +31,53 @@ jobs:
       - name: Prepare Tag
         id: tag
         run: |
-          echo "current=${{ env.IMAGE_NAME }}:`date +"%y.%m.%d.%H.%M"`" >> $GITHUB_OUTPUT
-          echo "latest=${{ env.IMAGE_NAME }}:latest" >> $GITHUB_OUTPUT
+          echo "current=${{ env.ECR_REGISTRY }}:`date +"%y.%m.%d.%H.%M"`" >> $GITHUB_OUTPUT
+          echo "latest=${{ env.ECR_REGISTRY }}:latest" >> $GITHUB_OUTPUT
 
-      - name: Login to Container Registry
-        uses: docker/login-action@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
         with:
-          registry: ${{ secrets.REGISTRY_HOST }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+          mask-aws-account-id: "no"
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
 
       - name: Build and Push
         uses: docker/build-push-action@v3
         with:
           push: true
-          tags: ${{ secrets.REGISTRY_HOST }}/${{ steps.tag.outputs.current }}, ${{ secrets.REGISTRY_HOST }}/${{ steps.tag.outputs.latest }}
+          tags: ${{ steps.tag.outputs.current }}, ${{ steps.tag.outputs.latest }}
 
   deploy:
     name: Deploy
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Configure SSH
-        run: |
-          mkdir -p ~/.ssh/
-          echo "$SSH_KEY" > ~/.ssh/staging.key
-          chmod 600 ~/.ssh/staging.key
-          cat >>~/.ssh/config <<END
-          Host staging
-            HostName $SSH_HOST
-            User $SSH_USER
-            IdentityFile ~/.ssh/staging.key
-            StrictHostKeyChecking no
-          END
-        env:
-          SSH_USER: ${{ secrets.STAGING_SSH_USER }}
-          SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
-          SSH_HOST: ${{ secrets.STAGING_SSH_HOST }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+          mask-aws-account-id: "no"
 
-      - name: Set deployment image
-        run: ssh staging 'microk8s kubectl set image deployments/${{ env.KUBE_DEPLOYMENT_NAME }} ${{ env.KUBE_CONTAINER_NAME }}=localhost:32000/${{ needs.build.outputs.tag }} -n ${{ env.KUBE_NAMESPACE }}'
+      - name: deploy to cluster
+        uses: kodermax/kubectl-aws-eks@master
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        with:
+          args: set image deployment/${{ env.KUBE_DEPLOYMENT_NAME }} ${{ env.KUBE_CONTAINER_NAME }}=${{  needs.build.outputs.image_uri }} -n ${{ env.KUBE_NAMESPACE }}
+
+      - name: verify deployment
+        uses: kodermax/kubectl-aws-eks@master
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        with:
+          args: rollout status deployment/${{ env.KUBE_DEPLOYMENT_NAME }} -n ${{ env.KUBE_NAMESPACE }}
 
   alert:
     name: Alert
@@ -79,15 +86,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Successful
-        if: ${{ needs.build.result == 'success' }}
+        if: ${{ needs.build.result == 'success' && needs.deploy.result == 'success' }}
         run: |
-          curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "{\"content\": \"\`${{ secrets.REGISTRY_HOST }}/${{ needs.build.outputs.tag }}\` [deployed](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) successfully :tada:\"}" $DISCORD_WEBHOOK &> /dev/null
+          curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "{\"content\": \"\`${{  needs.build.outputs.image_uri }}\` [deployed](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) successfully :tada:\"}" $DISCORD_WEBHOOK &> /dev/null
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 
       - name: Failed
-        if: ${{ needs.build.result != 'success' }}
+        if: ${{ needs.build.result != 'success' || needs.deploy.result != 'success' }}
         run: |
-          curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "{\"content\": \"\`${{ secrets.REGISTRY_HOST }}/${{ needs.build.outputs.tag }}\` [deployment](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) failed :x:\"}" $DISCORD_WEBHOOK &> /dev/null
+          curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "{\"content\": \"\`${{  needs.build.outputs.image_uri }}\` [deployment](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) failed :x:\"}" $DISCORD_WEBHOOK &> /dev/null
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
