@@ -1,5 +1,5 @@
 export const apiUrl = {
-  test: "http://localhost:8000",
+  test: "https://api.sandbox.intuitionexchange.com",
   development: "http://localhost:8000",
   production: "https://api.intuitionexchange.com",
 };
