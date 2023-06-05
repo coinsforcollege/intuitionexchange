@@ -2,7 +2,7 @@ import axios, { AxiosError } from "axios";
 
 // Create instance
 const axiosUserInstance = axios.create({
-  baseURL: "https://api.intuitionexchange.com",
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
 });
 
 // Set the AUTH token for any request
