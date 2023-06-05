@@ -58,14 +58,9 @@ export default function OnboardingStep2({
 
     window.SocureInitializer.init(token).then((lib: any) => {
       lib.init(token, "#main-socure", config).then(function () {
-        lib
-          .start(2, input, {
-            method: "GET",
-            url: "https://www.example.com",
-          })
-          .catch((err: any) => {
-            setError(err?.status ?? "");
-          });
+        lib.start(2, input).catch((err: any) => {
+          setError(err?.status ?? "");
+        });
       });
     });
   };
