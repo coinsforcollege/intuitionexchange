@@ -49,12 +49,12 @@ export default function OnboardingStep2({
       qrCodeNeeded: true, //toggle the QR code display
     };
 
-    const input = {
-      mobileNumber:
-        process.env.NEXT_PUBLIC_NODE_ENV === "development"
-          ? undefined
-          : `+${user.phoneCountry}${user.phone}`,
-    };
+    const input =
+      process.env.NEXT_PUBLIC_NODE_ENV === "development"
+        ? {}
+        : {
+            mobileNumber: `+${user.phoneCountry}${user.phone}`,
+          };
 
     window.SocureInitializer.init(token).then((lib: any) => {
       lib.init(token, "#main-socure", config).then(function () {
