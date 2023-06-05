@@ -1,10 +1,8 @@
 import axios from "axios";
 
-import { apiUrl } from "./common";
-
 // Create instance
 const axiosDefaultInstance = axios.create({
-  baseURL: apiUrl[process.env.NODE_ENV],
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
 });
 
 export { axiosDefaultInstance };

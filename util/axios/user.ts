@@ -1,10 +1,8 @@
 import axios, { AxiosError } from "axios";
 
-import { apiUrl } from "./common";
-
 // Create instance
 const axiosUserInstance = axios.create({
-  baseURL: apiUrl[process.env.NODE_ENV],
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
 });
 
 // Set the AUTH token for any request
