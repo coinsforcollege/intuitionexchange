@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy - Sandbox
 
 on:
   workflow_dispatch:
