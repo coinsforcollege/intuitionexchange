@@ -1,0 +1,103 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-west-1
+  ECR_REGISTRY: 998653631692.dkr.ecr.us-west-1.amazonaws.com/exchange_sandbox_web
+  KUBE_CONTAINER_NAME: web
+  KUBE_DEPLOYMENT_NAME: web
+  KUBE_NAMESPACE: x-exchange
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    outputs:
+      image_uri: ${{ steps.tag.outputs.current }}
+    steps:
+      - name: check out code 🛎
+        uses: actions/checkout@v3
+
+      - name: check out buildx
+        uses: docker/setup-buildx-action@v2
+        id: buildx
+        with:
+          install: true
+
+      - name: Prepare Tag
+        id: tag
+        run: |
+          echo "current=${{ env.ECR_REGISTRY }}:`date +"%y.%m.%d.%H.%M"`" >> $GITHUB_OUTPUT
+          echo "latest=${{ env.ECR_REGISTRY }}:latest" >> $GITHUB_OUTPUT
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          mask-aws-account-id: "no"
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and Push
+        uses: docker/build-push-action@v3
+        with:
+          build-args: |
+            NEXT_PUBLIC_API_URL=https://api.sandbox.intuitionexchange.com
+          push: true
+          tags: ${{ steps.tag.outputs.current }}, ${{ steps.tag.outputs.latest }}
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          mask-aws-account-id: "no"
+
+      - name: deploy to cluster
+        uses: kodermax/kubectl-aws-eks@master
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        with:
+          args: set image deployment/${{ env.KUBE_DEPLOYMENT_NAME }} ${{ env.KUBE_CONTAINER_NAME }}=${{  needs.build.outputs.image_uri }} -n ${{ env.KUBE_NAMESPACE }}
+
+      - name: verify deployment
+        uses: kodermax/kubectl-aws-eks@master
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        with:
+          args: rollout status deployment/${{ env.KUBE_DEPLOYMENT_NAME }} -n ${{ env.KUBE_NAMESPACE }}
+
+  alert:
+    name: Alert
+    if: ${{ always() }}
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Successful
+        if: ${{ needs.build.result == 'success' && needs.deploy.result == 'success' }}
+        run: |
+          curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "{\"content\": \"\`${{  needs.build.outputs.image_uri }}\` [deployed](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) successfully :tada:\"}" $DISCORD_WEBHOOK &> /dev/null
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+
+      - name: Failed
+        if: ${{ needs.build.result != 'success' || needs.deploy.result != 'success' }}
+        run: |
+          curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "{\"content\": \"\`${{  needs.build.outputs.image_uri }}\` [deployment](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) failed :x:\"}" $DISCORD_WEBHOOK &> /dev/null
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
