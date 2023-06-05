@@ -97,7 +97,7 @@ function Page() {
         async={true}
         type="text/javascript"
         src={
-          process.env.NODE_ENV === "development"
+          process.env.NEXT_PUBLIC_NODE_ENV === "development"
             ? "https://sandbox.bootstrapper.primetrust-cdn.com/bootstrap.js"
             : "https://bootstrapper.primetrust-cdn.com/bootstrap.js"
         }

@@ -50,7 +50,10 @@ export default function OnboardingStep2({
     };
 
     const input = {
-      mobileNumber: `+${user.phoneCountry}${user.phone}`,
+      mobileNumber:
+        process.env.NEXT_PUBLIC_NODE_ENV === "development"
+          ? `+1${user.phone}`
+          : `+${user.phoneCountry}${user.phone}`,
     };
 
     window.SocureInitializer.init(token).then((lib: any) => {

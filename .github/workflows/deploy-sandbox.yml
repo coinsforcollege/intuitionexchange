@@ -12,7 +12,8 @@ env:
   KUBE_CONTAINER_NAME: web
   KUBE_DEPLOYMENT_NAME: web
   KUBE_NAMESPACE: x-exchange
-  API_URL: https://api.sandbox.intuitionexchange.com
+  NEXT_PUBLIC_API_URL: https://api.sandbox.intuitionexchange.com
+  NEXT_PUBLIC_NODE_ENV: development
 
 jobs:
   build:
@@ -52,7 +53,8 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           build-args: |
-            NEXT_PUBLIC_API_URL= ${{ env.API_URL }}
+            NEXT_PUBLIC_API_URL= ${{ env.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_NODE_ENV= ${{ env.NEXT_PUBLIC_NODE_ENV }}
           push: true
           tags: ${{ steps.tag.outputs.current }}, ${{ steps.tag.outputs.latest }}
 
