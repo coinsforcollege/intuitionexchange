@@ -82,16 +82,16 @@ export default function OnboardingStep2({
         if (response.status === "VERIFICATION_COMPLETE") {
           if (
             response.verifyResult.documentVerification.decision?.value ===
-            "accept"
+            "reject"
           ) {
+            setError(
+              "Apologies, but the documents you uploaded are not acceptable. Please try again or contact support"
+            );
+          } else {
             setForm((prev) => ({
               ...prev,
               socureDocumentId: response.documentUuid,
             }));
-          } else {
-            setError(
-              "Apologies, but the documents you uploaded are not acceptable. Please try again or contact support"
-            );
           }
         }
       },
