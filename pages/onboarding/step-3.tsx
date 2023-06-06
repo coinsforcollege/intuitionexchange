@@ -16,9 +16,12 @@ interface SocureVerifyResult {
     };
     documentData?: {
       address?: string;
+      dob?: string;
       documentNumber?: string;
+      expirationDate?: string;
       firstName?: string;
       fullName?: string;
+      issueDate?: string;
       parsedAddress?: {
         city?: string;
         country?: string;
@@ -161,7 +164,14 @@ export default function OnboardingStep2({
             title="Something went wrong!"
             subTitle={error}
             extra={
-              <Button loading={loading} onClick={startSocure} type="primary">
+              <Button
+                loading={loading}
+                onClick={() => {
+                  setError("");
+                  startSocure();
+                }}
+                type="primary"
+              >
                 Try Again
               </Button>
             }
