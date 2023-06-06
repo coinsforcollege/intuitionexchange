@@ -8,6 +8,43 @@ import { HandleError } from "util/axios/error-handler";
 
 import { IOnboardingForm } from "./index.page";
 
+interface SocureVerifyResult {
+  documentVerification: {
+    decision?: {
+      name: string;
+      value: "reject" | "accept";
+    };
+    documentData?: {
+      address?: string;
+      documentNumber?: string;
+      firstName?: string;
+      fullName?: string;
+      parsedAddress?: {
+        city?: string;
+        country?: string;
+        physicalAddress?: string;
+        postalCode?: string;
+        state?: string;
+      };
+      surName?: string;
+    };
+    documentType?: {
+      country?: string;
+      state?: string;
+      type?: string;
+    };
+  };
+  referenceId: string;
+}
+
+interface SocureResponse {
+  documentUuid: string;
+  key: string;
+  referenceId: string;
+  status: string;
+  verifyResult: SocureVerifyResult;
+}
+
 export default function OnboardingStep2({
   form,
   loading,
@@ -37,12 +74,22 @@ export default function OnboardingStep2({
     // document capture
     const config = {
       // onProgress: console.log, //callback method for reading the progress status
-      onSuccess: (response: { documentUuid: string; status: string }) => {
+      onSuccess: (response: SocureResponse) => {
+        console.log(response);
         if (response.status === "VERIFICATION_COMPLETE") {
-          setForm((prev) => ({
-            ...prev,
-            socureDocumentId: response.documentUuid,
-          }));
+          if (
+            response.verifyResult.documentVerification.decision?.value ===
+            "accept"
+          ) {
+            setForm((prev) => ({
+              ...prev,
+              socureDocumentId: response.documentUuid,
+            }));
+          } else {
+            setError(
+              "Apologies, but the documents you uploaded are not acceptable. Please try again or contact support"
+            );
+          }
         }
       },
       // onError: console.log, //callback method to read the error response
@@ -75,6 +122,7 @@ export default function OnboardingStep2({
     window.devicer.run(
       deviceFPOptions,
       function (response: { result: string; sessionId: string }) {
+        console.log(response);
         if (response.result === "Captured") {
           setForm((prev) => ({ ...prev, socureDeviceId: response.sessionId }));
         }
@@ -112,6 +160,11 @@ export default function OnboardingStep2({
             status="error"
             title="Something went wrong!"
             subTitle={error}
+            extra={
+              <Button loading={loading} onClick={startSocure} type="primary">
+                Try Again
+              </Button>
+            }
           />
         </Row>
       )}
@@ -121,6 +174,16 @@ export default function OnboardingStep2({
             status="success"
             title="Documents Uploaded!"
             subTitle="Click on finish to submit your application."
+            extra={
+              <Button
+                loading={loading}
+                disabled={!isDocumentUploaded}
+                onClick={onFinish}
+                type="primary"
+              >
+                Finish
+              </Button>
+            }
           />
         </Row>
       )}
@@ -144,14 +207,6 @@ export default function OnboardingStep2({
         <Space>
           <Button disabled={loading} type="dashed" onClick={onBack}>
             Back
-          </Button>
-          <Button
-            loading={loading}
-            disabled={!isDocumentUploaded}
-            type="primary"
-            onClick={onFinish}
-          >
-            Finish
           </Button>
         </Space>
       </Row>
