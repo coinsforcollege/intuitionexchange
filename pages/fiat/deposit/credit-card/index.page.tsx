@@ -1,4 +1,4 @@
-import { LeftOutlined } from "@ant-design/icons";
+import { DeleteOutlined, LeftOutlined } from "@ant-design/icons";
 import {
   Button,
   Card,
@@ -27,8 +27,10 @@ export function Page() {
   const router = useRouter();
   const [loading, setLoading] = React.useState(false);
   const { api: notification } = React.useContext(NotificationContext);
-  const { data, error, isLoading } = useSWR("/api/fiat/credit-cards", (url) =>
-    axiosInstance.user.get<ApiFiatCreditCard[]>(url).then((res) => res.data)
+  const { data, error, isLoading, mutate } = useSWR(
+    "/api/fiat/credit-cards",
+    (url) =>
+      axiosInstance.user.get<ApiFiatCreditCard[]>(url).then((res) => res.data)
   );
 
   if (error) {
@@ -49,7 +51,7 @@ export function Page() {
     );
   }
 
-  const onFinish = async (data: { amount: number; bank: string }) => {
+  const onFinish = async (data: { amount: number; card: string }) => {
     setLoading(true);
 
     await axiosInstance.user
@@ -62,6 +64,22 @@ export function Page() {
           query: { token: res.data.token },
         });
         setLoading(false);
+      })
+      .catch(HandleError(notification));
+
+    setLoading(false);
+  };
+
+  const remove = async (id: string) => {
+    setLoading(true);
+
+    await axiosInstance.user
+      .delete<{
+        message: string;
+      }>(`/api/fiat/credit-cards/${id}`)
+      .then((res) => {
+        mutate();
+        notification.success({ message: res.data.message });
       })
       .catch(HandleError(notification));
 
@@ -114,12 +132,27 @@ export function Page() {
                   },
                 ]}
               >
-                <Radio.Group>
+                <Radio.Group style={{ width: "100%" }}>
                   <Space direction="vertical">
                     {data.map((card, index) => (
-                      <Radio key={`bank-${index}`} value={card.id}>
-                        XXXX-XXXX-XXXX-{card.last_digits}
-                      </Radio>
+                      <div
+                        key={`bank-${index}`}
+                        style={{
+                          justifyContent: "space-between",
+                          width: "100%",
+                        }}
+                      >
+                        <Radio value={card.id}>
+                          XXXX-XXXX-XXXX-{card.last_digits}
+                        </Radio>
+                        <Button
+                          size="small"
+                          danger
+                          icon={<DeleteOutlined />}
+                          type="link"
+                          onClick={() => remove(card.id)}
+                        />
+                      </div>
                     ))}
                   </Space>
                 </Radio.Group>
