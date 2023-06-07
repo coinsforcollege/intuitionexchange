@@ -55,12 +55,8 @@ export interface ApiFiatWireInstructions {
 }
 
 export interface ApiFiatCreditCard {
-  creditCardBin: string;
-  creditCardExpirationDate: string;
-  creditCardName: string;
-  creditCardPostalCode: string;
-  creditCardType: string;
   id: string;
+  last_digits: string;
 }
 
 export interface ApiAssetTransaction {
