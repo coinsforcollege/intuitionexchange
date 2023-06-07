@@ -6,7 +6,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import { useRouter } from "next/router";
 import React from "react";
 import useSWR from "swr";
-import { OrderState, OrderType, P2POrderRecord } from "types";
+import { OrderBaseType, OrderState, OrderType, P2POrderRecord } from "types";
 import { axiosInstance } from "util/axios";
 import { PreciseCalculation } from "util/calculation";
 import { FormatCurrency } from "util/functions";
@@ -85,7 +85,8 @@ export function HistoryScreen() {
       key: "price",
       render: (_, t) => (
         <Typography style={{ fontSize: "12px" }}>
-          {FormatCurrency(PreciseCalculation.round(t.price))} USD
+          {FormatCurrency(PreciseCalculation.round(t.price))}{" "}
+          {t.base.type === OrderBaseType.Fiat ? t.base.currency : t.base.code}
         </Typography>
       ),
     },
