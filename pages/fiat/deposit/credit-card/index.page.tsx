@@ -118,7 +118,7 @@ export function Page() {
                   <Space direction="vertical">
                     {data.map((card, index) => (
                       <Radio key={`bank-${index}`} value={card.id}>
-                        xxxx-xxxx-xxxx-{card.last_digits}
+                        XXXX-XXXX-XXXX-{card.last_digits}
                       </Radio>
                     ))}
                   </Space>
