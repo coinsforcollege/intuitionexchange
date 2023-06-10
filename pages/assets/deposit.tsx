@@ -50,7 +50,7 @@ export function DepositScreen({
           <div
             style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
           >
-            {[...data, ...data].map((wallet, _index) => (
+            {data.map((wallet, _index) => (
               <div
                 key={`wallet-${_index}`}
                 style={{ display: "flex", gap: "0.5rem" }}
