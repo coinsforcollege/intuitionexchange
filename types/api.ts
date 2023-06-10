@@ -38,6 +38,7 @@ export interface ApiFiatTransaction {
 export interface ApiFiatBank {
   bankAccountName: string;
   id: string;
+  last4: string;
   routingNumber: string;
 }
 
@@ -85,11 +86,6 @@ export interface ApiAssetSummary {
   settled: number;
   settledCold: number;
   settledHot: number;
-}
-
-export interface ApiAssetDeposit {
-  assetId: string;
-  walletAddress: string;
 }
 
 export interface ApiAssetWithdraw {

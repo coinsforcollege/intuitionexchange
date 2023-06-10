@@ -1,5 +1,6 @@
-import { DeleteOutlined, LeftOutlined } from "@ant-design/icons";
+import { CloseOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import {
+  Alert,
   Button,
   Card,
   Form,
@@ -90,31 +91,26 @@ export function Page() {
     <>
       <div style={{ maxWidth: "800px", margin: "auto" }}>
         <Card
-          title={
-            <Space>
-              <Link href="/fiat/deposit">
-                <Button type="text">
-                  <LeftOutlined />
-                </Button>
-              </Link>
-              <Typography>Credit / Debit</Typography>
-            </Space>
-          }
+          title={<Typography>Deposit - Credit/Debit Card</Typography>}
           extra={
-            <Link href="/fiat/deposit/credit-card/add">
-              <Button>Add Credit / Debit</Button>
+            <Link href="/fiat/deposit">
+              <Button type="link">
+                <CloseOutlined />
+              </Button>
             </Link>
           }
         >
           {data.length === 0 && (
             <div>
-              <Space direction="vertical">
-                <Typography>
-                  In order for you to deposit funds to your account, you will
-                  need to register your credit / debit card details with us.
-                </Typography>
+              <Space direction="vertical" size={16}>
+                <Alert
+                  message="In order for you to withdraw assets from your account, you will need to register your external wallet details with us."
+                  type="info"
+                />
                 <Link href="/fiat/deposit/credit-card/add">
-                  <Button>Add Credit / Debit</Button>
+                  <Button htmlType="submit" style={{ width: "100%" }}>
+                    Add Wallet
+                  </Button>
                 </Link>
               </Space>
             </div>
@@ -132,16 +128,10 @@ export function Page() {
                   },
                 ]}
               >
-                <Radio.Group style={{ width: "100%" }}>
+                <Radio.Group>
                   <Space direction="vertical">
                     {data.map((card, index) => (
-                      <div
-                        key={`bank-${index}`}
-                        style={{
-                          justifyContent: "space-between",
-                          width: "100%",
-                        }}
-                      >
+                      <div key={`bank-${index}`}>
                         <Radio value={card.id}>
                           XXXX-XXXX-XXXX-{card.last_digits}
                         </Radio>
@@ -154,6 +144,18 @@ export function Page() {
                         />
                       </div>
                     ))}
+                    <div>
+                      <Link href="/fiat/deposit/credit-card/add">
+                        <Button
+                          size="small"
+                          style={{ color: "var(--color-primary)" }}
+                          type="link"
+                          icon={<PlusOutlined />}
+                        >
+                          Add new card
+                        </Button>
+                      </Link>
+                    </div>
                   </Space>
                 </Radio.Group>
               </Form.Item>

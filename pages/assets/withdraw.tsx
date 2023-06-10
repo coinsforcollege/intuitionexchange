@@ -1,4 +1,4 @@
-import { CloseOutlined } from "@ant-design/icons";
+import { CloseOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import {
   Alert,
   Button,
@@ -30,7 +30,7 @@ export function WithdrawScreen({
   const [loading, setLoading] = React.useState(false);
   const { api: notification } = React.useContext(NotificationContext);
 
-  const { data, error, isLoading } = useSWR(
+  const { data, error, isLoading, mutate } = useSWR(
     `/api/assets/withdraw/addresses?asset=${asset}`,
     (url) =>
       axiosInstance.user.get<ApiAssetWithdraw[]>(url).then((res) => res.data)
@@ -91,13 +91,29 @@ export function WithdrawScreen({
     setLoading(false);
   };
 
+  const remove = async (id: string) => {
+    setLoading(true);
+
+    await axiosInstance.user
+      .delete<{
+        message: string;
+      }>(`/api/assets/withdraw/addresses/${id}`)
+      .then((res) => {
+        mutate();
+        notification.success({ message: res.data.message });
+      })
+      .catch(HandleError(notification));
+
+    setLoading(false);
+  };
+
   return (
     <>
       <div style={{ maxWidth: "800px", margin: "auto" }}>
         <Card
           title={`Withdraw ${asset}`}
           extra={
-            <Button type="text" onClick={() => onClose()}>
+            <Button type="link" onClick={() => onClose()}>
               <CloseOutlined />
             </Button>
           }
@@ -135,10 +151,30 @@ export function WithdrawScreen({
                 <Radio.Group>
                   <Space direction="vertical">
                     {data.map((item, index) => (
-                      <Radio key={`bank-${index}`} value={item.id}>
-                        {item.walletAddress}
-                      </Radio>
+                      <div key={`bank-${index}`}>
+                        <Radio key={`bank-${index}`} value={item.id}>
+                          {item.walletAddress}
+                        </Radio>
+                        <Button
+                          size="small"
+                          danger
+                          icon={<DeleteOutlined />}
+                          type="link"
+                          onClick={() => remove(item.id)}
+                        />
+                      </div>
                     ))}
+                    <div>
+                      <Button
+                        size="small"
+                        style={{ color: "var(--color-primary)" }}
+                        type="link"
+                        icon={<PlusOutlined />}
+                        onClick={onAddWallet}
+                      >
+                        Add wallet
+                      </Button>
+                    </div>
                   </Space>
                 </Radio.Group>
               </Form.Item>
@@ -161,15 +197,6 @@ export function WithdrawScreen({
                   style={{ width: "100%" }}
                 >
                   Withdraw
-                </Button>
-              </Form.Item>
-              <Form.Item>
-                <Button
-                  htmlType="submit"
-                  style={{ width: "100%" }}
-                  onClick={() => onAddWallet()}
-                >
-                  Add Wallet
                 </Button>
               </Form.Item>
             </Form>

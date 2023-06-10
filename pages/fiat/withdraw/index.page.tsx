@@ -1,5 +1,6 @@
-import { LeftOutlined } from "@ant-design/icons";
+import { CloseOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import {
+  Alert,
   Button,
   Card,
   Form,
@@ -26,8 +27,9 @@ export function Page() {
   const [step, setStep] = React.useState(0);
   const [loading, setLoading] = React.useState(false);
   const { api: notification } = React.useContext(NotificationContext);
-  const { data, error, isLoading } = useSWR("/api/fiat/bank-accounts", (url) =>
-    axiosInstance.user.get<ApiFiatBank[]>(url).then((res) => res.data)
+  const { data, error, isLoading, mutate } = useSWR(
+    "/api/fiat/bank-accounts",
+    (url) => axiosInstance.user.get<ApiFiatBank[]>(url).then((res) => res.data)
   );
 
   if (error) {
@@ -67,36 +69,50 @@ export function Page() {
     setLoading(false);
   };
 
+  const remove = async (id: string) => {
+    setLoading(true);
+
+    await axiosInstance.user
+      .delete<{
+        message: string;
+      }>(`/api/fiat/bank-accounts/${id}`)
+      .then((res) => {
+        mutate();
+        notification.success({ message: res.data.message });
+      })
+      .catch(HandleError(notification));
+
+    setLoading(false);
+  };
+
   return (
     <>
       <div style={{ maxWidth: "800px", margin: "auto" }}>
         <Card
-          title={
-            <Space>
-              <Link href="/wallet">
-                <Button type="text">
-                  <LeftOutlined />
-                </Button>
-              </Link>
-              <Typography>Withdraw</Typography>
-            </Space>
-          }
+          title={<Typography>Withdraw</Typography>}
           extra={
-            <Link href="/fiat/add-bank">
-              <Button>Add Bank</Button>
+            <Link href="/wallet">
+              <Button type="link">
+                <CloseOutlined />
+              </Button>
             </Link>
           }
         >
           {step === 1 && <Result status="success" title="Request submitted!" />}
           {step === 0 && data.length === 0 && (
             <div>
-              <Space direction="vertical">
-                <Typography>
-                  In order for you to withdraw funds from your account to your
+              <Space direction="vertical" size={16}>
+                <Alert
+                  message="In order for you to withdraw funds from your account to your
                   bank account, you will need to register your bank details with
-                  us.
-                </Typography>
-                <Link href="/fiat/add-bank">Add Bank</Link>
+                  us."
+                  type="info"
+                />
+                <Link href="/fiat/withdraw/add-bank">
+                  <Button htmlType="submit" style={{ width: "100%" }}>
+                    Add Bank
+                  </Button>
+                </Link>
               </Space>
             </div>
           )}
@@ -116,10 +132,31 @@ export function Page() {
                 <Radio.Group>
                   <Space direction="vertical">
                     {data.map((bank, index) => (
-                      <Radio key={`bank-${index}`} value={bank.id}>
-                        {bank.routingNumber} - {bank.bankAccountName}
-                      </Radio>
+                      <div key={`bank-${index}`}>
+                        <Radio value={bank.id}>
+                          {bank.bankAccountName} (XXX-XXX-{bank.last4})
+                        </Radio>
+                        <Button
+                          size="small"
+                          danger
+                          icon={<DeleteOutlined />}
+                          type="link"
+                          onClick={() => remove(bank.id)}
+                        />
+                      </div>
                     ))}
+                    <div>
+                      <Link href="/fiat/withdraw/add-bank">
+                        <Button
+                          size="small"
+                          style={{ color: "var(--color-primary)" }}
+                          type="link"
+                          icon={<PlusOutlined />}
+                        >
+                          Add bank
+                        </Button>
+                      </Link>
+                    </div>
                   </Space>
                 </Radio.Group>
               </Form.Item>

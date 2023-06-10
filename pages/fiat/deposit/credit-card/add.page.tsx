@@ -1,5 +1,5 @@
-import { LeftOutlined } from "@ant-design/icons";
-import { Button, Card, Result, Space, Spin, Typography } from "antd";
+import { CloseOutlined } from "@ant-design/icons";
+import { Button, Card, Result, Spin, Typography } from "antd";
 import Footer from "components/footer";
 import Header from "components/header";
 import { NotificationContext } from "context/notification";
@@ -103,15 +103,16 @@ function Page() {
         }
       />
       <div className="container">
-        <Space style={{ paddingBottom: "20px" }}>
-          <Link href="/fiat/deposit/credit-card">
-            <Button type="text">
-              <LeftOutlined />
-            </Button>
-          </Link>
-          <Typography>Add Credit / Debit Card</Typography>
-        </Space>
-        <Card>
+        <Card
+          title={<Typography>Add - Credit/Debit Card</Typography>}
+          extra={
+            <Link href="/fiat/deposit/credit-card">
+              <Button type="link">
+                <CloseOutlined />
+              </Button>
+            </Link>
+          }
+        >
           <div id="verification" />
         </Card>
       </div>

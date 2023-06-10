@@ -1,7 +1,7 @@
 import {
   BankOutlined,
+  CloseOutlined,
   CreditCardOutlined,
-  LeftOutlined,
 } from "@ant-design/icons";
 import { Button, Card, Col, Row, Space, Typography } from "antd";
 import Footer from "components/footer";
@@ -16,15 +16,13 @@ export function Page() {
     <>
       <div style={{ maxWidth: "800px", margin: "auto" }}>
         <Card
-          title={
-            <Space>
-              <Link href="/wallet">
-                <Button type="text">
-                  <LeftOutlined />
-                </Button>
-              </Link>
-              <Typography>Deposit</Typography>
-            </Space>
+          title={<Typography>Deposit</Typography>}
+          extra={
+            <Link href="/wallet">
+              <Button type="link">
+                <CloseOutlined />
+              </Button>
+            </Link>
           }
         >
           <Row style={{ textAlign: "center" }}>

@@ -1,5 +1,5 @@
-import { LeftOutlined } from "@ant-design/icons";
-import { Button, Card, Form, Input, Result, Space, Typography } from "antd";
+import { CloseOutlined } from "@ant-design/icons";
+import { Button, Card, Form, Input, Result, Typography } from "antd";
 import Footer from "components/footer";
 import Header from "components/header";
 import { NotificationContext } from "context/notification";
@@ -44,15 +44,13 @@ export function Page() {
     <>
       <div style={{ maxWidth: "800px", margin: "auto" }}>
         <Card
-          title={
-            <Space>
-              <Link href="/fiat/withdraw">
-                <Button type="text">
-                  <LeftOutlined />
-                </Button>
-              </Link>
-              <Typography>Add Bank Account</Typography>
-            </Space>
+          title={<Typography>Add Bank Account</Typography>}
+          extra={
+            <Link href="/fiat/withdraw">
+              <Button type="link">
+                <CloseOutlined />
+              </Button>
+            </Link>
           }
         >
           {step === 1 && (

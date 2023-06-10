@@ -1,4 +1,4 @@
-import { LeftOutlined } from "@ant-design/icons";
+import { CloseOutlined } from "@ant-design/icons";
 import {
   Alert,
   Button,
@@ -6,7 +6,6 @@ import {
   Descriptions,
   Result,
   Skeleton,
-  Space,
   Typography,
 } from "antd";
 import Footer from "components/footer";
@@ -50,15 +49,13 @@ export function Page() {
     <>
       <div style={{ maxWidth: "800px", margin: "auto" }}>
         <Card
-          title={
-            <Space>
-              <Link href="/fiat/deposit">
-                <Button type="text">
-                  <LeftOutlined />
-                </Button>
-              </Link>
-              <Typography>Wire instructions</Typography>
-            </Space>
+          title={<Typography>Wire instructions</Typography>}
+          extra={
+            <Link href="/fiat/deposit">
+              <Button type="link">
+                <CloseOutlined />
+              </Button>
+            </Link>
           }
         >
           <div style={{ paddingBottom: "1rem" }}>

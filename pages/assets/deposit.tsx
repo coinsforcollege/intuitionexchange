@@ -1,9 +1,8 @@
-import { CloseOutlined, CopyOutlined } from "@ant-design/icons";
+import { CloseOutlined, CopyOutlined, WalletOutlined } from "@ant-design/icons";
 import { Button, Card, Result, Skeleton, Tooltip, Typography } from "antd";
 import { NotificationContext } from "context/notification";
 import React from "react";
 import useSWR from "swr";
-import { ApiAssetDeposit } from "types";
 import { axiosInstance } from "util/axios";
 
 export function DepositScreen({
@@ -16,8 +15,7 @@ export function DepositScreen({
   const { api: notification } = React.useContext(NotificationContext);
   const { data, error, isLoading } = useSWR(
     `/api/assets/wallet-address?asset=${asset}`,
-    (url) =>
-      axiosInstance.user.get<ApiAssetDeposit>(url).then((res) => res.data)
+    (url) => axiosInstance.user.get<string[]>(url).then((res) => res.data)
   );
 
   if (error) {
@@ -49,23 +47,33 @@ export function DepositScreen({
             </Button>
           }
         >
-          <div style={{ display: "flex" }}>
-            <Typography style={{ paddingRight: "8px" }}>
-              {data.walletAddress}
-            </Typography>
-            <a
-              onClick={() => {
-                window.navigator.clipboard.writeText(data.walletAddress);
-                notification.success({
-                  message: "wallet address copied",
-                  placement: "bottomLeft",
-                });
-              }}
-            >
-              <Tooltip title="copy">
-                <CopyOutlined />
-              </Tooltip>
-            </a>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+          >
+            {[...data, ...data].map((wallet, _index) => (
+              <div
+                key={`wallet-${_index}`}
+                style={{ display: "flex", gap: "0.5rem" }}
+              >
+                <WalletOutlined />
+                <Typography style={{ paddingRight: "8px" }}>
+                  {wallet}
+                </Typography>
+                <a
+                  onClick={() => {
+                    window.navigator.clipboard.writeText(wallet);
+                    notification.success({
+                      message: "wallet address copied",
+                      placement: "bottomLeft",
+                    });
+                  }}
+                >
+                  <Tooltip title="copy">
+                    <CopyOutlined />
+                  </Tooltip>
+                </a>
+              </div>
+            ))}
           </div>
         </Card>
       </div>
