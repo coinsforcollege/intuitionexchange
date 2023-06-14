@@ -68,14 +68,11 @@ export function FiatBalance() {
         }}
         extra={
           <Space>
-            <Link href="/fiat/deposit">
-              <Button>Deposit</Button>
+            <Link href="/wallet/transactions">
+              <Button>Transactions</Button>
             </Link>
-            <Link href="/fiat/withdraw">
-              <Button>Withdraw</Button>
-            </Link>
-            <Link href="/fiat/history">
-              <Button>Fiat History</Button>
+            <Link href="/wallet/transfers">
+              <Button type="primary">Funds</Button>
             </Link>
           </Space>
         }

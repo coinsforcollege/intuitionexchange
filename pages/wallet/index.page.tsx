@@ -4,8 +4,8 @@ import { UserAuthContextProvider } from "context/protect-route-user";
 import Head from "next/head";
 import React, { ReactElement } from "react";
 
-import { AssetBalance } from "./assets/balance";
-import { FiatBalance } from "./fiat/balance";
+import { AssetBalance } from "../assets/balance";
+import { FiatBalance } from "../fiat/balance";
 
 export function Page() {
   return (

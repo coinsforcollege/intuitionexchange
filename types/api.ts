@@ -21,6 +21,13 @@ export interface ApiFiatTotals {
   settled: number;
 }
 
+export interface ApiPagination<T> {
+  data: T[];
+  limit: number;
+  page: number;
+  totalPage: number;
+}
+
 export interface ApiFiatTransaction {
   amount: number;
   comments: string[];
@@ -33,6 +40,50 @@ export interface ApiFiatTransaction {
   settledAt: string;
   settledOn: string;
   specialType: string;
+}
+
+export interface ApiFiatTransfer {
+  amount: number;
+  createdAt: string;
+  currencyType: string;
+  disbursementStatus?: string;
+  fundsTransferType: string;
+  id: string;
+  reference: string;
+  status: string;
+  transferType: TransferType;
+  updatedAt: string;
+}
+
+export interface ApiAssetTransaction {
+  assetCode: string;
+  assetId: string;
+  assetTransactionType: string;
+  comments: string[];
+  createdAt: string;
+  currencyType: string;
+  effectiveAt: string;
+  id: string;
+  settledAt: string;
+  settledOn: string;
+  unitCount: number;
+}
+
+export enum TransferType {
+  Contribution = "contribution",
+  Disbursement = "disbursement",
+}
+
+export interface ApiAssetTransfer {
+  assetCode: string;
+  assetId: string;
+  assetTransferType: string;
+  createdAt: string;
+  disbursementStatus?: string;
+  id: string;
+  status: string;
+  transferType: TransferType;
+  unitCount: number;
 }
 
 export interface ApiFiatBank {
