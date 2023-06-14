@@ -16,14 +16,19 @@ import style from "./pairs.module.css";
 dayjs.extend(relativeTime);
 
 export function HistoryScreen() {
-  const { data: balances } = React.useContext(BalanceContext);
-  const [mode, setMode] = React.useState(OrderState.Open);
   const router = useRouter();
+  const { data: balances } = React.useContext(BalanceContext);
+
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(5);
+  const [mode, setMode] = React.useState(OrderState.Open);
 
   const { data, error, mutate } = useSWR(
-    `/p2p-order?state=${mode}`,
+    `/p2p-order?state=${mode}&page=${page}&limit=${pageSize}`,
     (url: string) =>
-      axiosInstance.user.get<P2POrderRecord[]>(url).then((res) => res.data),
+      axiosInstance.user
+        .get<{ data: P2POrderRecord[]; limit: number; total: number }>(url)
+        .then((res) => res.data),
     {
       refreshInterval: 15_000,
     }
@@ -150,7 +155,20 @@ export function HistoryScreen() {
             size="small"
             style={{ width: "100%", height: "400px", overflowY: "auto" }}
             pagination={{
-              pageSize: 6,
+              current: page,
+              showSizeChanger: true,
+              pageSizeOptions: [5, 10, 15, 20, 25],
+              pageSize: data?.limit,
+              total: data?.total,
+              onChange: (_page, _size) => {
+                if (page !== _page) {
+                  setPage(_page);
+                }
+
+                if (pageSize !== _size) {
+                  setPageSize(_size);
+                }
+              },
             }}
             rowKey={(t) => t.id}
             onRow={(record) => {
@@ -160,7 +178,7 @@ export function HistoryScreen() {
                 },
               };
             }}
-            dataSource={data}
+            dataSource={data?.data}
             columns={columns}
             locale={{
               emptyText: (

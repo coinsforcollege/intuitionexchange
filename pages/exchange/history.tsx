@@ -15,11 +15,15 @@ export function HistoryScreen() {
   const [mode, setMode] = React.useState<OrderState>(OrderState.Closed);
   const { data: balances } = React.useContext(BalanceContext);
   const [receipt, setReceipt] = React.useState("");
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(5);
 
   const { data, error, isLoading, mutate } = useSWR(
-    `/orders?state=${mode}`,
+    `/orders?state=${mode}&page=${page}&limit=${pageSize}`,
     (url: string) =>
-      axiosInstance.user.get<ApiOrder[]>(url).then((res) => res.data)
+      axiosInstance.user
+        .get<{ data: ApiOrder[]; limit: number; total: number }>(url)
+        .then((res) => res.data)
   );
 
   React.useEffect(() => {
@@ -210,10 +214,23 @@ export function HistoryScreen() {
             size="small"
             style={{ width: "100%", height: "400px", overflowY: "auto" }}
             pagination={{
-              pageSize: 6,
+              current: page,
+              showSizeChanger: true,
+              pageSizeOptions: [5, 10, 15, 20, 25],
+              pageSize: data?.limit,
+              total: data?.total,
+              onChange: (_page, _size) => {
+                if (page !== _page) {
+                  setPage(_page);
+                }
+
+                if (pageSize !== _size) {
+                  setPageSize(_size);
+                }
+              },
             }}
             rowKey={(t) => t.id}
-            dataSource={data}
+            dataSource={data.data}
             columns={columns}
             locale={{
               emptyText: (
