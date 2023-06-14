@@ -23,7 +23,7 @@ export function HistoryScreen() {
   const [pageSize, setPageSize] = React.useState(5);
   const [mode, setMode] = React.useState(OrderState.Open);
 
-  const { data, error, mutate } = useSWR(
+  const { data, error, mutate, isLoading } = useSWR(
     `/p2p-order?state=${mode}&page=${page}&limit=${pageSize}`,
     (url: string) =>
       axiosInstance.user
@@ -151,6 +151,7 @@ export function HistoryScreen() {
         </div>
         <div>
           <Table
+            loading={isLoading}
             className={style["table"]}
             size="small"
             style={{ width: "100%", height: "400px", overflowY: "auto" }}

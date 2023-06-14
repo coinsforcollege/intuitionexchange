@@ -1,5 +1,5 @@
 import { EyeOutlined } from "@ant-design/icons";
-import { Button, Card, Modal, Result, Skeleton, Table, Typography } from "antd";
+import { Button, Card, Modal, Result, Table, Typography } from "antd";
 import { ColumnsType } from "antd/es/table";
 import { BalanceContext } from "context/balance";
 import React from "react";
@@ -37,14 +37,6 @@ export function HistoryScreen() {
         status="error"
         title="An unexpected error has occurred, please reload the page"
       />
-    );
-  }
-
-  if (isLoading || !data) {
-    return (
-      <Card style={{ width: "100%" }}>
-        <Skeleton active />
-      </Card>
     );
   }
 
@@ -230,7 +222,8 @@ export function HistoryScreen() {
               },
             }}
             rowKey={(t) => t.id}
-            dataSource={data.data}
+            loading={isLoading}
+            dataSource={data?.data}
             columns={columns}
             locale={{
               emptyText: (
