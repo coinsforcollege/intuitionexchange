@@ -103,6 +103,7 @@ export function PairsScreen({
               .filter(
                 (pair) =>
                   pair !== selectedBase &&
+                  pair !== "ADA" &&
                   pair !== "USD" &&
                   pair.toLowerCase().startsWith(search)
               )
