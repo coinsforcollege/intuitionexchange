@@ -55,7 +55,7 @@ export default function OnboardingStep3({
         subTitle={
           isError || status.success !== 0
             ? "We were unable to authenticate the information provided by you. Please try again with correct identity details."
-            : "It can take upto 5 minutes to process the information you provided. You can refresh the page to check status of your account."
+            : "It can take up to 5 minutes to process the information you provided. Click on refresh to check status of your account."
         }
         extra={[
           <Space

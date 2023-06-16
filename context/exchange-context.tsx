@@ -24,8 +24,12 @@ export const ExchangeContext = React.createContext<ExchangeContext>(
 );
 
 export const ExchangeContextProvider = ({ children }: { children: any }) => {
-  const { data, error, mutate } = useSWR("/tickers/", (url) =>
-    axiosInstance.default.get<Pairs>(url).then((res) => res.data)
+  const { data, error, mutate } = useSWR(
+    "/tickers/",
+    (url) => axiosInstance.default.get<Pairs>(url).then((res) => res.data),
+    {
+      refreshInterval: 5000,
+    }
   );
 
   const refresh = async () => {
