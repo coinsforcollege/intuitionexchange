@@ -76,7 +76,18 @@ function ViewOrder(props: { orderId: string }) {
             justifyContent: "space-between",
           }}
         >
-          <Button type="text" onClick={() => router.push("/p2p")}>
+          <Button
+            type="text"
+            onClick={() =>
+              router.push(
+                `/p2p/${data.order.assetCode}-${
+                  data.order.base.type === OrderBaseType.Asset
+                    ? data.order.base.code
+                    : "USD"
+                }`
+              )
+            }
+          >
             <ArrowLeftOutlined />
             <span style={{ paddingLeft: "8px" }}>Go back</span>
           </Button>

@@ -65,7 +65,7 @@ export function Page() {
               InTuition Exchange Gives 10% of Its Net Revenue to Support College
               Education for Students through Tuition Coins ($TUIT)
             </Typography.Title>
-            <Link href="/p2p?pair=TUIT-USD">
+            <Link href="/p2p/TUIT-USD">
               <Button type="primary" size="large">
                 Buy TUIT
               </Button>

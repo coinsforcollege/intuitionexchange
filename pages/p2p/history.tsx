@@ -175,7 +175,7 @@ export function HistoryScreen() {
             onRow={(record) => {
               return {
                 onClick: () => {
-                  router.push(`/p2p/${record.id}`);
+                  router.push(`/p2p/order/${record.id}`);
                 },
               };
             }}

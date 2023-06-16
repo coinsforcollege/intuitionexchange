@@ -1,4 +1,4 @@
-import { Col, Row } from "antd";
+import { Col, Row, Spin } from "antd";
 import Footer from "components/footer";
 import Header, { HeaderKey } from "components/header";
 import { ExchangeContextProvider } from "context/exchange-context";
@@ -16,25 +16,28 @@ import { VolumeScreen } from "./volume";
 
 export function Page() {
   const router = useRouter();
-  const [asset, setAsset] = React.useState("BTC");
   const [selectedBase, setSelectedBase] = React.useState("USD");
-  const [baseAsset, setBaseAsset] = React.useState("USD");
   const [orderType, setOrderType] = React.useState<OrderType>(OrderType.Buy);
   const [unit, setUnit] = React.useState(0);
   const [price, setPrice] = React.useState(0);
 
+  const pair = String(router.query.pair);
+  const [asset, baseAsset] = pair.split("-");
+
   React.useEffect(() => {
-    if (router.isReady) {
-      if (typeof router.query.pair === "string") {
-        const [asset, base] = router.query.pair.split("-");
-        if (asset !== undefined && base !== undefined) {
-          setAsset(asset.toUpperCase());
-          setBaseAsset(base.toUpperCase());
-          setSelectedBase(base.toUpperCase());
-        }
-      }
+    if (baseAsset && selectedBase !== baseAsset) {
+      setSelectedBase(baseAsset);
     }
-  }, [router.isReady]);
+  }, [baseAsset]);
+
+  if (!asset || !baseAsset) {
+    router.replace("BTC-USD");
+    return (
+      <div style={{ textAlign: "center", padding: "10rem 0" }}>
+        <Spin />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -43,10 +46,11 @@ export function Page() {
           <PairsScreen
             selectedBase={selectedBase}
             setSelectedBase={setSelectedBase}
-            base={baseAsset}
-            setBase={setBaseAsset}
             asset={asset}
-            setAsset={setAsset}
+            base={baseAsset}
+            setPair={(a, b) => {
+              router.push(`${a}-${b}`);
+            }}
           />
         </Col>
         <Col xs={24} lg={10} xxl={12}>

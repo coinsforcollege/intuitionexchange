@@ -12,15 +12,13 @@ export function PairsScreen({
   asset,
   base,
   selectedBase,
-  setBase,
-  setAsset,
+  setPair,
   setSelectedBase,
 }: {
   asset: string;
   base: string;
   selectedBase: string;
-  setAsset: React.Dispatch<React.SetStateAction<string>>;
-  setBase: React.Dispatch<React.SetStateAction<string>>;
+  setPair: (a: string, b: string) => void;
   setSelectedBase: React.Dispatch<React.SetStateAction<string>>;
 }) {
   const router = useRouter();
@@ -119,8 +117,7 @@ export function PairsScreen({
                   href="/p2p"
                   onClick={(e) => {
                     e.preventDefault();
-                    setAsset(pair);
-                    setBase(selectedBase);
+                    setPair(pair, selectedBase);
                     router.replace({
                       query: {
                         pair: `${pair}-${selectedBase}`,

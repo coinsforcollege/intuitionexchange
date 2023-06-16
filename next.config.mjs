@@ -10,6 +10,20 @@ const nextConfig = {
     NEXT_PUBLIC_API_URL:
       process.env.NEXT_PUBLIC_API_URL || "https://api.intuitionexchange.com",
   },
+  async redirects() {
+    return [
+      {
+        source: "/exchange",
+        destination: "/exchange/BTC-USD",
+        permanent: true,
+      },
+      {
+        source: "/p2p",
+        destination: "/p2p/BTC-USD",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
