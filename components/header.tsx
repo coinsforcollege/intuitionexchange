@@ -282,7 +282,7 @@ export default function Header(props: {
               </Space>
             </div>
           </div>
-          {user?.primeTrustAccountStatus === "frozen" && (
+          {user?.ptFreeze && (
             <Alert
               showIcon
               style={{ marginTop: "1rem" }}
