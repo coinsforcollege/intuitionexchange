@@ -8,7 +8,7 @@ export interface ApiUserInfo {
   middleName?: string;
   phone: string;
   phoneCountry: string;
-  primeTrustAccountStatus: boolean;
+  primeTrustAccountStatus: string;
 }
 
 export interface ApiFiatTotals {

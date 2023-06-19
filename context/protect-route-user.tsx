@@ -1,4 +1,3 @@
-import { ClosedAccountComponent } from "components/closed-account";
 import { NotFoundComponent } from "components/not-found";
 import { useRouter } from "next/router";
 import React from "react";
@@ -49,10 +48,6 @@ export const UserAuthContextProvider = ({
 
   if (isAdmin && !(user.flags & Flags.Admin)) {
     return <NotFoundComponent />;
-  }
-
-  if (!user.primeTrustAccountStatus) {
-    return <ClosedAccountComponent />;
   }
 
   return (

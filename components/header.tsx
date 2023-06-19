@@ -2,6 +2,7 @@ import { BulbOutlined, LogoutOutlined, UserOutlined } from "@ant-design/icons";
 import { css } from "@emotion/css";
 import { Icon } from "@iconify/react";
 import {
+  Alert,
   Avatar,
   Button,
   Drawer,
@@ -281,6 +282,28 @@ export default function Header(props: {
               </Space>
             </div>
           </div>
+          {user?.primeTrustAccountStatus === "frozen" && (
+            <Alert
+              showIcon
+              style={{ marginTop: "1rem" }}
+              type="warning"
+              message={
+                <>
+                  <b>Trading and deposits are temporarily suspended</b>. You can
+                  still withdraw existing fiat and cryptocurrency funds. Thank
+                  you for your patience. For further assistance, please{" "}
+                  <Link
+                    href="https://support.intuitionexchange.com"
+                    target="_blank"
+                  >
+                    contact support
+                  </Link>
+                  .
+                </>
+              }
+              closable
+            />
+          )}
         </div>
       </div>
     </>
