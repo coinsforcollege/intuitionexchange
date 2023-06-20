@@ -32,37 +32,52 @@ export function P2POrderTransactions({ order }: Props) {
   return (
     <Card>
       <Typography.Title level={4} style={{ textAlign: "center" }}>
-        Trade details
+        Transactions
       </Typography.Title>
-      <div>
-        {data.data.map((tx) => (
-          <div key={tx._id}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "1rem",
-                paddingTop: "1rem",
-              }}
-            >
-              <div style={{ fontSize: "24px", color: "#00B81D" }}>
-                <CheckOutlined />
+      {data.data.length === 0 && (
+        <div>
+          <Typography
+            style={{
+              paddingTop: "2rem",
+              color: "var(--color-text-l3)",
+              textAlign: "center",
+            }}
+          >
+            No records to display
+          </Typography>
+        </div>
+      )}
+      {data.data.length > 0 && (
+        <div>
+          {data.data.map((tx) => (
+            <div key={tx._id}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "1rem",
+                  paddingTop: "1rem",
+                }}
+              >
+                <div style={{ fontSize: "24px", color: "#00B81D" }}>
+                  <CheckOutlined />
+                </div>
+                <Typography style={{ flexGrow: 1, fontWeight: "500" }}>
+                  {tx.executedQuantity} {order.assetCode} for a total of{" "}
+                  {tx.executedPrice}{" "}
+                  {order.base.type === OrderBaseType.Fiat
+                    ? order.base.currency
+                    : order.base.code}
+                </Typography>
+                <Typography style={{ fontSize: "12px" }}>
+                  {dayjs(tx.createdAt).format("MMMM DD, YYYY")} at{" "}
+                  {dayjs(tx.createdAt).format("hh:mm A")}
+                </Typography>
               </div>
-              <Typography style={{ flexGrow: 1, fontWeight: "500" }}>
-                {tx.executedQuantity} {order.assetCode} for a total of{" "}
-                {tx.executedPrice}{" "}
-                {order.base.type === OrderBaseType.Fiat
-                  ? order.base.currency
-                  : order.base.code}
-              </Typography>
-              <Typography style={{ fontSize: "12px" }}>
-                {dayjs(tx.createdAt).format("MMMM DD, YYYY")} at{" "}
-                {dayjs(tx.createdAt).format("hh:mm A")}
-              </Typography>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </Card>
   );
 }
