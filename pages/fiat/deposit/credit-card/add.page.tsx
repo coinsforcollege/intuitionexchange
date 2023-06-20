@@ -106,8 +106,8 @@ function Page() {
         <Card
           title={<Typography>Add - Credit/Debit Card</Typography>}
           extra={
-            <Link href="/fiat/deposit/credit-card">
-              <Button type="link">
+            <Link href="/fiat/deposit/credit-card" style={{ color: "inherit" }}>
+              <Button type="text">
                 <CloseOutlined />
               </Button>
             </Link>

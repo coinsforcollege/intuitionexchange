@@ -3,6 +3,7 @@ import {
   CloseOutlined,
   CreditCardOutlined,
 } from "@ant-design/icons";
+import { css } from "@emotion/css";
 import { Button, Card, Col, Row, Space, Typography } from "antd";
 import Footer from "components/footer";
 import Header from "components/header";
@@ -18,8 +19,8 @@ export function Page() {
         <Card
           title={<Typography>Deposit</Typography>}
           extra={
-            <Link href="/wallet">
-              <Button type="link">
+            <Link href="/wallet" style={{ color: "inherit" }}>
+              <Button type="text">
                 <CloseOutlined />
               </Button>
             </Link>
@@ -27,7 +28,10 @@ export function Page() {
         >
           <Row style={{ textAlign: "center" }}>
             <Col xs={24} sm={12}>
-              <Link href="/fiat/deposit/wire">
+              <Link
+                href="/fiat/deposit/wire"
+                className={css({ color: "inherit" })}
+              >
                 <Space direction="vertical">
                   <BankOutlined style={{ fontSize: "3rem" }} />
                   <Typography>Wire</Typography>
@@ -35,7 +39,10 @@ export function Page() {
               </Link>
             </Col>
             <Col xs={24} sm={12}>
-              <Link href="/fiat/deposit/credit-card">
+              <Link
+                href="/fiat/deposit/credit-card"
+                className={css({ color: "inherit" })}
+              >
                 <Space direction="vertical">
                   <CreditCardOutlined style={{ fontSize: "3rem" }} />
                   <Typography>Credit / Debit Card</Typography>

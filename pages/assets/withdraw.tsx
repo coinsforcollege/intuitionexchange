@@ -11,6 +11,7 @@ import {
   Space,
 } from "antd";
 import { NotificationContext } from "context/notification";
+import Link from "next/link";
 import React from "react";
 import useSWR from "swr";
 import { ApiAssetWithdraw } from "types";
@@ -59,7 +60,12 @@ export function WithdrawScreen({
       <Result
         style={{ width: "100%" }}
         status="success"
-        title="Withdraw requested"
+        title="Disbursement authorization email has been sent to your registered email address"
+        extra={
+          <Link href="/wallet/transfers">
+            <Button type="primary">Check Transfer Status</Button>
+          </Link>
+        }
       />
     );
   }
@@ -113,7 +119,7 @@ export function WithdrawScreen({
         <Card
           title={`Withdraw ${asset}`}
           extra={
-            <Button type="link" onClick={() => onClose()}>
+            <Button type="text" onClick={() => onClose()}>
               <CloseOutlined />
             </Button>
           }

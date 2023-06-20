@@ -46,8 +46,8 @@ export function Page() {
         <Card
           title={<Typography>Add Bank Account</Typography>}
           extra={
-            <Link href="/fiat/withdraw">
-              <Button type="link">
+            <Link href="/fiat/withdraw" style={{ color: "inherit" }}>
+              <Button type="text">
                 <CloseOutlined />
               </Button>
             </Link>

@@ -174,7 +174,7 @@ export function FiatTransfers() {
               Deposit
             </Button>
           </Link>
-          <Link href="/fiat/withdraw">
+          <Link href="/fiat/withdraw" style={{ color: "inherit" }}>
             <Button>Withdraw</Button>
           </Link>
         </Space>

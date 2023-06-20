@@ -176,7 +176,7 @@ function Page() {
               <Tooltip title="Resend verification code">
                 <Button
                   shape="circle"
-                  type="link"
+                  type="text"
                   icon={<ReloadOutlined />}
                   onClick={resendPhoneOTP}
                 />

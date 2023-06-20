@@ -91,14 +91,24 @@ export function Page() {
         <Card
           title={<Typography>Withdraw</Typography>}
           extra={
-            <Link href="/wallet">
-              <Button type="link">
+            <Link href="/wallet" style={{ color: "inherit" }}>
+              <Button type="text">
                 <CloseOutlined />
               </Button>
             </Link>
           }
         >
-          {step === 1 && <Result status="success" title="Request submitted!" />}
+          {step === 1 && (
+            <Result
+              status="success"
+              title="Disbursement authorization email has been sent to your registered email address"
+              extra={
+                <Link href="/wallet/transfers">
+                  <Button type="primary">Check Transfer Status</Button>
+                </Link>
+              }
+            />
+          )}
           {step === 0 && data.length === 0 && (
             <div>
               <Space direction="vertical" size={16}>

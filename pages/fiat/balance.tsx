@@ -68,7 +68,7 @@ export function FiatBalance() {
         }}
         extra={
           <Space>
-            <Link href="/wallet/transactions">
+            <Link style={{ color: "inherit" }} href="/wallet/transactions">
               <Button>Transactions</Button>
             </Link>
             <Link href="/wallet/transfers">

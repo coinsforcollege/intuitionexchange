@@ -1,7 +1,6 @@
 import {
   ArrowLeftOutlined,
   CheckCircleOutlined,
-  CheckOutlined,
   InfoCircleFilled,
   LoadingOutlined,
 } from "@ant-design/icons";
@@ -17,14 +16,11 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import React, { ReactElement } from "react";
 import useSWR from "swr";
-import {
-  OrderBaseType,
-  OrderState,
-  P2POrderRecord,
-  P2PTransaction,
-} from "types";
+import { OrderBaseType, OrderState, P2POrderRecord } from "types";
 import { axiosInstance } from "util/axios";
 import { HandleError } from "util/axios/error-handler";
+
+import { P2POrderTransactions } from "./transactions";
 
 function ViewOrder(props: { orderId: string }) {
   const [loading, setLoading] = React.useState(false);
@@ -34,9 +30,7 @@ function ViewOrder(props: { orderId: string }) {
   const { data, error, mutate } = useSWR(
     `/p2p-order/${props.orderId}`,
     (url: string) =>
-      axiosInstance.user
-        .get<{ order: P2POrderRecord; transactions: P2PTransaction[] }>(url)
-        .then((res) => res.data),
+      axiosInstance.user.get<P2POrderRecord>(url).then((res) => res.data),
     { refreshInterval: 15_000 }
   );
 
@@ -80,9 +74,9 @@ function ViewOrder(props: { orderId: string }) {
             type="text"
             onClick={() =>
               router.push(
-                `/p2p/${data.order.assetCode}-${
-                  data.order.base.type === OrderBaseType.Asset
-                    ? data.order.base.code
+                `/p2p/${data.assetCode}-${
+                  data.base.type === OrderBaseType.Asset
+                    ? data.base.code
                     : "USD"
                 }`
               )
@@ -91,7 +85,7 @@ function ViewOrder(props: { orderId: string }) {
             <ArrowLeftOutlined />
             <span style={{ paddingLeft: "8px" }}>Go back</span>
           </Button>
-          {data.order.status === OrderState.Open && (
+          {data.status === OrderState.Open && (
             <Button
               type="text"
               danger
@@ -104,96 +98,58 @@ function ViewOrder(props: { orderId: string }) {
         </div>
         <div style={{ display: "flex", alignItems: "center" }}>
           <Typography style={{ flexGrow: 1, fontSize: "12px" }}>
-            {data.order.orderType}{" "}
+            {data.orderType}{" "}
             <b>
-              {data.order.quantity} {data.order.assetCode}{" "}
+              {data.quantity} {data.assetCode}{" "}
             </b>
             at{" "}
             <b>
-              {data.order.price}{" "}
-              {data.order.base.type === OrderBaseType.Fiat
-                ? data.order.base.currency
-                : data.order.base.code}{" "}
+              {data.price}{" "}
+              {data.base.type === OrderBaseType.Fiat
+                ? data.base.currency
+                : data.base.code}{" "}
             </b>
-            at {dayjs(data.order.createdAt).format("MMMM DD, YYYY")} at{" "}
-            {dayjs(data.order.createdAt).format("hh:mm A")}
+            at {dayjs(data.createdAt).format("MMMM DD, YYYY")} at{" "}
+            {dayjs(data.createdAt).format("hh:mm A")}
           </Typography>
           <Typography style={{ fontSize: "12px" }}>
-            Order ID: {data.order.id}
+            Order ID: {data.id}
           </Typography>
         </div>
         <Card style={{ textAlign: "center" }}>
           <Space direction="vertical" size="small">
-            {data.order.status === OrderState.Open && (
+            {data.status === OrderState.Open && (
               <div style={{ fontSize: "64px", color: "#14A9FF" }}>
                 <LoadingOutlined />
               </div>
             )}
-            {data.order.status === OrderState.Closed && (
+            {data.status === OrderState.Closed && (
               <div style={{ fontSize: "64px", color: "#777777" }}>
                 <InfoCircleFilled />
               </div>
             )}
-            {data.order.status === OrderState.Completed && (
+            {data.status === OrderState.Completed && (
               <div style={{ fontSize: "64px", color: "#00B81D" }}>
                 <CheckCircleOutlined />
               </div>
             )}
             <Typography.Title level={4}>
-              {data.order.status === OrderState.Open
+              {data.status === OrderState.Open
                 ? "Matching your order"
-                : data.order.status === OrderState.Closed
+                : data.status === OrderState.Closed
                 ? "Order Closed"
                 : "Trade completed!"}
             </Typography.Title>
-            {data.order.reason && (
-              <Typography style={{ color: "orange" }}>
-                {data.order.reason}
-              </Typography>
+            {data.reason && (
+              <Typography style={{ color: "orange" }}>{data.reason}</Typography>
             )}
             <Typography style={{ fontSize: "12px" }}>
-              Order created on{" "}
-              {dayjs(data.order.createdAt).format("MMMM DD, YYYY")} at{" "}
-              {dayjs(data.order.createdAt).format("hh:mm A")}
+              Order created on {dayjs(data.createdAt).format("MMMM DD, YYYY")}{" "}
+              at {dayjs(data.createdAt).format("hh:mm A")}
             </Typography>
           </Space>
         </Card>
-        {data.transactions.length > 0 && (
-          <Card>
-            <Typography.Title level={4} style={{ textAlign: "center" }}>
-              Trade details
-            </Typography.Title>
-            <div>
-              {data.transactions.map((tx) => (
-                <div key={tx._id}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "1rem",
-                      paddingTop: "1rem",
-                    }}
-                  >
-                    <div style={{ fontSize: "24px", color: "#00B81D" }}>
-                      <CheckOutlined />
-                    </div>
-                    <Typography style={{ flexGrow: 1, fontWeight: "500" }}>
-                      {tx.executedQuantity} {data.order.assetCode} for a total
-                      of {tx.executedPrice}{" "}
-                      {data.order.base.type === OrderBaseType.Fiat
-                        ? data.order.base.currency
-                        : data.order.base.code}
-                    </Typography>
-                    <Typography style={{ fontSize: "12px" }}>
-                      {dayjs(tx.createdAt).format("MMMM DD, YYYY")} at{" "}
-                      {dayjs(tx.createdAt).format("hh:mm A")}
-                    </Typography>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
+        <P2POrderTransactions order={data} />
       </Space>
     </div>
   );
