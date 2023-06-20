@@ -115,7 +115,7 @@ function Page() {
                     <Checkbox>Remember me</Checkbox>
                   </Form.Item>
                   <Form.Item>
-                    <Link href="/reset">Forget password</Link>
+                    <Link href="/reset">Forgot password</Link>
                   </Form.Item>
                 </div>
 
