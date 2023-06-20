@@ -1,5 +1,6 @@
 import { CheckOutlined } from "@ant-design/icons";
-import { Card, Result, Typography } from "antd";
+import { css } from "@emotion/css";
+import { Card, Pagination, Result, Typography } from "antd";
 import LoadingScreen from "components/loading-screen";
 import dayjs from "dayjs";
 import React from "react";
@@ -12,11 +13,19 @@ interface Props {
 }
 
 export function P2POrderTransactions({ order }: Props) {
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(25);
+
   const { data, error } = useSWR(
-    `/p2p-order/${order.id}/transactions`,
+    `/p2p-order/${order.id}/transactions?limit=${pageSize}&page=${page}`,
     (url: string) =>
       axiosInstance.user
-        .get<{ data: P2PTransaction[]; limit: number; page: number }>(url)
+        .get<{
+          data: P2PTransaction[];
+          limit: number;
+          page: number;
+          total: number;
+        }>(url)
         .then((res) => res.data),
     { refreshInterval: 15_000 }
   );
@@ -76,6 +85,24 @@ export function P2POrderTransactions({ order }: Props) {
               </div>
             </div>
           ))}
+          <div className={css({ paddingTop: "1rem", textAlign: "end" })}>
+            <Pagination
+              showSizeChanger
+              current={page}
+              total={data.total}
+              pageSize={pageSize}
+              pageSizeOptions={[5, 10, 15, 25, 50]}
+              onChange={(_page, _size) => {
+                if (page !== _page) {
+                  setPage(_page);
+                }
+
+                if (pageSize !== _size) {
+                  setPageSize(_size);
+                }
+              }}
+            />
+          </div>
         </div>
       )}
     </Card>
