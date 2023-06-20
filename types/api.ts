@@ -205,6 +205,7 @@ export interface P2POrderRecord {
   assetCode: string;
   assetId: string;
   assetName: string;
+  averagePrice: string;
   base: P2POrderBaseCurrency | P2POrderBaseAsset;
   createdAt: string;
   id: string;
@@ -214,6 +215,8 @@ export interface P2POrderRecord {
   quantityRemaining: number;
   reason?: string;
   status: OrderState;
+  totalPrice: number;
+  totalQuantity: number;
   updatedAt: string;
 }
 

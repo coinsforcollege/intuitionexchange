@@ -147,6 +147,16 @@ function ViewOrder(props: { orderId: string }) {
               Order created on {dayjs(data.createdAt).format("MMMM DD, YYYY")}{" "}
               at {dayjs(data.createdAt).format("hh:mm A")}
             </Typography>
+            <Typography.Title level={4}>
+              Sold {data.totalQuantity} {data.assetCode} for {data.totalPrice}{" "}
+              {data.base.type === OrderBaseType.Fiat
+                ? data.base.currency
+                : data.base.code}{" "}
+              (Average Price: {data.averagePrice})
+            </Typography.Title>
+            <Typography>
+              Remaining quantity: {data.quantityRemaining} {data.assetCode}
+            </Typography>
           </Space>
         </Card>
         <P2POrderTransactions order={data} />

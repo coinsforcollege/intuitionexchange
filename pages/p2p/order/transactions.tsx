@@ -14,7 +14,7 @@ interface Props {
 
 export function P2POrderTransactions({ order }: Props) {
   const [page, setPage] = React.useState(1);
-  const [pageSize, setPageSize] = React.useState(25);
+  const [pageSize, setPageSize] = React.useState(10);
 
   const { data, error } = useSWR(
     `/p2p-order/${order.id}/transactions?limit=${pageSize}&page=${page}`,
