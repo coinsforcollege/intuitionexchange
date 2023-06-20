@@ -70,8 +70,8 @@ export function FiatTransactions() {
         current: page,
         showSizeChanger: true,
         pageSizeOptions: [5, 10, 15, 20, 25],
-        pageSize: data?.limit,
-        total: data?.totalPage,
+        pageSize: data?.limit ?? 0,
+        total: (data?.totalPage ?? 0) * (data?.limit ?? 0),
         onChange: (_page, _size) => {
           if (page !== _page) {
             setPage(_page);
