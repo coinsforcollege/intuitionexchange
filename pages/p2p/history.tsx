@@ -1,4 +1,5 @@
-import { Card, Result, Table, Typography } from "antd";
+import { css } from "@emotion/css";
+import { Card, Pagination, Result, Table, Typography } from "antd";
 import { ColumnsType } from "antd/es/table";
 import { BalanceContext } from "context/balance";
 import dayjs from "dayjs";
@@ -149,28 +150,17 @@ export function HistoryScreen() {
             </label>
           </div>
         </div>
-        <div>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           <Table
             loading={isLoading}
             className={style["table"]}
             size="small"
-            style={{ width: "100%", height: "400px", overflowY: "auto" }}
-            pagination={{
-              current: page,
-              showSizeChanger: true,
-              pageSizeOptions: [5, 10, 15, 20, 25],
-              pageSize: data?.limit,
-              total: data?.total,
-              onChange: (_page, _size) => {
-                if (page !== _page) {
-                  setPage(_page);
-                }
-
-                if (pageSize !== _size) {
-                  setPageSize(_size);
-                }
-              },
-            }}
+            style={{ width: "100%", height: "350px", overflowY: "auto" }}
             rowKey={(t) => t.id}
             onRow={(record) => {
               return {
@@ -179,6 +169,7 @@ export function HistoryScreen() {
                 },
               };
             }}
+            pagination={{ pageSize: pageSize, hideOnSinglePage: true }}
             dataSource={data?.data}
             columns={columns}
             locale={{
@@ -192,6 +183,23 @@ export function HistoryScreen() {
                   No records to display
                 </Typography>
               ),
+            }}
+          />
+          <Pagination
+            className={css({ padding: "8px", textAlign: "end" })}
+            current={page}
+            showSizeChanger={true}
+            pageSizeOptions={[5, 10, 15, 20, 25]}
+            pageSize={data?.limit ?? 0}
+            total={data?.total ?? 0}
+            onChange={(_page, _size) => {
+              if (page !== _page) {
+                setPage(_page);
+              }
+
+              if (pageSize !== _size) {
+                setPageSize(_size);
+              }
             }}
           />
         </div>

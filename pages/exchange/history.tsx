@@ -1,5 +1,14 @@
 import { EyeOutlined } from "@ant-design/icons";
-import { Button, Card, Modal, Result, Table, Typography } from "antd";
+import { css } from "@emotion/css";
+import {
+  Button,
+  Card,
+  Modal,
+  Pagination,
+  Result,
+  Table,
+  Typography,
+} from "antd";
 import { ColumnsType } from "antd/es/table";
 import { BalanceContext } from "context/balance";
 import React from "react";
@@ -205,22 +214,7 @@ export function HistoryScreen() {
             className={style["table"]}
             size="small"
             style={{ width: "100%", height: "400px", overflowY: "auto" }}
-            pagination={{
-              current: page,
-              showSizeChanger: true,
-              pageSizeOptions: [5, 10, 15, 20, 25],
-              pageSize: data?.limit,
-              total: data?.total,
-              onChange: (_page, _size) => {
-                if (page !== _page) {
-                  setPage(_page);
-                }
-
-                if (pageSize !== _size) {
-                  setPageSize(_size);
-                }
-              },
-            }}
+            pagination={{ pageSize: pageSize, hideOnSinglePage: true }}
             rowKey={(t) => t.id}
             loading={isLoading}
             dataSource={data?.data}
@@ -233,6 +227,23 @@ export function HistoryScreen() {
                   No records to display
                 </Typography>
               ),
+            }}
+          />
+          <Pagination
+            className={css({ padding: "8px", textAlign: "end" })}
+            current={page}
+            showSizeChanger={true}
+            pageSizeOptions={[5, 10, 15, 20, 25]}
+            pageSize={data?.limit ?? 0}
+            total={data?.total ?? 0}
+            onChange={(_page, _size) => {
+              if (page !== _page) {
+                setPage(_page);
+              }
+
+              if (pageSize !== _size) {
+                setPageSize(_size);
+              }
             }}
           />
         </div>
