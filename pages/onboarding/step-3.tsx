@@ -1,8 +1,8 @@
+import { css } from "@emotion/css";
 import { Button, Result, Row, Space, Spin } from "antd";
 import { NotificationContext } from "context/notification";
 import { OnboardingAuthContext } from "context/protect-route-onboarding";
 import React from "react";
-import { useEffectOnce } from "usehooks-ts";
 import { axiosInstance } from "util/axios";
 import { HandleError } from "util/axios/error-handler";
 
@@ -61,6 +61,7 @@ export default function OnboardingStep2({
   onFinish: () => void;
   setForm: React.Dispatch<React.SetStateAction<IOnboardingForm>>;
 }) {
+  const [start, setStart] = React.useState(false);
   const [error, setError] = React.useState("");
   const { user } = React.useContext(OnboardingAuthContext);
   const { api: notification } = React.useContext(NotificationContext);
@@ -134,6 +135,8 @@ export default function OnboardingStep2({
   };
 
   const startSocure = async () => {
+    setStart(true);
+
     setForm((prev) => ({
       ...prev,
       socureDeviceId: "",
@@ -151,13 +154,9 @@ export default function OnboardingStep2({
       .catch(HandleError(notification));
   };
 
-  useEffectOnce(() => {
-    startSocure();
-  });
-
-  return (
-    <>
-      {error.length > 0 && (
+  function GetScreen() {
+    if (error.length > 0) {
+      return (
         <Row style={{ justifyContent: "center" }}>
           <Result
             status="error"
@@ -177,8 +176,9 @@ export default function OnboardingStep2({
             }
           />
         </Row>
-      )}
-      {error.length === 0 && isDocumentUploaded && (
+      );
+    } else if (isDocumentUploaded) {
+      return (
         <Row style={{ justifyContent: "center" }}>
           <Result
             status="success"
@@ -196,8 +196,126 @@ export default function OnboardingStep2({
             }
           />
         </Row>
-      )}
-      {error.length === 0 && !isDocumentUploaded && (
+      );
+    } else if (!start) {
+      return (
+        <Row
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexDirection: "column",
+            gap: "1rem",
+          }}
+        >
+          <h2>Things to keep in mind during the verification process:</h2>
+          <ul
+            className={css({
+              listStyle: "none",
+            })}
+          >
+            <li>
+              <span role="img" aria-label="checkmark">
+                &#10004;
+              </span>
+              Camera for image capture has a minimum of 5 megapixels.
+            </li>
+            <li>
+              <span role="img" aria-label="cross">
+                &#10060;
+              </span>
+              Camera resolution is too low or camera is out of focus, lens is
+              not clean.
+            </li>
+            <br />
+            <li>
+              <span role="img" aria-label="checkmark">
+                &#10004;
+              </span>
+              ID occupies most (85-90%) of the overall image, and the edges of
+              the ID are visible.
+            </li>
+            <li>
+              <span role="img" aria-label="cross">
+                &#10060;
+              </span>
+              ID has too much space around the edges.
+            </li>
+            <br />
+            <li>
+              <span role="img" aria-label="checkmark">
+                &#10004;
+              </span>
+              ID is photographed on a solid, contrasting background.
+            </li>
+            <li>
+              <span role="img" aria-label="cross">
+                &#10060;
+              </span>
+              ID is photographed on a white background (or a similar background
+              color as the ID).
+            </li>
+            <br />
+            <li>
+              <span role="img" aria-label="checkmark">
+                &#10004;
+              </span>
+              ID is photographed in an upright position.
+            </li>
+            <li>
+              <span role="img" aria-label="cross">
+                &#10060;
+              </span>
+              ID is photographed in a skewed or rotated position.
+            </li>
+            <br />
+            <li>
+              <span role="img" aria-label="checkmark">
+                &#10004;
+              </span>
+              ID image is clear and in focus with all details readable.
+            </li>
+            <li>
+              <span role="img" aria-label="cross">
+                &#10060;
+              </span>
+              ID image is blurred or obfuscated.
+            </li>
+            <br />
+            <li>
+              <span role="img" aria-label="checkmark">
+                &#10004;
+              </span>
+              ID is well-lit during image capture.
+            </li>
+            <li>
+              <span role="img" aria-label="cross">
+                &#10060;
+              </span>
+              ID image has high glare or reflection (often caused by camera
+              flash).
+            </li>
+            <br />
+            <li>
+              <span role="img" aria-label="checkmark">
+                &#10004;
+              </span>
+              ID barcodes are visible in the image. Note that barcodes can be
+              located on either the front or the back of the ID.
+            </li>
+            <li>
+              <span role="img" aria-label="cross">
+                &#10060;
+              </span>
+              ID barcode is missing or obfuscated in the image.
+            </li>
+          </ul>
+          <Button type="primary" onClick={startSocure}>
+            Start KYC
+          </Button>
+        </Row>
+      );
+    } else {
+      return (
         <Row>
           <div
             style={{
@@ -212,7 +330,13 @@ export default function OnboardingStep2({
             <Spin />
           </div>
         </Row>
-      )}
+      );
+    }
+  }
+
+  return (
+    <>
+      {GetScreen()}
       <Row style={{ paddingTop: "2rem" }}>
         <Space>
           <Button disabled={loading} type="dashed" onClick={onBack}>
