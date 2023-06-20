@@ -10,7 +10,6 @@ import {
   InputNumber,
   Modal,
   Row,
-  Select,
   Space,
   Tooltip,
 } from "antd";
@@ -54,7 +53,7 @@ function Page() {
     await axiosInstance.default
       .post<{
         message: string;
-      }>("/api/account/create", values)
+      }>("/api/account/create", { ...values, country: "US" })
       .then((res) => {
         notification.success({
           message: res.data.message,
@@ -173,6 +172,7 @@ function Page() {
                           initialValue="1"
                         >
                           <Input
+                            disabled
                             prefix="+"
                             style={{
                               width: "15%",
@@ -226,27 +226,6 @@ function Page() {
                       <Input
                         type="password"
                         placeholder="Please enter strong password here"
-                      />
-                    </Form.Item>
-                  </Col>
-                  <Col xs={24}>
-                    <Form.Item
-                      label="Country"
-                      name="country"
-                      extra="We currently serve only in the United States"
-                      required
-                      rules={[
-                        {
-                          required: true,
-                          message: "Please select your country!",
-                        },
-                      ]}
-                      initialValue="US"
-                    >
-                      <Select
-                        disabled
-                        placeholder="Select country"
-                        options={[{ label: "United States", value: "US" }]}
                       />
                     </Form.Item>
                   </Col>
