@@ -136,7 +136,7 @@ function Page() {
               <LeftOutlined />
             </Button>
           </Link>
-          <Typography>Add Credit Card</Typography>
+          <Typography>Complete Payment</Typography>
         </Space>
         <Card>
           <div id="verification-widget" />
@@ -150,7 +150,7 @@ Page.GetLayout = function GetLayout(page: ReactElement) {
   return (
     <>
       <Head>
-        <title>Add credit card | Intuition Exchange</title>
+        <title>Complete Payment | Intuition Exchange</title>
       </Head>
       <UserAuthContextProvider>
         <Header />
