@@ -10,12 +10,14 @@ import {
   UserAuthContextProvider,
 } from "context/protect-route-user";
 import Head from "next/head";
+import { useRouter } from "next/router";
 import React from "react";
 import OtpInput from "react-otp-input";
 import { axiosInstance } from "util/axios";
 import { HandleError } from "util/axios/error-handler";
 
 function Page() {
+  const router = useRouter();
   const [form] = Form.useForm();
   const [otpSent, setOtpSent] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
@@ -40,6 +42,7 @@ function Page() {
           setOtpSent(false);
           form.resetFields();
           refreshUser();
+          router.push("/settings/profile");
         }
       })
       .catch(HandleError(notification));
