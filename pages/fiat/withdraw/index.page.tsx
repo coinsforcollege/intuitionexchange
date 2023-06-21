@@ -188,6 +188,8 @@ export function Page() {
                   prefix="$"
                   title="Amount"
                   placeholder="Enter amount"
+                  precision={2}
+                  step={0.1}
                 />
               </Form.Item>
               <Form.Item>

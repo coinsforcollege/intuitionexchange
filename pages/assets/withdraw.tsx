@@ -194,6 +194,8 @@ export function WithdrawScreen({
                   style={{ width: "100%" }}
                   title="Amount"
                   placeholder="0.0"
+                  precision={6}
+                  step={0.1}
                 />
               </Form.Item>
               <Form.Item>
