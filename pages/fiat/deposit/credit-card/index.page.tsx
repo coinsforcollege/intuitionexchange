@@ -166,7 +166,7 @@ export function Page() {
                 rules={[
                   { required: true, message: "Please enter amount!" },
                   {
-                    min: 1,
+                    min: 0.01,
                     type: "number",
                     message: "Minimum amount should be greater then zero!",
                   },
@@ -177,6 +177,8 @@ export function Page() {
                   prefix="$"
                   title="Amount"
                   placeholder="Enter amount"
+                  precision={2}
+                  step={0.1}
                 />
               </Form.Item>
               <Form.Item>
