@@ -25,7 +25,7 @@ export function HistoryScreen() {
   const { data: balances } = React.useContext(BalanceContext);
   const [receipt, setReceipt] = React.useState("");
   const [page, setPage] = React.useState(1);
-  const [pageSize, setPageSize] = React.useState(5);
+  const [pageSize, setPageSize] = React.useState(7);
 
   const { data, error, isLoading, mutate } = useSWR(
     `/orders?state=${mode}&page=${page}&limit=${pageSize}`,
@@ -232,7 +232,6 @@ export function HistoryScreen() {
           <Pagination
             className={css({ padding: "8px", textAlign: "end" })}
             current={page}
-            showSizeChanger={true}
             pageSizeOptions={[5, 10, 15, 20, 25]}
             pageSize={data?.limit ?? 0}
             total={data?.total ?? 0}
