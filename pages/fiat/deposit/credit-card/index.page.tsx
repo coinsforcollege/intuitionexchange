@@ -91,7 +91,7 @@ export function Page() {
     <>
       <div style={{ maxWidth: "800px", margin: "auto" }}>
         <Card
-          title={<Typography>Deposit - Credit/Debit Card</Typography>}
+          title={<Typography>Deposit funds via credit/debit card</Typography>}
           extra={
             <Link href="/fiat/deposit" style={{ color: "inherit" }}>
               <Button type="text">
@@ -118,7 +118,7 @@ export function Page() {
           {data.length > 0 && (
             <Form disabled={loading} layout="vertical" onFinish={onFinish}>
               <Form.Item
-                label="Select card"
+                label="Saved card"
                 name="card"
                 required
                 rules={[
@@ -152,7 +152,7 @@ export function Page() {
                           type="link"
                           icon={<PlusOutlined />}
                         >
-                          Add new card
+                          Add a new credit/debit card
                         </Button>
                       </Link>
                     </div>
@@ -164,7 +164,7 @@ export function Page() {
                 required
                 name="amount"
                 rules={[
-                  { required: true, message: "Please enter amount!" },
+                  { required: true, message: "Please enter deposit amount!" },
                   {
                     min: 0.01,
                     type: "number",
@@ -176,7 +176,7 @@ export function Page() {
                   style={{ width: "100%" }}
                   prefix="$"
                   title="Amount"
-                  placeholder="Enter amount"
+                  placeholder="Enter deposit amount"
                   precision={2}
                   step={0.1}
                 />
@@ -202,7 +202,7 @@ Page.GetLayout = function GetLayout(page: ReactElement) {
   return (
     <>
       <Head>
-        <title>Deposit fiat | Intuition Exchange</title>
+        <title>Deposit funds via credit/debit card | Intuition Exchange</title>
       </Head>
       <UserAuthContextProvider>
         <Header />
