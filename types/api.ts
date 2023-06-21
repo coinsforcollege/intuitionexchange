@@ -205,7 +205,7 @@ export interface P2POrderRecord {
   assetCode: string;
   assetId: string;
   assetName: string;
-  averagePrice: string;
+  averagePrice: number;
   base: P2POrderBaseCurrency | P2POrderBaseAsset;
   createdAt: string;
   id: string;

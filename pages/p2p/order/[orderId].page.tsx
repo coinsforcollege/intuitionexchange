@@ -19,6 +19,7 @@ import useSWR from "swr";
 import { OrderBaseType, OrderState, P2POrderRecord } from "types";
 import { axiosInstance } from "util/axios";
 import { HandleError } from "util/axios/error-handler";
+import { FormatCurrency } from "util/functions";
 
 import { P2POrderTransactions } from "./transactions";
 
@@ -148,14 +149,16 @@ function ViewOrder(props: { orderId: string }) {
               at {dayjs(data.createdAt).format("hh:mm A")}
             </Typography>
             <Typography.Title level={4}>
-              Sold {data.totalQuantity} {data.assetCode} for {data.totalPrice}{" "}
+              Sold {FormatCurrency(data.totalQuantity)} {data.assetCode} for{" "}
+              {FormatCurrency(data.totalPrice)}{" "}
               {data.base.type === OrderBaseType.Fiat
                 ? data.base.currency
                 : data.base.code}{" "}
-              (Average Price: {data.averagePrice})
+              (Average Price: {FormatCurrency(data.averagePrice)})
             </Typography.Title>
             <Typography>
-              Remaining quantity: {data.quantityRemaining} {data.assetCode}
+              Remaining quantity: {FormatCurrency(data.quantityRemaining)}{" "}
+              {data.assetCode}
             </Typography>
           </Space>
         </Card>
