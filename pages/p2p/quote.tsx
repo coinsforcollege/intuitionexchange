@@ -4,6 +4,7 @@ import {
   ConfigProvider,
   Input,
   InputNumber,
+  Modal,
   Space,
   Typography,
 } from "antd";
@@ -28,6 +29,7 @@ export function QuoteScreen(props: {
   setUnit: React.Dispatch<React.SetStateAction<number>>;
   unit: number;
 }) {
+  const [showQuote, setShowQuote] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const { api: notification } = React.useContext(NotificationContext);
   const { data: balances, refresh } = React.useContext(BalanceContext);
@@ -66,6 +68,73 @@ export function QuoteScreen(props: {
 
   return (
     <>
+      <Modal
+        width={"400px"}
+        open={showQuote}
+        title={`${props.orderType === OrderType.Buy ? "Buy" : "Sell"} ${
+          props.asset
+        } for ${props.base}`}
+        onCancel={() => setShowQuote(false)}
+        footer={[]}
+      >
+        <div style={{ paddingTop: "2rem" }}>
+          <div className={style["quote-main"]}>
+            <div className={style["quote-container"]}>
+              <div className={style["quote-item"]}>
+                <span>Quantity</span>
+                <span>
+                  {FormatCurrency(props.unit)} {props.asset}
+                </span>
+              </div>
+              <div className={style["quote-item"]}>
+                <span>At Price</span>
+                <span>
+                  {FormatCurrency(props.price)} {props.base}
+                </span>
+              </div>
+              <div className={style["quote-item"]}>
+                <span>Order Value</span>
+                <span>
+                  {FormatCurrency(
+                    PreciseCalculation.round(
+                      PreciseCalculation.multiplication(props.price, props.unit)
+                    )
+                  )}{" "}
+                  {props.base}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style={{ paddingTop: "1rem" }}>
+          <ConfigProvider
+            theme={{
+              token: {
+                colorPrimary: "#55bd6c",
+                colorPrimaryBg: "#55bd6c00",
+                colorErrorBg: "#f6685e00",
+                colorError: "#f6685e",
+              },
+            }}
+          >
+            <Button
+              style={{
+                width: "100%",
+                textTransform: "uppercase",
+                fontWeight: 700,
+              }}
+              type="primary"
+              danger={props.orderType === OrderType.Sell}
+              onClick={() => {
+                setShowQuote(false);
+                handle();
+              }}
+            >
+              Confirm {props.orderType}
+            </Button>
+          </ConfigProvider>
+        </div>
+      </Modal>
       <Card
         style={{ height: "440px", overflow: "hidden", border: 0 }}
         bodyStyle={{
@@ -152,7 +221,7 @@ export function QuoteScreen(props: {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              handle();
+              setShowQuote(true);
             }}
             style={{
               width: "100%",
