@@ -59,17 +59,17 @@ export function Page() {
           {step === 0 && (
             <Form disabled={loading} layout="vertical" onFinish={onFinish}>
               <Form.Item
-                label="Bank Account Name"
+                label="Account Holder Name"
                 required
                 name="bankAccountName"
                 rules={[
                   {
                     required: true,
-                    message: "Please enter bank account name!",
+                    message: "Please enter account holder name!",
                   },
                 ]}
               >
-                <Input placeholder="Enter bank account name" />
+                <Input placeholder="Enter account holder name" />
               </Form.Item>
               <Form.Item
                 label="Bank Account Number"
