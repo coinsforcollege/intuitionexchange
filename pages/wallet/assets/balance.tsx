@@ -134,6 +134,7 @@ export function AssetBalance() {
       render: (_, t) => (
         <Space>
           <Button
+            disabled
             onClick={() => {
               if (t.code === expand && type === "deposit") {
                 setExpand("");
@@ -147,6 +148,7 @@ export function AssetBalance() {
             Deposit
           </Button>
           <Button
+            disabled
             onClick={() => {
               if (t.code === expand && type === "withdraw") {
                 setExpand("");

@@ -360,6 +360,7 @@ export function QuoteScreen(props: {
                 }}
               >
                 <Button
+                  disabled
                   htmlType="submit"
                   loading={loading}
                   style={{

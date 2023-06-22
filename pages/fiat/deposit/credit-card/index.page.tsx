@@ -184,6 +184,7 @@ export function Page() {
               </Form.Item>
               <Form.Item>
                 <Button
+                  disabled
                   htmlType="submit"
                   type="primary"
                   style={{ width: "100%" }}

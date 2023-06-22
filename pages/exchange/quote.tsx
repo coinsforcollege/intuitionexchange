@@ -378,6 +378,7 @@ export function QuoteScreen({ asset, base }: { asset: string; base: string }) {
                 }}
               >
                 <Button
+                  disabled
                   htmlType="submit"
                   loading={loading}
                   style={{

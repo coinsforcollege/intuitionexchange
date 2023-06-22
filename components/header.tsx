@@ -317,6 +317,20 @@ export default function Header(props: {
               closable
             />
           )}
+          <Alert
+            showIcon
+            style={{ marginTop: "1rem" }}
+            type="warning"
+            message={
+              <>
+                All trading operations and fund transfers to and from our
+                exchange are momentarily on hold. Rest assured, your funds are
+                secure, and we are diligently striving to restore normal
+                services.
+              </>
+            }
+            closable
+          />
         </div>
       </div>
     </>
