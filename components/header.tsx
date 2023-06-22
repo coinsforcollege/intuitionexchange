@@ -139,39 +139,45 @@ export default function Header(props: {
               <Space>
                 {user && !isPhone && (
                   <>
-                    <Link href="/exchange">
-                      <Button
-                        type="text"
-                        className={ActiveHeaderCss({
-                          activeKey: props.active,
-                          key: HeaderKey.Exchange,
-                        })}
-                      >
-                        Exchange
-                      </Button>
-                    </Link>
-                    <Link href="/p2p">
-                      <Button
-                        type="text"
-                        className={ActiveHeaderCss({
-                          activeKey: props.active,
-                          key: HeaderKey.P2P,
-                        })}
-                      >
-                        P2P
-                      </Button>
-                    </Link>
-                    <Link href="/wallet">
-                      <Button
-                        type="text"
-                        className={ActiveHeaderCss({
-                          activeKey: props.active,
-                          key: HeaderKey.Wallet,
-                        })}
-                      >
-                        Wallet
-                      </Button>
-                    </Link>
+                    <div>
+                      <Link href="/exchange/BTC-USD">
+                        <Button
+                          type="text"
+                          className={ActiveHeaderCss({
+                            activeKey: props.active,
+                            key: HeaderKey.Exchange,
+                          })}
+                        >
+                          Exchange
+                        </Button>
+                      </Link>
+                    </div>
+                    <div>
+                      <Link href="/p2p/BTC-USD">
+                        <Button
+                          type="text"
+                          className={ActiveHeaderCss({
+                            activeKey: props.active,
+                            key: HeaderKey.P2P,
+                          })}
+                        >
+                          P2P
+                        </Button>
+                      </Link>
+                    </div>
+                    <div>
+                      <Link href="/wallet">
+                        <Button
+                          type="text"
+                          className={ActiveHeaderCss({
+                            activeKey: props.active,
+                            key: HeaderKey.Wallet,
+                          })}
+                        >
+                          Wallet
+                        </Button>
+                      </Link>
+                    </div>
                   </>
                 )}
                 <Button
@@ -242,7 +248,7 @@ export default function Header(props: {
                       open={isDrawerOpen}
                     >
                       <Space direction="vertical" style={{ width: "100%" }}>
-                        <Link href="/exchange">
+                        <Link href="/exchange" style={{ color: "inherit" }}>
                           <Button
                             type="text"
                             style={{ width: "100%", textAlign: "start" }}
@@ -251,7 +257,7 @@ export default function Header(props: {
                             Exchange
                           </Button>
                         </Link>
-                        <Link href="/p2p">
+                        <Link href="/p2p" style={{ color: "inherit" }}>
                           <Button
                             type="text"
                             style={{ width: "100%", textAlign: "start" }}
@@ -260,7 +266,7 @@ export default function Header(props: {
                             P2P
                           </Button>
                         </Link>
-                        <Link href="/wallet">
+                        <Link href="/wallet" style={{ color: "inherit" }}>
                           <Button
                             type="text"
                             style={{ width: "100%", textAlign: "start" }}
