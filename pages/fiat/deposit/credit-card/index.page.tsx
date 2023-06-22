@@ -5,6 +5,7 @@ import {
   Card,
   Form,
   InputNumber,
+  List,
   Radio,
   Result,
   Skeleton,
@@ -187,11 +188,46 @@ export function Page() {
                   type="primary"
                   style={{ width: "100%" }}
                 >
-                  Deposit
+                  Proceed
                 </Button>
               </Form.Item>
             </Form>
           )}
+        </Card>
+        <Card style={{ marginTop: "1rem" }}>
+          <List>
+            <List.Item>
+              View{" "}
+              <Link href="/fiat/deposit">
+                <b>Alternative Methods</b>
+              </Link>{" "}
+              to deposit funds.
+            </List.Item>
+            <List.Item>
+              If you have already wired funds to the above details kindly wait
+              up to 1 business day for it to be processed.
+            </List.Item>
+            <List.Item>
+              Please note that weekends can delay the deposit processing.
+            </List.Item>
+            <List.Item>
+              Visit{" "}
+              <Link href="/wallet/transfers">
+                <b>Transfer History</b>
+              </Link>{" "}
+              page to check status of your past deposits and withdrawals.
+            </List.Item>
+            <List.Item>
+              <Link
+                href="https://support.intuitionexchange.com"
+                target="_blank"
+              >
+                <b>Contact Support</b>
+              </Link>{" "}
+              if you feel there has been a delay in the settlement of funds into
+              your InTuition account.
+            </List.Item>
+          </List>
         </Card>
       </div>
     </>

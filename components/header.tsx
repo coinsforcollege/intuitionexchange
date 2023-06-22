@@ -228,7 +228,11 @@ export default function Header(props: {
                         icon="material-symbols:menu-rounded"
                         fontSize="24"
                         onClick={() => setDrawer(true)}
-                        style={{ display: "flex", cursor: "pointer" }}
+                        style={{
+                          display: "flex",
+                          cursor: "pointer",
+                          color: "white",
+                        }}
                       />
                     )}
                     <Drawer
