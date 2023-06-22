@@ -144,7 +144,7 @@ export function WithdrawScreen({
           {data.length > 0 && (
             <Form disabled={loading} layout="vertical" onFinish={onFinish}>
               <Form.Item
-                label="Select wallet"
+                label="Select Destination Address"
                 name="assetTransferMethodId"
                 required
                 rules={[
@@ -178,7 +178,7 @@ export function WithdrawScreen({
                         icon={<PlusOutlined />}
                         onClick={onAddWallet}
                       >
-                        Add wallet
+                        Add new address
                       </Button>
                     </div>
                   </Space>
@@ -193,7 +193,7 @@ export function WithdrawScreen({
                 <InputNumber
                   style={{ width: "100%" }}
                   title="Amount"
-                  placeholder="0.0"
+                  placeholder="Enter amount to withdraw"
                   precision={6}
                   step={0.1}
                 />
@@ -204,7 +204,7 @@ export function WithdrawScreen({
                   type="primary"
                   style={{ width: "100%" }}
                 >
-                  Withdraw
+                  Submit Request
                 </Button>
               </Form.Item>
             </Form>

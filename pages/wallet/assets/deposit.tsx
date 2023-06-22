@@ -1,5 +1,15 @@
 import { CloseOutlined, CopyOutlined, WalletOutlined } from "@ant-design/icons";
-import { Button, Card, Result, Skeleton, Tooltip, Typography } from "antd";
+import {
+  Alert,
+  Button,
+  Card,
+  List,
+  Result,
+  Skeleton,
+  Space,
+  Tooltip,
+  Typography,
+} from "antd";
 import { NotificationContext } from "context/notification";
 import React from "react";
 import useSWR from "swr";
@@ -40,23 +50,21 @@ export function DepositScreen({
     <>
       <div style={{ maxWidth: "800px", margin: "auto" }}>
         <Card
-          title={<Typography>Wallet Address</Typography>}
+          title={<Typography>Deposit Address</Typography>}
           extra={
             <Button type="text" onClick={() => onClose()}>
               <CloseOutlined />
             </Button>
           }
         >
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-          >
+          <List>
             {data.map((wallet, _index) => (
-              <div
+              <List.Item
                 key={`wallet-${_index}`}
                 style={{ display: "flex", gap: "0.5rem" }}
               >
-                <WalletOutlined />
-                <Typography style={{ paddingRight: "8px" }}>
+                <WalletOutlined style={{ paddingRight: "8px" }} />
+                <Typography style={{ marginInlineEnd: "auto" }}>
                   {wallet}
                 </Typography>
                 <a
@@ -72,10 +80,30 @@ export function DepositScreen({
                     <CopyOutlined />
                   </Tooltip>
                 </a>
-              </div>
+              </List.Item>
             ))}
-          </div>
+          </List>
         </Card>
+        <Space
+          direction="vertical"
+          style={{ width: "100%", marginTop: "1rem" }}
+        >
+          <Alert
+            showIcon
+            type="warning"
+            message={
+              <>
+                Deposit only <b>{asset}</b> to mentioned address. Depositing any
+                other asset will result in a loss of funds.
+              </>
+            }
+          />
+          <Alert
+            showIcon
+            type="info"
+            message="Assets usually arrive within a few minutes but it could longer in some cases depending on network speed."
+          />
+        </Space>
       </div>
     </>
   );
