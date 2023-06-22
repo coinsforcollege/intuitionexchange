@@ -248,7 +248,10 @@ export default function Header(props: {
                       open={isDrawerOpen}
                     >
                       <Space direction="vertical" style={{ width: "100%" }}>
-                        <Link href="/exchange" style={{ color: "inherit" }}>
+                        <Link
+                          href="/exchange/BTC-USD"
+                          style={{ color: "inherit" }}
+                        >
                           <Button
                             type="text"
                             style={{ width: "100%", textAlign: "start" }}
@@ -257,7 +260,7 @@ export default function Header(props: {
                             Exchange
                           </Button>
                         </Link>
-                        <Link href="/p2p" style={{ color: "inherit" }}>
+                        <Link href="/p2p/BTC-USD" style={{ color: "inherit" }}>
                           <Button
                             type="text"
                             style={{ width: "100%", textAlign: "start" }}

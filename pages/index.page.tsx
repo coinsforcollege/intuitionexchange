@@ -278,7 +278,7 @@ export function Page() {
             <Typography.Paragraph>
               Experience the lowest trading fees in the United States
             </Typography.Paragraph>
-            <Link href="/exchange">
+            <Link href="/exchange/BTC-USD">
               <Button type="primary" size="large">
                 Start Trading
               </Button>

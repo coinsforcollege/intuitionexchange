@@ -116,7 +116,7 @@ export function PairsScreen({
                       : ""
                   }`}
                   id={`ticker-${pair}`}
-                  href="/p2p"
+                  href={`/exchange/${pair}`}
                   onClick={(e) => {
                     e.preventDefault();
                     setPair(pair, selectedBase);

@@ -26,7 +26,7 @@ function Page() {
   React.useEffect(() => {
     if (isLoading) return;
     if (user) {
-      router.replace(router.query.redirect?.toString() ?? "/exchange");
+      router.replace(router.query.redirect?.toString() ?? "/exchange/BTC-USD");
     } else {
       RemoveToken();
     }

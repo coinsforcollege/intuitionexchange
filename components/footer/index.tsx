@@ -65,12 +65,12 @@ export default function Footer(props: { fullWidth?: boolean }) {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/exchange" className="footer-link">
+                  <Link href="/exchange/BTC-USD" className="footer-link">
                     Exchange
                   </Link>
                 </li>
                 <li>
-                  <Link href="/p2p" className="footer-link">
+                  <Link href="/p2p/BTC-USD" className="footer-link">
                     P2P
                   </Link>
                 </li>

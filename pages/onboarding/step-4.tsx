@@ -32,7 +32,7 @@ export default function OnboardingStep3({
             type="primary"
             onClick={async () => {
               await refresh();
-              router.replace("/exchange");
+              router.replace("/exchange/BTC-USD");
             }}
           >
             Start Trading
