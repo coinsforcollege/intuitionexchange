@@ -40,10 +40,10 @@ function Page() {
 
     try {
       if (step === Step.start) {
-        const { data } = await axiosInstance.user.post(
-          "/api/account/update/password",
-          { password }
-        );
+        const { data } = await axiosInstance.user.post<{
+          message: string;
+          token: string;
+        }>("/api/account/update/password", { password });
 
         tokenRef.current = data.token;
         setStep(Step.verify);
@@ -53,16 +53,19 @@ function Page() {
           placement: "bottomLeft",
         });
       } else if (step === Step.verify) {
-        await axiosInstance.user.post("/api/account/update/password/verify", {
-          otp,
-          token: tokenRef.current,
-        });
+        const { data } = await axiosInstance.user.post<{ message: string }>(
+          "/api/account/update/password/verify",
+          {
+            otp,
+            token: tokenRef.current,
+          }
+        );
 
         setStep(Step.finish);
         form.resetFields();
 
         notification.success({
-          message: "Password changed successfully",
+          message: data.message,
           placement: "bottomLeft",
         });
       }
@@ -227,7 +230,7 @@ Page.GetLayout = function GetLayout(page: React.ReactElement) {
   return (
     <>
       <Head>
-        <title>Security Settings | Intuition Exchange</title>
+        <title>Change password | Intuition Exchange</title>
       </Head>
       <UserAuthContextProvider>
         <Header />

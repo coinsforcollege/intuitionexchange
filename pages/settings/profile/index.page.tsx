@@ -72,7 +72,7 @@ Page.GetLayout = function GetLayout(page: React.ReactElement) {
   return (
     <>
       <Head>
-        <title>Profile Settings | Intuition Exchange</title>
+        <title>Profile settings | Intuition Exchange</title>
       </Head>
       <UserAuthContextProvider>
         <Header />
