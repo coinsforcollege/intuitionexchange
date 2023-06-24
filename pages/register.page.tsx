@@ -223,7 +223,7 @@ function Page() {
                         },
                       ]}
                     >
-                      <Input
+                      <Input.Password
                         type="password"
                         placeholder="Please enter strong password here"
                       />

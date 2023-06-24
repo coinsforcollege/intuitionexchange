@@ -131,7 +131,7 @@ function Page() {
                     { required: true, message: "Please enter your password!" },
                   ]}
                 >
-                  <Input
+                  <Input.Password
                     type="password"
                     placeholder="Please enter your password"
                   />

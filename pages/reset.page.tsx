@@ -1,6 +1,6 @@
 import { ReloadOutlined } from "@ant-design/icons";
 import { css } from "@emotion/css";
-import { Button, Card, Form, Input, Space, Tooltip } from "antd";
+import { Button, Card, Form, Input, Tooltip, Typography } from "antd";
 import Footer from "components/footer";
 import Header from "components/header";
 import { NotificationContext } from "context/notification";
@@ -13,10 +13,18 @@ import OtpInput from "react-otp-input";
 import { axiosInstance } from "util/axios";
 import { HandleError } from "util/axios/error-handler";
 
+enum Step {
+  finish = "FINISH",
+  newPassword = "NEW_PASSWORD",
+  start = "START",
+  verify = "VERIFY",
+}
+
 function Page() {
+  const tokenRef = React.useRef("");
   const [form] = Form.useForm();
   const router = useRouter();
-  const [otpSent, setOtpSent] = React.useState(false);
+  const [step, setStep] = React.useState(Step.start);
   const [loading, setLoading] = React.useState(false);
   const { api: notification } = React.useContext(NotificationContext);
   const {
@@ -35,29 +43,69 @@ function Page() {
     }
   }, [isLoading]);
 
-  const onFinish = async (values: {
+  const onFinish = async ({
+    email,
+    otp,
+    password,
+  }: {
     email: string;
+    otp: string;
     password: string;
-    remember: boolean;
   }) => {
     setLoading(true);
 
-    await axiosInstance.default
-      .post<{
-        message: string;
-      }>(otpSent ? "/api/account/reset/verify" : "/api/account/reset", values)
-      .then((res) => {
+    try {
+      if (step === Step.start) {
+        const { data } = await axiosInstance.user.post<{
+          message: string;
+          nextStep: Step;
+          token: string;
+        }>("/api/account/reset", {
+          email,
+        });
+
+        tokenRef.current = data.token;
+        setStep(Step.verify);
+
         notification.success({
-          message: res.data.message,
+          message: data.message,
           placement: "bottomLeft",
         });
-        if (!otpSent) {
-          setOtpSent(true);
-        } else {
-          router.replace("/login");
-        }
-      })
-      .catch(HandleError(notification));
+      } else if (step === Step.verify) {
+        const { data } = await axiosInstance.user.post<{
+          message: string;
+          nextStep: Step;
+        }>("/api/account/reset/verify", {
+          otp,
+          token: tokenRef.current,
+        });
+
+        setStep(Step.newPassword);
+
+        notification.success({
+          message: data.message,
+          placement: "bottomLeft",
+        });
+      } else if (step === Step.newPassword) {
+        const { data } = await axiosInstance.user.post<{
+          message: string;
+          nextStep: Step;
+        }>("/api/account/reset/new-password", {
+          password,
+          token: tokenRef.current,
+        });
+
+        setStep(Step.finish);
+        form.resetFields();
+
+        notification.success({
+          message: data.message,
+          placement: "bottomLeft",
+        });
+      }
+    } catch (error: any) {
+      HandleError(notification)(error);
+    }
 
     setLoading(false);
   };
@@ -102,60 +150,44 @@ function Page() {
               initialValues={{ remember: true }}
               onFinish={onFinish}
             >
-              <div style={{ display: otpSent ? "none" : "block" }}>
-                <Form.Item
-                  label="Email"
-                  required
-                  name="email"
-                  rules={[
-                    {
-                      required: true,
-                      message: "Please enter your email address!",
-                    },
-                  ]}
-                >
-                  <Input
-                    type="email"
-                    placeholder="Please enter your email address"
-                  />
-                </Form.Item>
-
-                <Form.Item>
-                  <Button loading={loading} type="primary" htmlType="submit">
-                    Continue
-                  </Button>
-                </Form.Item>
-
-                <Form.Item>
-                  {"Remember password? "}
-                  <Link href="/login">Login now!</Link>
-                </Form.Item>
-              </div>
-
-              {otpSent && (
-                <div>
+              {step === Step.start && (
+                <>
                   <Form.Item
-                    label="New Password"
+                    label="Email"
                     required
-                    name="password"
+                    name="email"
                     rules={[
                       {
                         required: true,
-                        message: "Please enter your new password!",
+                        message: "Please enter your email address!",
                       },
                     ]}
                   >
                     <Input
-                      autoFocus
-                      type="password"
-                      placeholder="Please enter your new password"
+                      type="email"
+                      placeholder="Please enter your email address"
                     />
                   </Form.Item>
 
+                  <Form.Item>
+                    <Button loading={loading} type="primary" htmlType="submit">
+                      Next
+                    </Button>
+                  </Form.Item>
+
+                  <Form.Item>
+                    {"Remember password? "}
+                    <Link href="/login">Login now!</Link>
+                  </Form.Item>
+                </>
+              )}
+
+              {step === Step.verify && (
+                <div>
                   <Form.Item
                     extra={
                       <div style={{ padding: "4px 0" }}>
-                        Sent to {form.getFieldValue("email")}
+                        Sent verification code on your email
                       </div>
                     }
                     label="Email verification code"
@@ -203,23 +235,85 @@ function Page() {
                   </Form.Item>
 
                   <Form.Item>
-                    <Space>
-                      <Button onClick={() => setOtpSent(false)}>Back</Button>
-                      <Button
-                        loading={loading}
-                        type="primary"
-                        htmlType="submit"
-                      >
-                        Verify
-                      </Button>
-                    </Space>
+                    <Button loading={loading} type="primary" htmlType="submit">
+                      Next
+                    </Button>
+                  </Form.Item>
+                </div>
+              )}
+
+              {step === Step.newPassword && (
+                <>
+                  <Form.Item
+                    label="New Password"
+                    required
+                    name="password"
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please enter your new password!",
+                      },
+                    ]}
+                  >
+                    <Input.Password
+                      type="password"
+                      placeholder="Please enter your new password"
+                    />
+                  </Form.Item>
+                  <Form.Item
+                    label="Confirm New Password"
+                    required
+                    name="confirmPassword"
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please enter your new password!",
+                      },
+                      ({ getFieldValue }) => ({
+                        validator(_, value) {
+                          if (!value || getFieldValue("password") === value) {
+                            return Promise.resolve();
+                          }
+
+                          return Promise.reject(
+                            new Error(
+                              "The new password that you entered do not match!"
+                            )
+                          );
+                        },
+                      }),
+                    ]}
+                  >
+                    <Input.Password
+                      type="password"
+                      placeholder="Please confirm your new password"
+                    />
                   </Form.Item>
 
                   <Form.Item>
-                    {"Remember password? "}
-                    <Link href="/login">Login now!</Link>
+                    <Button loading={loading} type="primary" htmlType="submit">
+                      Finish
+                    </Button>
                   </Form.Item>
-                </div>
+                </>
+              )}
+
+              {step === Step.finish && (
+                <>
+                  <Form.Item>
+                    <Typography>✅ Password changed successfully</Typography>
+                  </Form.Item>
+                  <Form.Item>
+                    <Button
+                      loading={loading}
+                      type="primary"
+                      htmlType="button"
+                      onClick={() => router.push("/login")}
+                    >
+                      Login now!
+                    </Button>
+                  </Form.Item>
+                </>
               )}
             </Form>
           </Card>

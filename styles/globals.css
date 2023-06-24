@@ -83,3 +83,9 @@ iframe.pt-bootstrap-iframe {
   border-bottom: 1px solid var(--color-header-border);
   background-color: var(--color-inner-header-background);
 }
+
+.flex-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

@@ -17,7 +17,7 @@ function Page() {
 
   return (
     <div>
-      <Space direction="vertical" style={{ width: "100%" }} size="large">
+      <Space direction="vertical" style={{ width: "100%" }} size="middle">
         <Typography.Title level={4}>
           {user.firstName} {user.middleName} {user.lastName}
         </Typography.Title>
@@ -29,7 +29,12 @@ function Page() {
         >
           <InboxOutlined style={{ fontSize: "1.25rem" }} />
           <Typography
-            style={{ fontSize: "1.25rem", paddingLeft: "1rem", flexGrow: 1 }}
+            style={{
+              fontSize: "1.25rem",
+              paddingLeft: "1rem",
+              flexGrow: 1,
+              fontWeight: 600,
+            }}
           >
             {user.email}
           </Typography>
@@ -45,7 +50,12 @@ function Page() {
         >
           <MobileOutlined style={{ fontSize: "1.25rem" }} />
           <Typography
-            style={{ fontSize: "1.25rem", paddingLeft: "1rem", flexGrow: 1 }}
+            style={{
+              fontSize: "1.25rem",
+              paddingLeft: "1rem",
+              flexGrow: 1,
+              fontWeight: 600,
+            }}
           >
             +{user.phoneCountry}-{user.phone}
           </Typography>

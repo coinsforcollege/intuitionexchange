@@ -1,4 +1,5 @@
 import {
+  ArrowLeftOutlined,
   PercentageOutlined,
   UnlockOutlined,
   UserOutlined,
@@ -41,11 +42,12 @@ const SidebarItems: Item[] = [
 ];
 
 interface Props {
+  backUrl?: string;
   children: any;
   selected: SettingsSidebar;
 }
 
-export function SettingsLayout({ children, selected }: Props) {
+export function SettingsLayout({ backUrl, children, selected }: Props) {
   const router = useRouter();
   const selectedItem = SidebarItems.find((i) => i.id === selected) as Item;
 
@@ -94,7 +96,17 @@ export function SettingsLayout({ children, selected }: Props) {
         <div className="settings-container">
           <div className="settings-section" data-private="true">
             <div className="settings-section-header">
-              <span style={{ color: "#3067F0" }}> {selectedItem.icon}</span>
+              {backUrl !== undefined && (
+                <ArrowLeftOutlined
+                  onClick={() => router.push(backUrl)}
+                  style={{
+                    fontSize: "1rem",
+                    paddingRight: "1rem",
+                    cursor: "pointer",
+                  }}
+                />
+              )}
+              <span style={{ color: "#3067F0" }}>{selectedItem.icon}</span>
               <span className="settings-section-header-title">
                 {selectedItem.title}
               </span>

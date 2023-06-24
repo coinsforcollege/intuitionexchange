@@ -22,6 +22,11 @@ const nextConfig = {
         destination: "/p2p/BTC-USD",
         permanent: true,
       },
+      {
+        source: "/settings",
+        destination: "/settings/profile",
+        permanent: true,
+      },
     ];
   },
 };
