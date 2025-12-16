@@ -143,11 +143,13 @@ interface TradingPair {
 interface BuySellFormProps {
   onTrade?: (side: OrderSide, asset: string, amount: number, total: number) => Promise<void>;
   isLoading?: boolean;
+  initialAsset?: string;
 }
 
 const BuySellForm: React.FC<BuySellFormProps> = ({
   onTrade,
   isLoading = false,
+  initialAsset,
 }) => {
   const { token } = useToken();
   const { mode } = useThemeMode();
@@ -184,7 +186,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
   }, [pairs]);
   
   const [side, setSide] = useState<OrderSide>('BUY');
-  const [selectedAsset, setSelectedAsset] = useState<string>('BTC');
+  const [selectedAsset, setSelectedAsset] = useState<string>(initialAsset || 'BTC');
   const [amount, setAmount] = useState<string>(''); // Token amount
   const [cashAmount, setCashAmount] = useState<string>(''); // USD amount
   const [showConfirm, setShowConfirm] = useState(false);
@@ -192,6 +194,13 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [orderStatusModalVisible, setOrderStatusModalVisible] = useState(false);
   const [currentOrder, setCurrentOrder] = useState<InternalOrder | null>(null);
+  
+  // Update selected asset when initialAsset prop changes (e.g., from URL query)
+  useEffect(() => {
+    if (initialAsset && initialAsset !== selectedAsset) {
+      setSelectedAsset(initialAsset);
+    }
+  }, [initialAsset]);
   
   const loading = isLoading || isTrading || isSubmitting;
   const isBuy = side === 'BUY';

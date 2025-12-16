@@ -12,6 +12,7 @@ export interface DepositIntentResponse {
 
 export interface FiatTransaction {
   id: string;
+  transactionId: string;
   type: 'DEPOSIT' | 'WITHDRAWAL';
   method: string;
   amount: number;

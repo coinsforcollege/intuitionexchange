@@ -165,6 +165,7 @@ export default function TokenDetailsPage() {
   const [tokenData, setTokenData] = useState<TokenMarketData | null>(null);
   const [loadingToken, setLoadingToken] = useState(true);
   const [isWatchlisted, setIsWatchlisted] = useState(false);
+  const [isTogglingWatchlist, setIsTogglingWatchlist] = useState(false);
 
   const isDark = mode === 'dark';
   const isMobile = mounted ? !screens.md : true;
@@ -214,19 +215,22 @@ export default function TokenDetailsPage() {
 
   const handleToggleWatchlist = useCallback(async () => {
     if (!symbol || typeof symbol !== 'string') return;
+    setIsTogglingWatchlist(true);
     try {
       await toggleWatchlist(symbol.toUpperCase());
       setIsWatchlisted((prev) => !prev);
       message.success(isWatchlisted ? 'Removed from watchlist' : 'Added to watchlist');
     } catch {
       message.error('Failed to update watchlist');
+    } finally {
+      setTimeout(() => setIsTogglingWatchlist(false), 300);
     }
   }, [symbol, isWatchlisted]);
 
-  const handleTrade = useCallback(() => {
+  const handleBuy = useCallback(() => {
     if (!symbol || typeof symbol !== 'string') return;
     setSelectedPair(`${symbol.toUpperCase()}-USD`);
-    router.push(`/trade?pair=${symbol.toUpperCase()}-USD`);
+    router.push(`/buy-sell?asset=${symbol.toUpperCase()}`);
   }, [symbol, router, setSelectedPair]);
 
   const supplyPercentage = useMemo(() => {
@@ -320,7 +324,7 @@ export default function TokenDetailsPage() {
                 type="primary"
                 size="large"
                 icon={<SwapOutlined />}
-                onClick={handleTrade}
+                onClick={handleBuy}
                 style={{
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   border: 'none',
@@ -330,7 +334,7 @@ export default function TokenDetailsPage() {
                   paddingRight: 32,
                 }}
               >
-                Trade {symbolStr}
+                Buy {symbolStr}
               </Button>
             </motion.div>
           ) : (
@@ -510,38 +514,46 @@ export default function TokenDetailsPage() {
                         background: separatorColor,
                       }} />
                       
-                      <KeyStat
-                        label="Market Cap"
-                        value={formatLargeNumber(tokenData.market_data.market_cap.usd)}
-                        color="#11998e"
-                      />
-                      <KeyStat
-                        label="24h Volume"
-                        value={formatLargeNumber(tokenData.market_data.total_volume.usd)}
-                        color="#4facfe"
-                      />
-                      <KeyStat
-                        label="Circulating"
-                        value={formatSupply(tokenData.market_data.circulating_supply)}
-                        color="#fa709a"
-                        subValue={
-                          tokenData.market_data.max_supply && (
-                            <Progress
-                              percent={supplyPercentage}
-                              size="small"
-                              showInfo={false}
-                              strokeColor="#fa709a"
-                              trailColor={separatorColor}
-                              style={{ maxWidth: 80, margin: '0 auto' }}
-                            />
-                          )
-                        }
-                      />
-                      <KeyStat
-                        label="Max Supply"
-                        value={tokenData.market_data.max_supply ? formatSupply(tokenData.market_data.max_supply) : '∞'}
-                        color="#667eea"
-                      />
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 80 }}>
+                        <KeyStat
+                          label="Market Cap"
+                          value={formatLargeNumber(tokenData.market_data.market_cap.usd)}
+                          color="#11998e"
+                        />
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 80 }}>
+                        <KeyStat
+                          label="24h Volume"
+                          value={formatLargeNumber(tokenData.market_data.total_volume.usd)}
+                          color="#4facfe"
+                        />
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 80 }}>
+                        <KeyStat
+                          label="Circulating"
+                          value={formatSupply(tokenData.market_data.circulating_supply)}
+                          color="#fa709a"
+                          subValue={
+                            tokenData.market_data.max_supply && (
+                              <Progress
+                                percent={supplyPercentage}
+                                size="small"
+                                showInfo={false}
+                                strokeColor="#fa709a"
+                                trailColor={separatorColor}
+                                style={{ maxWidth: 80, margin: '0 auto' }}
+                              />
+                            )
+                          }
+                        />
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 80 }}>
+                        <KeyStat
+                          label="Max Supply"
+                          value={tokenData.market_data.max_supply ? formatSupply(tokenData.market_data.max_supply) : '∞'}
+                          color="#667eea"
+                        />
+                      </div>
                     </div>
                   ) : (
                     // Desktop: horizontal row with vertical separators
@@ -768,7 +780,7 @@ export default function TokenDetailsPage() {
                       <Button
                         type="primary"
                         icon={<SwapOutlined />}
-                        onClick={handleTrade}
+                        onClick={handleBuy}
                         block
                         size="large"
                         style={{
@@ -780,7 +792,7 @@ export default function TokenDetailsPage() {
                           fontSize: themeToken.fontSizeLG,
                         }}
                       >
-                        Trade {symbolStr}
+                        Buy {symbolStr}
                       </Button>
                       <Button
                         icon={isWatchlisted ? <StarFilled style={{ color: '#f6c343' }} /> : <StarOutlined />}
@@ -928,48 +940,70 @@ export default function TokenDetailsPage() {
             </div>
           )}
 
-          {/* Mobile fixed bottom CTA */}
+          {/* Mobile fixed bottom CTA - positioned above navbar */}
           {isMobile && tokenData && (
             <div style={{
               position: 'fixed',
-              bottom: 0,
+              bottom: 115, // Above the navigation bar (nav height ~100px + spacing)
               left: 0,
               right: 0,
-              padding: themeToken.paddingMD,
-              background: isDark ? 'rgba(10,10,15,0.95)' : 'rgba(255,255,255,0.95)',
-              backdropFilter: 'blur(10px)',
-              borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+              padding: `0 ${themeToken.paddingMD}px`,
               zIndex: 100,
               display: 'flex',
               gap: themeToken.marginSM,
             }}>
-              <Button
-                icon={isWatchlisted ? <StarFilled style={{ color: '#f6c343' }} /> : <StarOutlined />}
+              <motion.button
                 onClick={handleToggleWatchlist}
-                size="large"
-                style={{ height: 48, width: 48, borderRadius: themeToken.borderRadiusLG, padding: 0 }}
-              />
+                animate={{
+                  scale: isTogglingWatchlist ? 0.85 : 1,
+                  rotate: isTogglingWatchlist ? 360 : 0,
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.9 }}
+                transition={{ duration: 0.3 }}
+                style={{ 
+                  height: 52, 
+                  width: 52, 
+                  minWidth: 52,
+                  borderRadius: themeToken.borderRadiusLG, 
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: isDark ? themeToken.colorBgElevated : themeToken.colorBgContainer,
+                  border: `1px solid ${themeToken.colorBorder}`,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  cursor: 'pointer',
+                }}
+              >
+                {isWatchlisted ? (
+                  <StarFilled style={{ color: '#f6c343', fontSize: 24 }} />
+                ) : (
+                  <StarOutlined style={{ fontSize: 24, color: themeToken.colorTextSecondary }} />
+                )}
+              </motion.button>
               <Button
                 type="primary"
                 icon={<SwapOutlined />}
-                onClick={handleTrade}
+                onClick={handleBuy}
                 size="large"
                 block
                 style={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background: themeToken.colorSuccess,
                   border: 'none',
-                  height: 48,
+                  height: 52,
                   borderRadius: themeToken.borderRadiusLG,
                   fontWeight: fontWeights.semibold,
+                  boxShadow: '0 4px 12px rgba(22, 196, 127, 0.3)',
                 }}
               >
-                Trade {symbolStr}
+                Buy {symbolStr}
               </Button>
             </div>
           )}
 
           {/* Bottom padding for mobile CTA */}
-          {isMobile && tokenData && <div style={{ height: 80 }} />}
+          {isMobile && tokenData && <div style={{ height: 190 }} />}
         </div>
       </DashboardLayout>
     </>

@@ -3,6 +3,17 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma.service';
 import Stripe from 'stripe';
 
+/**
+ * Generate a human-readable transaction ID
+ * Format: TXN-YYYYMMDD-XXXXXX (e.g., TXN-20241216-A1B2C3)
+ */
+function generateTransactionId(): string {
+  const now = new Date();
+  const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
+  const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `TXN-${datePart}-${randomPart}`;
+}
+
 @Injectable()
 export class FiatService {
   private readonly logger = new Logger(FiatService.name);
@@ -44,6 +55,7 @@ export class FiatService {
     // Create transaction record
     const transaction = await this.prisma.client.fiatTransaction.create({
       data: {
+        transactionId: generateTransactionId(),
         userId,
         type: 'DEPOSIT',
         method: 'card',
@@ -264,6 +276,7 @@ export class FiatService {
     return {
       transactions: transactions.map((t) => ({
         id: t.id,
+        transactionId: t.transactionId || `TXN-${t.id.slice(0, 8).toUpperCase()}`,
         type: t.type,
         method: t.method,
         amount: parseFloat(t.amount.toString()),
@@ -555,6 +568,7 @@ export class FiatService {
       // Create transaction record
       const transaction = await this.prisma.client.fiatTransaction.create({
         data: {
+          transactionId: generateTransactionId(),
           userId,
           type: 'WITHDRAWAL',
           method: 'bank',

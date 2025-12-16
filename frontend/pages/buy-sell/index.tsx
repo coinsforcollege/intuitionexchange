@@ -13,6 +13,7 @@ const { useBreakpoint } = Grid;
 
 export default function BuySellPage() {
   const router = useRouter();
+  const { asset } = router.query;
   const { token } = useToken();
   const { user, isLoading } = useAuth();
   const { mode } = useThemeMode();
@@ -22,6 +23,9 @@ export default function BuySellPage() {
 
   const isDark = mode === 'dark';
   const isMobile = mounted ? !screens.md : true;
+  
+  // Get initial asset from query parameter
+  const initialAsset = typeof asset === 'string' ? asset.toUpperCase() : undefined;
 
   useEffect(() => {
     setMounted(true);
@@ -133,7 +137,7 @@ export default function BuySellPage() {
               maxWidth: 420,
             }}
           >
-            <BuySellForm />
+            <BuySellForm initialAsset={initialAsset} />
           </motion.div>
 
           {/* Info Text - hidden on mobile since it's in the sticky footer */}

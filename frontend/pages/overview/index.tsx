@@ -406,8 +406,8 @@ export default function DashboardPage() {
     router.push('/trade');
   }, [router]);
 
-  const handleNavigateToWatchlist = useCallback(() => {
-    router.push('/overview/watchlist');
+  const handleNavigateToWatchlist = useCallback((tab: 'watchlist' | 'browse' = 'watchlist') => {
+    router.push(`/overview/watchlist?tab=${tab}`);
   }, [router]);
 
   const handleRemoveFromWatchlist = useCallback((asset: string) => {
@@ -417,7 +417,7 @@ export default function DashboardPage() {
   }, []);
 
   const handleBuyAsset = useCallback((asset: string) => {
-    router.push(`/trade?pair=${asset}-USD`);
+    router.push(`/buy-sell?asset=${asset}`);
   }, [router]);
 
   // Quick actions - memoized
@@ -631,7 +631,7 @@ export default function DashboardPage() {
               isMobile={isMobile}
               action={
                 <button
-                  onClick={handleNavigateToWatchlist}
+                  onClick={() => handleNavigateToWatchlist('browse')}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -695,7 +695,7 @@ export default function DashboardPage() {
                   ))}
                   {watchlistTokens.length > 4 && (
                     <button
-                      onClick={handleNavigateToWatchlist}
+                      onClick={() => handleNavigateToWatchlist('watchlist')}
                       style={{
                         display: 'flex',
                         alignItems: 'center',

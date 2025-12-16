@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { theme, Grid, Skeleton, Input, message } from 'antd';
-import { StarOutlined, StarFilled, SearchOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { theme, Grid, Skeleton, Input, message, Empty } from 'antd';
+import { StarOutlined, StarFilled, SearchOutlined, ArrowLeftOutlined, AppstoreOutlined, UnorderedListOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'motion/react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { fontWeights } from '@/theme/themeConfig';
@@ -13,6 +13,8 @@ import { getWatchlist, toggleWatchlist, WatchlistItem } from '@/services/api/wat
 
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
+
+type TabKey = 'watchlist' | 'browse';
 
 export default function WatchlistPage() {
   const router = useRouter();
@@ -27,9 +29,18 @@ export default function WatchlistPage() {
   const [watchlistItems, setWatchlistItems] = useState<string[]>([]);
   const [loadingWatchlist, setLoadingWatchlist] = useState(true);
   const [togglingAsset, setTogglingAsset] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabKey>('watchlist');
 
   const isDark = mode === 'dark';
   const isMobile = mounted ? !screens.md : false;
+
+  // Read tab from query parameter on mount
+  useEffect(() => {
+    const tabParam = router.query.tab as string;
+    if (tabParam === 'browse' || tabParam === 'watchlist') {
+      setActiveTab(tabParam);
+    }
+  }, [router.query.tab]);
 
   useEffect(() => {
     setMounted(true);
@@ -86,17 +97,25 @@ export default function WatchlistPage() {
     });
   }, [pairs]);
 
-  // Filter tokens by search query
+  // Get watchlisted tokens only
+  const watchlistedTokens = useMemo(() => {
+    return usdTokens.filter((token) => watchlistItems.includes(token.baseCurrency));
+  }, [usdTokens, watchlistItems]);
+
+  // Filter tokens by search query and active tab
   const filteredTokens = useMemo(() => {
-    if (!searchQuery.trim()) return usdTokens;
+    // Start with the appropriate base list based on active tab
+    const baseList = activeTab === 'watchlist' ? watchlistedTokens : usdTokens;
+    
+    if (!searchQuery.trim()) return baseList;
     
     const query = searchQuery.toLowerCase();
-    return usdTokens.filter(
+    return baseList.filter(
       (token) =>
         token.baseCurrency.toLowerCase().includes(query) ||
         token.name.toLowerCase().includes(query)
     );
-  }, [usdTokens, searchQuery]);
+  }, [usdTokens, watchlistedTokens, searchQuery, activeTab]);
 
   // Handle toggle watchlist
   const handleToggle = async (asset: string) => {
@@ -118,9 +137,9 @@ export default function WatchlistPage() {
     }
   };
 
-  // Navigate to exchange with the asset pair
+  // Navigate to buy-sell page with the asset
   const handleBuy = (asset: string) => {
-    router.push(`/trade?pair=${asset}-USD`);
+    router.push(`/buy-sell?asset=${asset}`);
   };
 
   if (pageLoading || isLoadingPairs) {
@@ -184,7 +203,7 @@ export default function WatchlistPage() {
                 margin: 0,
               }}
             >
-              Add to Watchlist
+              {activeTab === 'watchlist' ? 'My Watchlist' : 'Browse Tokens'}
             </h1>
             <p
               style={{
@@ -193,9 +212,83 @@ export default function WatchlistPage() {
                 margin: 0,
               }}
             >
-              {watchlistItems.length} tokens in your watchlist
+              {activeTab === 'watchlist' 
+                ? `${watchlistItems.length} tokens in your watchlist`
+                : `${usdTokens.length} tokens available`}
             </p>
           </div>
+        </motion.div>
+
+        {/* Tabs */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+          style={{
+            display: 'flex',
+            gap: token.marginXS,
+            marginBottom: token.marginLG,
+            background: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+            padding: 4,
+            borderRadius: token.borderRadiusLG,
+          }}
+        >
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              setActiveTab('watchlist');
+              router.replace('/overview/watchlist?tab=watchlist', undefined, { shallow: true });
+            }}
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: token.marginXS,
+              padding: `${token.paddingSM}px ${token.paddingMD}px`,
+              border: 'none',
+              borderRadius: token.borderRadius,
+              background: activeTab === 'watchlist' 
+                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                : 'transparent',
+              color: activeTab === 'watchlist' ? '#fff' : token.colorTextSecondary,
+              fontSize: token.fontSize,
+              fontWeight: fontWeights.semibold,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            <StarFilled style={{ fontSize: token.fontSizeSM }} />
+            My Watchlist ({watchlistItems.length})
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              setActiveTab('browse');
+              router.replace('/overview/watchlist?tab=browse', undefined, { shallow: true });
+            }}
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: token.marginXS,
+              padding: `${token.paddingSM}px ${token.paddingMD}px`,
+              border: 'none',
+              borderRadius: token.borderRadius,
+              background: activeTab === 'browse' 
+                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                : 'transparent',
+              color: activeTab === 'browse' ? '#fff' : token.colorTextSecondary,
+              fontSize: token.fontSize,
+              fontWeight: fontWeights.semibold,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            <AppstoreOutlined style={{ fontSize: token.fontSizeSM }} />
+            Browse All
+          </motion.button>
         </motion.div>
 
         {/* Search */}
@@ -206,7 +299,7 @@ export default function WatchlistPage() {
           style={{ marginBottom: token.marginLG }}
         >
           <Input
-            placeholder="Search by name or symbol..."
+            placeholder={activeTab === 'watchlist' ? 'Search your watchlist...' : 'Search all tokens...'}
             prefix={<SearchOutlined style={{ color: token.colorTextSecondary }} />}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -400,9 +493,39 @@ export default function WatchlistPage() {
                 color: token.colorTextSecondary,
               }}
             >
-              <SearchOutlined style={{ fontSize: 48, opacity: 0.3, marginBottom: token.marginMD }} />
-              <div style={{ fontSize: token.fontSizeLG }}>No tokens found</div>
-              <div style={{ fontSize: token.fontSize }}>Try a different search term</div>
+              {activeTab === 'watchlist' && watchlistItems.length === 0 ? (
+                <>
+                  <StarOutlined style={{ fontSize: 48, opacity: 0.3, marginBottom: token.marginMD }} />
+                  <div style={{ fontSize: token.fontSizeLG, marginBottom: token.marginXS }}>Your watchlist is empty</div>
+                  <div style={{ fontSize: token.fontSize, marginBottom: token.marginLG }}>Start tracking your favorite tokens</div>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      setActiveTab('browse');
+                      router.replace('/overview/watchlist?tab=browse', undefined, { shallow: true });
+                    }}
+                    style={{
+                      padding: `${token.paddingSM}px ${token.paddingLG}px`,
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      border: 'none',
+                      borderRadius: token.borderRadius,
+                      color: '#fff',
+                      fontSize: token.fontSize,
+                      fontWeight: fontWeights.semibold,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Browse Tokens
+                  </motion.button>
+                </>
+              ) : (
+                <>
+                  <SearchOutlined style={{ fontSize: 48, opacity: 0.3, marginBottom: token.marginMD }} />
+                  <div style={{ fontSize: token.fontSizeLG }}>No tokens found</div>
+                  <div style={{ fontSize: token.fontSize }}>Try a different search term</div>
+                </>
+              )}
             </motion.div>
           )}
         </motion.div>

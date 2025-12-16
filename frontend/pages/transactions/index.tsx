@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { theme, Grid, Skeleton, Empty } from 'antd';
+import { theme, Grid, Skeleton, Empty, message } from 'antd';
 import {
   SwapOutlined,
   ArrowUpOutlined,
@@ -27,6 +27,7 @@ type FilterTab = 'all' | 'trades' | 'deposits' | 'withdrawals';
 
 interface Transaction {
   id: string;
+  transactionId: string;
   type: 'trade' | 'deposit' | 'withdrawal';
   asset: string;
   amount: number;
@@ -258,9 +259,33 @@ const TransactionCard = memo(({
               fontSize: token.fontSizeSM,
               color: token.colorTextSecondary,
               marginTop: 2,
+              display: 'flex',
+              alignItems: 'center',
+              gap: token.marginXS,
             }}
           >
-            {formatDate(transaction.date)}
+            <span>{formatDate(transaction.date)}</span>
+            <span style={{ opacity: 0.5 }}>•</span>
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(transaction.transactionId);
+                message.success({
+                  content: `Copied: ${transaction.transactionId}`,
+                  duration: 2,
+                });
+              }}
+              style={{
+                fontFamily: 'monospace',
+                fontSize: 11,
+                padding: '1px 4px',
+                background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                borderRadius: 4,
+                cursor: 'pointer',
+              }}
+            >
+              {transaction.transactionId}
+            </span>
           </div>
         </div>
 
@@ -359,20 +384,35 @@ const TransactionRow = memo(({
     );
   };
 
+  // Check if this is a buy/deposit or sell/withdrawal for row coloring
+  const isBuyOrDeposit = transaction.type === 'deposit' || (transaction.type === 'trade' && transaction.side === 'BUY');
+  
+  // Row border color for clear visual distinction
+  const getBorderColor = () => {
+    if (isBuyOrDeposit) {
+      return '#16C47F'; // Green for buy/deposit
+    }
+    return '#fc6f03'; // Orange for sell/withdrawal
+  };
+
+  // Use the transaction ID from the database
+  const displayId = transaction.transactionId;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      whileHover={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(102, 126, 234, 0.03)' }}
+      whileHover={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(102, 126, 234, 0.05)' }}
       onClick={onRowClick}
       style={{
         display: 'grid',
-        gridTemplateColumns: '1.5fr 1fr 1fr 1fr 100px',
+        gridTemplateColumns: '1.5fr 1fr 1fr 1fr 120px',
         alignItems: 'center',
         gap: token.marginMD,
         padding: `${token.paddingSM}px ${token.paddingMD}px`,
         borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
+        borderLeft: `4px solid ${getBorderColor()}`,
         cursor: onRowClick ? 'pointer' : 'default',
         transition: 'background-color 0.15s',
       }}
@@ -441,27 +481,42 @@ const TransactionRow = memo(({
       {/* Status */}
       <div>{getStatusBadge()}</div>
 
-      {/* Change indicator */}
+      {/* Transaction ID */}
       <div
+        title="Click to copy"
+        onClick={(e) => {
+          e.stopPropagation();
+          navigator.clipboard.writeText(displayId);
+          message.success({
+            content: `Copied: ${displayId}`,
+            duration: 2,
+            style: { marginTop: '10vh' },
+          });
+        }}
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'flex-end',
           gap: 4,
-          color: transaction.type === 'withdrawal' || (transaction.type === 'trade' && transaction.side === 'SELL') 
-            ? '#fc6f03' 
-            : '#16C47F',
-          fontWeight: fontWeights.semibold,
-          fontSize: token.fontSize,
+          color: token.colorTextSecondary,
+          fontSize: token.fontSizeSM,
+          fontFamily: 'monospace',
+          cursor: 'pointer',
+          padding: '4px 8px',
+          borderRadius: token.borderRadiusSM,
+          background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+          transition: 'all 0.15s',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(102, 126, 234, 0.1)';
+          e.currentTarget.style.color = token.colorPrimary;
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)';
+          e.currentTarget.style.color = token.colorTextSecondary;
         }}
       >
-        {transaction.type === 'withdrawal' || (transaction.type === 'trade' && transaction.side === 'SELL') 
-          ? <ArrowUpOutlined /> 
-          : <ArrowDownOutlined />}
-        {transaction.type === 'withdrawal' || (transaction.type === 'trade' && transaction.side === 'SELL') 
-          ? '-' 
-          : '+'}
-        ${Math.abs(transaction.value).toFixed(2)}
+        {displayId}
       </div>
     </motion.div>
   );
@@ -472,7 +527,7 @@ export default function TransactionsPage() {
   const router = useRouter();
   const { token } = useToken();
   const { user, isLoading } = useAuth();
-  const { orders, isLoadingOrders, pairs } = useExchange();
+  const { orders, isLoadingOrders, pairs, refreshOrders } = useExchange();
   const { mode } = useThemeMode();
   const screens = useBreakpoint();
   const [mounted, setMounted] = useState(false);
@@ -502,9 +557,13 @@ export default function TransactionsPage() {
     }
   }, [user, isLoading, router]);
 
-  // Fetch fiat transactions
+  // Fetch orders and fiat transactions when page loads
   useEffect(() => {
     if (!pageLoading && user) {
+      // Fetch orders from exchange context (not fetched on initial context load)
+      refreshOrders();
+      
+      // Fetch fiat transactions
       const fetchFiat = async () => {
         try {
           setLoadingFiat(true);
@@ -519,7 +578,7 @@ export default function TransactionsPage() {
       };
       fetchFiat();
     }
-  }, [pageLoading, user]);
+  }, [pageLoading, user, refreshOrders]);
 
   // Get icon URL for an asset
   const getIconUrl = useCallback((asset: string) => {
@@ -536,6 +595,7 @@ export default function TransactionsPage() {
     orders.forEach(order => {
       result.push({
         id: `trade-${order.id}`,
+        transactionId: order.transactionId,
         type: 'trade',
         asset: order.asset,
         amount: order.filledAmount,
@@ -551,6 +611,7 @@ export default function TransactionsPage() {
     fiatTransactions.forEach(tx => {
       result.push({
         id: `fiat-${tx.id}`,
+        transactionId: tx.transactionId,
         type: tx.type === 'DEPOSIT' ? 'deposit' : 'withdrawal',
         asset: 'USD',
         amount: tx.amount,
@@ -864,7 +925,7 @@ export default function TransactionsPage() {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '1.5fr 1fr 1fr 1fr 100px',
+                    gridTemplateColumns: '1.5fr 1fr 1fr 1fr 120px',
                     gap: token.marginMD,
                     padding: `${token.paddingSM}px ${token.paddingMD}px`,
                     borderBottom: `2px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(102, 126, 234, 0.1)'}`,
@@ -884,7 +945,7 @@ export default function TransactionsPage() {
                     Status
                   </div>
                   <div style={{ fontSize: 11, color: token.colorTextTertiary, textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'right' }}>
-                    Net
+                    ID
                   </div>
                 </div>
 

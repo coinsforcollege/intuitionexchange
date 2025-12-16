@@ -13,6 +13,7 @@ export interface CreateOrderDto {
 
 export interface OrderResponse {
   id: string;
+  transactionId: string;
   productId: string;
   asset: string;
   quote: string;
@@ -27,6 +28,17 @@ export interface OrderResponse {
   coinbaseOrderId: string | null;
   createdAt: Date;
   completedAt: Date | null;
+}
+
+/**
+ * Generate a human-readable transaction ID
+ * Format: TXN-YYYYMMDD-XXXXXX (e.g., TXN-20241216-A1B2C3)
+ */
+function generateTransactionId(): string {
+  const now = new Date();
+  const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
+  const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `TXN-${datePart}-${randomPart}`;
 }
 
 @Injectable()
@@ -119,6 +131,7 @@ export class OrdersService {
     // Create pending order in database
     const order = await this.prisma.client.trade.create({
       data: {
+        transactionId: generateTransactionId(),
         userId,
         productId,
         asset,
@@ -579,6 +592,7 @@ export class OrdersService {
   private mapOrderToResponse(order: any): OrderResponse {
     return {
       id: order.id,
+      transactionId: order.transactionId || `TXN-${order.id.slice(0, 8).toUpperCase()}`,
       productId: order.productId,
       asset: order.asset,
       quote: order.quote,

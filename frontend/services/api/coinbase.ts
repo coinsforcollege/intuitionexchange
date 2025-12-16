@@ -42,6 +42,7 @@ export interface CoinbaseOrder {
 // Internal order (from our database)
 export interface InternalOrder {
   id: string;
+  transactionId: string;
   productId: string;
   asset: string;
   quote: string;

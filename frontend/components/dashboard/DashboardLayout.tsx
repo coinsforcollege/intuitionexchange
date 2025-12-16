@@ -20,7 +20,7 @@ import {
   SunOutlined,
   MoonOutlined,
   DollarOutlined,
-  FileTextOutlined,
+  HistoryOutlined,
   LineChartOutlined,
   LeftOutlined,
   RightOutlined,
@@ -140,9 +140,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     { 
       key: 'transactions', 
       label: 'Transactions', 
-      icon: <FileTextOutlined />, 
+      icon: <HistoryOutlined />, 
       href: '/transactions',
-      gradient: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+      gradient: 'linear-gradient(135deg, #5f72bd 0%, #9b23ea 100%)',
     },
   ];
 
@@ -275,7 +275,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     width: token.controlHeightSM + 4,
     height: token.controlHeightSM + 4,
     borderRadius: token.borderRadiusSM,
-    background: isActive ? item.gradient : 'rgba(255,255,255,0.15)',
+    background: isActive ? item.gradient : item.gradient,
+    opacity: isActive ? 1 : 0.6,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
