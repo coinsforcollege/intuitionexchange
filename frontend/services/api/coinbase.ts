@@ -85,7 +85,7 @@ async function apiCall<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -102,17 +102,28 @@ async function apiCall<T>(
     const data = await response.json();
 
     if (!response.ok) {
-      console.error(`API Error [${response.status}] ${endpoint}:`, data);
-      throw new Error(data.message || `API request failed: ${response.status}`);
+      // Log technical details for debugging (only in development)
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`API Error [${response.status}] ${endpoint}:`, data);
+      }
+      // Create user-friendly error
+      // In development, this will show in Next.js overlay (good for debugging)
+      // In production, this will be caught and shown as user message
+      throw new Error(data.message || 'Unable to process request. Please try again later.');
     }
 
     return data;
   } catch (error: any) {
     // Network error or JSON parse error
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error('Backend server is not running. Please start the backend.');
+      throw new Error('Unable to connect to server. Please check your connection and try again.');
     }
-    throw error;
+    // Re-throw with user-friendly message if it's already an Error with message
+    if (error instanceof Error) {
+      throw error;
+    }
+    // Fallback for unknown errors
+    throw new Error('An unexpected error occurred. Please try again later.');
   }
 }
 
@@ -168,20 +179,39 @@ export async function getAccounts(): Promise<CoinbaseAccount[]> {
 
 /**
  * Place a market order (uses internal orders API)
+ * Returns result object with success flag and optional error
+ * Wraps apiCall to catch errors synchronously and prevent Next.js overlay
  */
 export async function placeOrder(
   productId: string,
   side: 'BUY' | 'SELL',
   amount: number,
-): Promise<{ order: InternalOrder; success: boolean }> {
-  const data = await apiCall<{ success: boolean; order: InternalOrder }>(
-    '/orders',
-    {
-      method: 'POST',
-      body: JSON.stringify({ productId, side, amount }),
-    },
-  );
-  return { order: data.order, success: data.success };
+): Promise<{ order?: InternalOrder; success: boolean; error?: string }> {
+  // Wrap in Promise.resolve().then() to catch errors synchronously before Next.js can intercept
+  return Promise.resolve().then(async () => {
+    try {
+      const data = await apiCall<{ success: boolean; order: InternalOrder }>(
+        '/orders',
+        {
+          method: 'POST',
+          body: JSON.stringify({ productId, side, amount }),
+        },
+      );
+      return { order: data.order, success: data.success };
+    } catch (error: any) {
+      // Return error instead of throwing to prevent Next.js overlay
+      return {
+        success: false,
+        error: error?.message || 'Unable to process trade at this time. Please try again later.',
+      };
+    }
+  }).catch((error: any) => {
+    // Final catch to ensure no error escapes
+    return {
+      success: false,
+      error: error?.message || 'Unable to process trade at this time. Please try again later.',
+    };
+  });
 }
 
 /**
@@ -245,5 +275,15 @@ export function getCryptoIconUrl(symbol: string): string {
 export function getCryptoIconFallback(symbol: string): string {
   const symbolLower = symbol.toLowerCase();
   return `https://cryptoicons.org/api/icon/${symbolLower}/200`;
+}
+
+/**
+ * Get platform revenue
+ */
+export async function getRevenue(): Promise<Array<{ currency: string; amount: number }>> {
+  const data = await apiCall<{ success: boolean; revenue: Array<{ currency: string; amount: number }> }>(
+    '/orders/revenue',
+  );
+  return data.revenue;
 }
 

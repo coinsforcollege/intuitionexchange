@@ -10,6 +10,9 @@ import { AuthModule } from './modules/auth/auth.module';
 import { KycModule } from './modules/kyc/kyc.module';
 import { CoinbaseModule } from './modules/coinbase/coinbase.module';
 import { OrdersModule } from './modules/orders/orders.module';
+import { AssetsModule } from './modules/assets/assets.module';
+import { FiatModule } from './modules/fiat/fiat.module';
+import { WatchlistModule } from './modules/watchlist/watchlist.module';
 
 @Module({
   imports: [
@@ -31,6 +34,12 @@ import { OrdersModule } from './modules/orders/orders.module';
     CoinbaseModule,
     // Internal orders module
     OrdersModule,
+    // Assets/Balances module
+    AssetsModule,
+    // Fiat operations module
+    FiatModule,
+    // Watchlist module
+    WatchlistModule,
   ],
   controllers: [AppController, TestController],
   providers: [AppService, PrismaService, EmailService],

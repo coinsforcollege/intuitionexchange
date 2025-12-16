@@ -6,9 +6,12 @@ import { LineChartOutlined, DollarOutlined, HistoryOutlined } from '@ant-design/
 import { motion } from 'motion/react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { TradingChart, PairSelector, TradeForm } from '@/components/exchange';
+import OrderStatusModal from '@/components/exchange/OrderStatusModal';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
-import { ExchangeProvider, useExchange } from '@/context/ExchangeContext';
+import { useExchange } from '@/context/ExchangeContext';
+import { useThemeMode } from '@/context/ThemeContext';
+import { InternalOrder } from '@/services/api/coinbase';
 
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
@@ -18,9 +21,15 @@ function ExchangePageContent() {
   const router = useRouter();
   const { token } = useToken();
   const { user, isLoading } = useAuth();
+  const { mode } = useThemeMode();
   const screens = useBreakpoint();
   const [mounted, setMounted] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+  const [showOrderBook, setShowOrderBook] = useState(true);
+  const [orderStatusModalVisible, setOrderStatusModalVisible] = useState(false);
+  const [currentOrder, setCurrentOrder] = useState<InternalOrder | null>(null);
+  
+  const isDark = mode === 'dark';
   
   const {
     pairs,
@@ -30,6 +39,7 @@ function ExchangePageContent() {
     currentPairData,
     currentPrice,
     priceChange,
+    currentUsdVolume,
     candles,
     isLoadingCandles,
     candleGranularity,
@@ -43,7 +53,20 @@ function ExchangePageContent() {
     isLoadingOrderBook,
     executeTrade,
     isTrading,
+    refreshOrders,
+    refreshBalances,
   } = useExchange();
+
+  // Format USD volume for display
+  const formatVolume = (volume: number): string => {
+    if (isNaN(volume) || volume <= 0) return '$0';
+    if (volume >= 1e9) return `$${(volume / 1e9).toFixed(1)}B`;
+    if (volume >= 1e6) return `$${(volume / 1e6).toFixed(1)}M`;
+    if (volume >= 1e3) return `$${(volume / 1e3).toFixed(1)}K`;
+    return `$${volume.toFixed(0)}`;
+  };
+
+  const formattedUsdVolume = formatVolume(currentUsdVolume);
 
   const isMobile = mounted ? !screens.md : false;
   const isTablet = mounted ? (screens.md && !screens.lg) : false;
@@ -53,6 +76,18 @@ function ExchangePageContent() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Handle pair from URL query param
+  useEffect(() => {
+    if (router.query.pair && typeof router.query.pair === 'string') {
+      const pairFromUrl = router.query.pair.toUpperCase();
+      // Validate pair exists
+      const pairExists = pairs.some(p => p.symbol === pairFromUrl);
+      if (pairExists) {
+        setSelectedPair(pairFromUrl);
+      }
+    }
+  }, [router.query.pair, pairs, setSelectedPair]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -70,13 +105,126 @@ function ExchangePageContent() {
 
   // Handle trade execution
   const handleTrade = async (side: 'BUY' | 'SELL', amount: number, total: number) => {
-    const success = await executeTrade(side, amount, total);
-    if (success) {
-      message.success(`${side} order placed successfully!`);
+    const [baseAsset, quoteAsset] = selectedPair.split('-');
+    
+    // Create pending order immediately
+    const pendingOrder: InternalOrder = {
+      id: `pending-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+      productId: selectedPair,
+      asset: baseAsset,
+      quote: quoteAsset,
+      side,
+      requestedAmount: side === 'BUY' ? amount : amount,
+      filledAmount: 0,
+      price: currentPrice || 0,
+      totalValue: side === 'BUY' ? total : total,
+      platformFee: total * 0.005,
+      exchangeFee: 0,
+      status: 'PENDING',
+      coinbaseOrderId: null,
+      createdAt: new Date().toISOString(),
+      completedAt: null,
+    };
+    
+    // Show modal immediately with pending order
+    setCurrentOrder(pendingOrder);
+    setOrderStatusModalVisible(true);
+    
+    // Execute trade in background
+    const result = await executeTrade(side, amount, total);
+    
+    if (result.success) {
+      // Update modal with real order from API
+      if (result.order) {
+        setCurrentOrder(result.order);
+        
+        // If order is already completed, show success toast
+        if (result.order.status === 'COMPLETED' && result.order.filledAmount > 0) {
+          message.success(
+            `${side} order completed! Filled ${result.order.filledAmount.toFixed(8)} ${baseAsset} at $${result.order.price.toFixed(2)}`,
+            5
+          );
+        } else if (result.order.status === 'PENDING') {
+          // Start polling for order status
+          pollOrderStatus(result.order.id);
+        }
+      } else {
+        // If no order in response, refresh and try to get it
+        await refreshOrders();
+        await new Promise(resolve => setTimeout(resolve, 300));
+        const latestOrders = orders.slice(0, 1);
+        if (latestOrders.length > 0) {
+          const order = latestOrders[0];
+          setCurrentOrder(order);
+          if (order.status === 'PENDING') {
+            pollOrderStatus(order.id);
+          }
+        }
+      }
     } else {
-      message.error(`Failed to place ${side} order`);
+      // Update modal to show failed status
+      setCurrentOrder({
+        ...pendingOrder,
+        status: 'FAILED',
+      });
+      message.error('Unable to process trade at this time. Please try again later.');
     }
   };
+
+  // Poll for order status updates
+  const pollOrderStatus = (orderId: string) => {
+    let attempts = 0;
+    const maxAttempts = 15; // Poll for up to 30 seconds (15 * 2s)
+    
+    const pollInterval = setInterval(async () => {
+      attempts++;
+      
+      // Refresh orders
+      await refreshOrders();
+      
+      // Wait a bit for state to update, then check orders
+      setTimeout(() => {
+        // Find the order in the updated orders list
+        const updatedOrder = orders.find((o: any) => o.id === orderId);
+        if (updatedOrder) {
+          setCurrentOrder(updatedOrder);
+          
+          // If order is completed or failed, stop polling and show final toast
+          if (updatedOrder.status === 'COMPLETED' || updatedOrder.status === 'FAILED' || updatedOrder.status === 'CANCELLED') {
+            clearInterval(pollInterval);
+            
+            if (updatedOrder.status === 'COMPLETED' && updatedOrder.filledAmount > 0) {
+              const [baseAsset] = selectedPair.split('-');
+              message.success(
+                `${updatedOrder.side} order completed! Filled ${updatedOrder.filledAmount.toFixed(8)} ${baseAsset} at $${updatedOrder.price.toFixed(2)}`,
+                5
+              );
+            } else if (updatedOrder.status === 'FAILED') {
+              message.error('Order failed. Please try again.');
+            }
+            
+            // Refresh balances after order completes
+            refreshBalances();
+          }
+        }
+      }, 300);
+      
+      // Stop polling after max attempts
+      if (attempts >= maxAttempts) {
+        clearInterval(pollInterval);
+      }
+    }, 2000); // Poll every 2 seconds
+  };
+  
+  // Watch orders array for updates to current order
+  useEffect(() => {
+    if (currentOrder && orderStatusModalVisible) {
+      const updatedOrder = orders.find((o: any) => o.id === currentOrder.id);
+      if (updatedOrder && updatedOrder.status !== currentOrder.status) {
+        setCurrentOrder(updatedOrder);
+      }
+    }
+  }, [orders, currentOrder, orderStatusModalVisible]);
 
   const baseBalance = getBalance(baseAsset);
   const quoteBalance = getBalance(quoteAsset);
@@ -245,6 +393,19 @@ function ExchangePageContent() {
             />
           </motion.div>
         </DashboardLayout>
+        
+        {/* Order Status Modal */}
+        <OrderStatusModal
+          visible={orderStatusModalVisible}
+          order={currentOrder}
+          onClose={() => {
+            setOrderStatusModalVisible(false);
+            setCurrentOrder(null);
+          }}
+          onStatusUpdate={(updatedOrder) => {
+            setCurrentOrder(updatedOrder);
+          }}
+        />
       </>
     );
   }
@@ -258,12 +419,24 @@ function ExchangePageContent() {
       <Head>
         <title>Trade {selectedPair} - InTuition Exchange</title>
       </Head>
-      <DashboardLayout activeKey="exchange" fullWidth>
+      <DashboardLayout 
+        activeKey="exchange" 
+        fullWidth
+        exchangeData={{
+          pair: selectedPair,
+          price: currentPrice,
+          change: priceChange,
+          volume: formattedUsdVolume,
+          iconUrl: currentPairData?.iconUrl || `https://assets.coincap.io/assets/icons/${baseAsset.toLowerCase()}@2x.png`,
+          baseAsset: baseAsset,
+        }}
+      >
         <div style={{ 
           display: 'flex', 
           width: '100%', 
           height: '100%',
           overflow: 'hidden',
+          paddingTop: token.paddingMD,
         }}>
           {/* Left - Pairs (fixed width) */}
           {!isTablet && (
@@ -271,7 +444,7 @@ function ExchangePageContent() {
               width: PAIR_COLUMN_WIDTH, 
               minWidth: PAIR_COLUMN_WIDTH, 
               maxWidth: PAIR_COLUMN_WIDTH,
-              borderRight: `1px solid ${token.colorBorderSecondary}`,
+              borderRight: `2px solid ${isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(102, 126, 234, 0.3)'}`,
               flexShrink: 0,
               height: '100%',
               overflow: 'hidden',
@@ -290,7 +463,7 @@ function ExchangePageContent() {
           <div style={{ 
             flex: 1, 
             minWidth: 0,
-            borderRight: `1px solid ${token.colorBorderSecondary}`,
+            borderRight: `2px solid ${isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(102, 126, 234, 0.3)'}`,
             display: 'flex',
             flexDirection: 'column',
             height: '100%',
@@ -302,7 +475,7 @@ function ExchangePageContent() {
               minHeight: 0,
               display: 'flex',
               flexDirection: 'column',
-              borderBottom: `1px solid ${token.colorBorderSecondary}`,
+              borderBottom: `2px solid ${isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(102, 126, 234, 0.3)'}`,
               padding: `0 ${token.paddingMD}px`,
             }}>
               {isTablet && (
@@ -311,54 +484,14 @@ function ExchangePageContent() {
                 </div>
               )}
 
-              {/* Compact Price Header */}
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'space-between', 
-                padding: `${token.paddingSM}px 0`,
-                borderBottom: `1px solid ${token.colorBorderSecondary}`,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM }}>
-                  <img
-                    src={currentPairData?.iconUrl || `https://assets.coincap.io/assets/icons/${baseAsset.toLowerCase()}@2x.png`}
-                    alt={baseAsset}
-                    width={32}
-                    height={32}
-                    style={{ borderRadius: '50%' }}
-                    onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${baseAsset}&background=799EFF&color=fff`; }}
-                  />
-                  <div>
-                    <div style={{ fontSize: token.fontSizeLG, fontWeight: fontWeights.bold, color: token.colorText, lineHeight: 1.2 }}>
-                      {baseAsset}/{quoteAsset}
-                    </div>
-                    <div style={{ fontSize: token.fontSizeSM, color: token.colorTextTertiary, lineHeight: 1.2 }}>
-                      {currentPairData?.name || baseAsset}
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: token.marginMD }}>
-                  <span style={{ 
-                    fontSize: token.fontSizeHeading4, 
-                    fontWeight: fontWeights.bold, 
-                    color: token.colorText,
-                    lineHeight: 1.2,
-                  }}>
-                    ${currentPrice.toLocaleString('en-US', { maximumFractionDigits: 2 })}
-                  </span>
-                  <span style={{ 
-                    fontSize: token.fontSize, 
-                    fontWeight: fontWeights.semibold,
-                    color: priceChange >= 0 ? token.colorSuccess : token.colorError,
-                    lineHeight: 1.2,
-                  }}>
-                    {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
-                  </span>
-                </div>
-              </div>
-
               {/* Chart - fills remaining space */}
-              <div style={{ flex: 1, minHeight: 0 }}>
+              <div style={{ 
+                flex: 1, 
+                minHeight: 0,
+                backgroundColor: isDark ? 'rgba(0, 0, 0, 0.2)' : 'rgba(102, 126, 234, 0.02)',
+                borderRadius: token.borderRadiusSM,
+                padding: token.paddingSM,
+              }}>
                 <TradingChart
                   candles={candles}
                   isLoading={isLoadingCandles}
@@ -378,7 +511,14 @@ function ExchangePageContent() {
               overflow: 'hidden',
             }}>
               {/* Left - Trade History */}
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ 
+                flex: 0.4, 
+                minWidth: 0, 
+                display: 'flex', 
+                flexDirection: 'column',
+                borderRight: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(102, 126, 234, 0.15)'}`,
+                paddingRight: token.paddingMD,
+              }}>
                 <div style={{ 
                   fontSize: token.fontSizeSM, 
                   fontWeight: fontWeights.semibold, 
@@ -391,38 +531,47 @@ function ExchangePageContent() {
                 </div>
                 <TradeHistoryCompact trades={publicTrades} isLoading={isLoadingTrades} />
               </div>
-              {/* Right - Order Book + My Orders Tab Group */}
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                <Tabs
-                  defaultActiveKey="orderbook"
-                  size="small"
-                  style={{ 
-                    height: '100%', 
-                    display: 'flex', 
-                    flexDirection: 'column',
-                    minHeight: 0,
-                  }}
-                  items={[
-                    {
-                      key: 'orderbook',
-                      label: <span style={{ fontSize: token.fontSizeSM, fontWeight: fontWeights.medium }}>Order Book</span>,
-                      children: (
-                        <div style={{ height: '100%', minHeight: 0 }}>
-                          <OrderBookCompact orderBook={orderBook} isLoading={isLoadingOrderBook} />
-                        </div>
-                      ),
-                    },
-                    {
-                      key: 'orders',
-                      label: <span style={{ fontSize: token.fontSizeSM, fontWeight: fontWeights.medium }}><HistoryOutlined /> My Orders</span>,
-                      children: (
-                        <div style={{ height: '100%', minHeight: 0 }}>
-                          <OrderHistory orders={orders} isLoading={isLoadingOrders} />
-                        </div>
-                      ),
-                    },
-                  ]}
-                />
+              {/* Right - Order Book / My Orders (toggleable) */}
+              <div style={{ flex: 0.6, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ 
+                  fontSize: token.fontSizeSM, 
+                  fontWeight: fontWeights.semibold, 
+                  color: token.colorTextSecondary, 
+                  marginBottom: token.marginXS,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                }}>
+                  <span 
+                    style={{ 
+                      color: showOrderBook ? '#722ED1' : token.colorTextSecondary,
+                      transition: 'color 0.2s ease',
+                      marginRight: token.marginMD,
+                    }}
+                    onClick={() => setShowOrderBook(true)}
+                  >
+                    Order Book
+                  </span>
+                  <span 
+                    style={{ 
+                      color: !showOrderBook ? '#722ED1' : token.colorTextSecondary,
+                      transition: 'color 0.2s ease',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: token.marginXXS,
+                    }}
+                    onClick={() => setShowOrderBook(false)}
+                  >
+                    <HistoryOutlined style={{ fontSize: token.fontSizeSM }} />
+                    My Orders
+                  </span>
+                </div>
+                {showOrderBook ? (
+                  <OrderBookCompact orderBook={orderBook} isLoading={isLoadingOrderBook} />
+                ) : (
+                  <OrderHistory orders={orders} isLoading={isLoadingOrders} />
+                )}
               </div>
             </div>
           </div>
@@ -450,6 +599,19 @@ function ExchangePageContent() {
           </div>
         </div>
       </DashboardLayout>
+      
+      {/* Order Status Modal */}
+      <OrderStatusModal
+        visible={orderStatusModalVisible}
+        order={currentOrder}
+        onClose={() => {
+          setOrderStatusModalVisible(false);
+          setCurrentOrder(null);
+        }}
+        onStatusUpdate={(updatedOrder) => {
+          setCurrentOrder(updatedOrder);
+        }}
+      />
     </>
   );
 }
@@ -457,6 +619,8 @@ function ExchangePageContent() {
 // Order history component - Shows all orders with time
 function OrderHistory({ orders, isLoading }: { orders: any[]; isLoading: boolean }) {
   const { token } = theme.useToken();
+  const { mode } = useThemeMode();
+  const isDark = mode === 'dark';
 
   if (isLoading) {
     return <Skeleton active paragraph={{ rows: 5 }} />;
@@ -486,8 +650,8 @@ function OrderHistory({ orders, isLoading }: { orders: any[]; isLoading: boolean
       {/* Header */}
       <div style={{
         display: 'flex',
-        padding: `${token.paddingXS}px 0`,
-        fontSize: token.fontSizeSM,
+        padding: `${token.paddingSM}px ${token.paddingMD}px`,
+        fontSize: token.fontSize,
         color: token.colorTextSecondary,
         fontWeight: fontWeights.semibold,
         borderBottom: `1px solid ${token.colorBorderSecondary}`,
@@ -503,21 +667,36 @@ function OrderHistory({ orders, isLoading }: { orders: any[]; isLoading: boolean
         overflowY: 'auto',
         minHeight: 0,
       }}>
-        {orders.map((order) => (
+        {orders.map((order, index) => (
           <div
             key={order.id}
             style={{
               display: 'flex',
               justifyContent: 'space-between',
-              padding: `${token.paddingXXS}px 0`,
+              padding: `${token.paddingSM}px ${token.paddingMD}px`,
               borderBottom: `1px solid ${token.colorBorderSecondary}`,
-              fontSize: token.fontSizeSM,
+              fontSize: token.fontSize,
+              backgroundColor: index % 2 === 0 
+                ? (isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(102, 126, 234, 0.02)')
+                : 'transparent',
+              transition: 'background-color 0.2s ease',
+              cursor: 'pointer',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = isDark 
+                ? 'rgba(255, 255, 255, 0.05)' 
+                : 'rgba(102, 126, 234, 0.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = index % 2 === 0 
+                ? (isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(102, 126, 234, 0.02)')
+                : 'transparent';
             }}
           >
             <div style={{ flex: 1 }}>
               <span style={{ 
-                color: order.side === 'BUY' ? token.colorSuccess : token.colorError, 
-                fontWeight: fontWeights.semibold 
+                color: order.side === 'BUY' ? '#52c41a' : '#ff4d4f', 
+                fontWeight: fontWeights.bold 
               }}>
                 {order.side}
               </span>
@@ -525,14 +704,14 @@ function OrderHistory({ orders, isLoading }: { orders: any[]; isLoading: boolean
                 {order.productId}
               </span>
             </div>
-            <div style={{ flex: 1, textAlign: 'right', color: token.colorText, fontWeight: fontWeights.medium }}>
+            <div style={{ flex: 1, textAlign: 'right', color: token.colorText, fontWeight: fontWeights.semibold }}>
               ${order.totalValue.toFixed(2)}
             </div>
             <div style={{ 
               flex: 1, 
               textAlign: 'right', 
               color: token.colorTextTertiary,
-              fontSize: token.fontSizeSM,
+              fontSize: token.fontSize,
             }}>
               {new Date(order.createdAt).toLocaleTimeString('en-US', { 
                 hour: '2-digit', 
@@ -550,6 +729,8 @@ function OrderHistory({ orders, isLoading }: { orders: any[]; isLoading: boolean
 // Trade History - Shows all trades with scroll
 function TradeHistoryCompact({ trades, isLoading }: { trades: any[]; isLoading: boolean }) {
   const { token } = theme.useToken();
+  const { mode } = useThemeMode();
+  const isDark = mode === 'dark';
 
   if (isLoading) {
     return <Skeleton active paragraph={{ rows: 5 }} />;
@@ -578,8 +759,8 @@ function TradeHistoryCompact({ trades, isLoading }: { trades: any[]; isLoading: 
       {/* Header */}
       <div style={{
         display: 'flex',
-        padding: `${token.paddingXS}px 0`,
-        fontSize: token.fontSizeSM,
+        padding: `${token.paddingSM}px ${token.paddingMD}px`,
+        fontSize: token.fontSize,
         color: token.colorTextSecondary,
         fontWeight: fontWeights.semibold,
         borderBottom: `1px solid ${token.colorBorderSecondary}`,
@@ -599,15 +780,29 @@ function TradeHistoryCompact({ trades, isLoading }: { trades: any[]; isLoading: 
             key={trade.trade_id || idx}
             style={{
               display: 'flex',
-              padding: `${token.paddingXXS}px 0`,
-              fontSize: token.fontSizeSM,
-              fontFamily: 'monospace',
+              padding: `${token.paddingSM}px ${token.paddingMD}px`,
+              fontSize: token.fontSize,
+              backgroundColor: idx % 2 === 0 
+                ? (isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(102, 126, 234, 0.02)')
+                : 'transparent',
+              transition: 'background-color 0.2s ease',
+              cursor: 'pointer',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = isDark 
+                ? 'rgba(255, 255, 255, 0.05)' 
+                : 'rgba(102, 126, 234, 0.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = idx % 2 === 0 
+                ? (isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(102, 126, 234, 0.02)')
+                : 'transparent';
             }}
           >
             <span style={{ 
               flex: 1, 
-              color: trade.side === 'BUY' ? token.colorSuccess : token.colorError,
-              fontWeight: fontWeights.medium,
+              color: trade.side === 'BUY' ? '#52c41a' : '#ff4d4f',
+              fontWeight: fontWeights.bold,
             }}>
               {parseFloat(trade.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
@@ -615,7 +810,7 @@ function TradeHistoryCompact({ trades, isLoading }: { trades: any[]; isLoading: 
               flex: 1, 
               textAlign: 'right', 
               color: token.colorText,
-              fontWeight: fontWeights.medium,
+              fontWeight: fontWeights.semibold,
             }}>
               {parseFloat(trade.size).toFixed(6)}
             </span>
@@ -629,6 +824,8 @@ function TradeHistoryCompact({ trades, isLoading }: { trades: any[]; isLoading: 
 // Order Book - Two columns: Bids | Asks, shows all data
 function OrderBookCompact({ orderBook, isLoading }: { orderBook: any; isLoading: boolean }) {
   const { token } = theme.useToken();
+  const { mode } = useThemeMode();
+  const isDark = mode === 'dark';
 
   if (isLoading) {
     return <Skeleton active paragraph={{ rows: 5 }} />;
@@ -669,11 +866,11 @@ function OrderBookCompact({ orderBook, isLoading }: { orderBook: any; isLoading:
         <div style={{ 
           flex: 1, 
           display: 'flex', 
-          fontSize: token.fontSizeSM, 
+          fontSize: token.fontSize, 
           color: token.colorTextSecondary, 
           fontWeight: fontWeights.semibold, 
           borderBottom: `1px solid ${token.colorBorderSecondary}`, 
-          padding: `${token.paddingXS}px 0`,
+          padding: `${token.paddingSM}px ${token.paddingMD}px`,
           marginBottom: token.marginXS,
         }}>
           <span style={{ flex: 1 }}>Bid</span>
@@ -683,11 +880,11 @@ function OrderBookCompact({ orderBook, isLoading }: { orderBook: any; isLoading:
         <div style={{ 
           flex: 1, 
           display: 'flex', 
-          fontSize: token.fontSizeSM, 
+          fontSize: token.fontSize, 
           color: token.colorTextSecondary, 
           fontWeight: fontWeights.semibold, 
           borderBottom: `1px solid ${token.colorBorderSecondary}`, 
-          padding: `${token.paddingXS}px 0`,
+          padding: `${token.paddingSM}px ${token.paddingMD}px`,
           marginBottom: token.marginXS,
         }}>
           <span style={{ flex: 1 }}>Ask</span>
@@ -706,15 +903,36 @@ function OrderBookCompact({ orderBook, isLoading }: { orderBook: any; isLoading:
           const ask = asks[idx];
           
           return (
-            <div key={idx} style={{ display: 'flex', gap: token.marginMD }}>
+            <div 
+              key={idx} 
+              style={{ 
+                display: 'flex', 
+                gap: token.marginMD,
+                backgroundColor: idx % 2 === 0 
+                  ? (isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(102, 126, 234, 0.02)')
+                  : 'transparent',
+                padding: `${token.paddingXS}px ${token.paddingMD}px`,
+                transition: 'background-color 0.2s ease',
+                cursor: 'pointer',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = isDark 
+                  ? 'rgba(255, 255, 255, 0.05)' 
+                  : 'rgba(102, 126, 234, 0.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = idx % 2 === 0 
+                  ? (isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(102, 126, 234, 0.02)')
+                  : 'transparent';
+              }}
+            >
               {/* Bid */}
               <div style={{ 
                 flex: 1, 
                 display: 'flex', 
-                padding: `${token.paddingXXS}px 0`, 
+                padding: `${token.paddingXS}px 0`, 
                 position: 'relative', 
-                fontFamily: 'monospace',
-                fontSize: token.fontSizeSM,
+                fontSize: token.fontSize,
               }}>
                 {bid && (
                   <>
@@ -724,15 +942,15 @@ function OrderBookCompact({ orderBook, isLoading }: { orderBook: any; isLoading:
                       bottom: 0,
                       right: 0,
                       width: `${(parseFloat(bid.size) / maxSize) * 100}%`,
-                      backgroundColor: `${token.colorSuccess}15`,
+                      backgroundColor: 'rgba(82, 196, 26, 0.15)',
                       zIndex: 0,
                     }} />
                     <span style={{ 
                       flex: 1, 
-                      color: token.colorSuccess, 
+                      color: '#52c41a', 
                       position: 'relative', 
                       zIndex: 1,
-                      fontWeight: fontWeights.medium,
+                      fontWeight: fontWeights.bold,
                     }}>
                       {parseFloat(bid.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
@@ -742,7 +960,7 @@ function OrderBookCompact({ orderBook, isLoading }: { orderBook: any; isLoading:
                       color: token.colorText, 
                       position: 'relative', 
                       zIndex: 1,
-                      fontWeight: fontWeights.medium,
+                      fontWeight: fontWeights.semibold,
                     }}>
                       {parseFloat(bid.size).toFixed(6)}
                     </span>
@@ -753,10 +971,9 @@ function OrderBookCompact({ orderBook, isLoading }: { orderBook: any; isLoading:
               <div style={{ 
                 flex: 1, 
                 display: 'flex', 
-                padding: `${token.paddingXXS}px 0`, 
+                padding: `${token.paddingXS}px 0`, 
                 position: 'relative', 
-                fontFamily: 'monospace',
-                fontSize: token.fontSizeSM,
+                fontSize: token.fontSize,
               }}>
                 {ask && (
                   <>
@@ -766,15 +983,15 @@ function OrderBookCompact({ orderBook, isLoading }: { orderBook: any; isLoading:
                       bottom: 0,
                       left: 0,
                       width: `${(parseFloat(ask.size) / maxSize) * 100}%`,
-                      backgroundColor: `${token.colorError}15`,
+                      backgroundColor: 'rgba(255, 77, 79, 0.15)',
                       zIndex: 0,
                     }} />
                     <span style={{ 
                       flex: 1, 
-                      color: token.colorError, 
+                      color: '#ff4d4f', 
                       position: 'relative', 
                       zIndex: 1,
-                      fontWeight: fontWeights.medium,
+                      fontWeight: fontWeights.bold,
                     }}>
                       {parseFloat(ask.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
@@ -784,7 +1001,7 @@ function OrderBookCompact({ orderBook, isLoading }: { orderBook: any; isLoading:
                       color: token.colorText, 
                       position: 'relative', 
                       zIndex: 1,
-                      fontWeight: fontWeights.medium,
+                      fontWeight: fontWeights.semibold,
                     }}>
                       {parseFloat(ask.size).toFixed(6)}
                     </span>
@@ -799,11 +1016,7 @@ function OrderBookCompact({ orderBook, isLoading }: { orderBook: any; isLoading:
   );
 }
 
-// Main page component wrapped with provider
+// Main page component
 export default function ExchangePage() {
-  return (
-    <ExchangeProvider>
-      <ExchangePageContent />
-    </ExchangeProvider>
-  );
+  return <ExchangePageContent />;
 }

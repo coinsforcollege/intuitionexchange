@@ -25,10 +25,12 @@ import {
   LeftOutlined,
   RightOutlined,
   SearchOutlined,
+  ShoppingCartOutlined,
 } from '@ant-design/icons';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeMode } from '@/context/ThemeContext';
+import MobileBottomNav from '@/components/layout/MobileBottomNav';
 
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
@@ -45,12 +47,21 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
   activeKey?: string;
   fullWidth?: boolean;
+  exchangeData?: {
+    pair: string;
+    price: number;
+    change: number;
+    volume?: string;
+    iconUrl?: string;
+    baseAsset?: string;
+  };
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ 
   children, 
   activeKey = 'dashboard',
   fullWidth = false,
+  exchangeData,
 }) => {
   const router = useRouter();
   const { token } = useToken();
@@ -99,18 +110,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       gradient: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
     },
     { 
+      key: 'buy-sell', 
+      label: 'Buy & Sell', 
+      icon: <ShoppingCartOutlined />, 
+      href: '/buy-sell',
+      gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+    },
+    { 
       key: 'exchange', 
       label: 'Trade', 
       icon: <SwapOutlined />, 
       href: '/exchange',
       gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-    },
-    { 
-      key: 'buy-sell', 
-      label: 'Buy & Sell', 
-      icon: <DollarOutlined />, 
-      href: '/buy-sell',
-      gradient: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
     },
     { 
       key: 'orders', 
@@ -437,7 +448,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       height: `calc(100vh - ${HEADER_HEIGHT}px)`,
       overflow: 'hidden',
     } : {
-      minHeight: `calc(100vh - ${HEADER_HEIGHT}px)`,
+    minHeight: `calc(100vh - ${HEADER_HEIGHT}px)`,
     }),
     background: fullWidth 
       ? (isDark 
@@ -447,6 +458,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   };
 
+  // Mobile bottom nav height for padding (includes margin and safe area)
+  const MOBILE_NAV_HEIGHT = 100;
+
   const contentStyle: React.CSSProperties = {
     ...(fullWidth ? { 
       padding: 0,
@@ -454,7 +468,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       overflow: 'hidden',
     } : { 
       padding: isMobile ? token.paddingMD : token.paddingXL,
-      maxWidth: 1400, 
+      paddingBottom: isMobile ? token.paddingMD + MOBILE_NAV_HEIGHT : token.paddingXL,
+      maxWidth: 1400,
       margin: '0 auto' 
     }),
   };
@@ -575,15 +590,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               </div>
             </Tooltip>
           ) : (
-            <div
-              style={getNavItemStyle({ key: 'settings', label: 'Settings', icon: <SettingOutlined />, href: '/settings', gradient: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)' }, activeKey === 'settings')}
-              onClick={() => handleNavClick('/settings')}
-            >
-              <div style={navIconContainerStyle({ gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' } as NavItem, activeKey === 'settings')}>
-                <SettingOutlined />
-              </div>
-              <span style={navLabelStyle}>Settings</span>
+          <div
+            style={getNavItemStyle({ key: 'settings', label: 'Settings', icon: <SettingOutlined />, href: '/settings', gradient: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)' }, activeKey === 'settings')}
+            onClick={() => handleNavClick('/settings')}
+          >
+            <div style={navIconContainerStyle({ gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' } as NavItem, activeKey === 'settings')}>
+              <SettingOutlined />
             </div>
+              <span style={navLabelStyle}>Settings</span>
+          </div>
           )}
 
           {/* User card */}
@@ -596,23 +611,23 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               </div>
             </Tooltip>
           ) : (
-            <div style={{ ...userCardStyle, marginTop: token.marginMD }}>
-              <div style={userAvatarStyle}>
-                {user?.email?.charAt(0).toUpperCase() || 'U'}
-              </div>
-              <div style={{ flex: 1, overflow: 'hidden' }}>
-                <div style={{ fontSize: token.fontSize, fontWeight: fontWeights.semibold, color: token.colorWhite, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {user?.email?.split('@')[0] || 'User'}
-                </div>
-                <div style={{ fontSize: token.fontSize, color: 'rgba(255,255,255,0.7)' }}>
-                  {user?.kycStatus === 'APPROVED' ? '✓ Verified' : 'Pending'}
-                </div>
-              </div>
-              <PoweroffOutlined
-                style={{ fontSize: token.fontSizeLG, color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}
-                onClick={(e) => { e.stopPropagation(); handleLogout(); }}
-              />
+          <div style={{ ...userCardStyle, marginTop: token.marginMD }}>
+            <div style={userAvatarStyle}>
+              {user?.email?.charAt(0).toUpperCase() || 'U'}
             </div>
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              <div style={{ fontSize: token.fontSize, fontWeight: fontWeights.semibold, color: token.colorWhite, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user?.email?.split('@')[0] || 'User'}
+              </div>
+              <div style={{ fontSize: token.fontSize, color: 'rgba(255,255,255,0.7)' }}>
+                {user?.kycStatus === 'APPROVED' ? '✓ Verified' : 'Pending'}
+              </div>
+            </div>
+            <PoweroffOutlined
+              style={{ fontSize: token.fontSizeLG, color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}
+              onClick={(e) => { e.stopPropagation(); handleLogout(); }}
+            />
+          </div>
           )}
         </div>
       </aside>
@@ -635,58 +650,112 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             </>
           )}
           {!isMobile && (
-            <div style={welcomeStyle}>
-              <span style={welcomeTextStyle}>{greeting}</span>
-              <span style={userNameStyle}>{user?.email?.split('@')[0] || 'User'} 👋</span>
-            </div>
+            <>
+              {exchangeData ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: token.marginMD }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM }}>
+                    {exchangeData.iconUrl && (
+                      <img
+                        src={exchangeData.iconUrl}
+                        alt={exchangeData.baseAsset || exchangeData.pair.split('-')[0]}
+                        width={32}
+                        height={32}
+                        style={{ borderRadius: '50%' }}
+                        onError={(e) => { 
+                          (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${exchangeData.baseAsset || exchangeData.pair.split('-')[0]}&background=799EFF&color=fff`; 
+                        }}
+                      />
+                    )}
+                    <span style={{ fontSize: token.fontSizeLG, fontWeight: fontWeights.bold, color: token.colorText }}>
+                      {exchangeData.pair}
+                    </span>
+                    <span style={{ fontSize: token.fontSizeHeading4, fontWeight: fontWeights.bold, color: token.colorText }}>
+                      ${exchangeData.price.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+                    </span>
+                    <span style={{ 
+                      fontSize: token.fontSizeLG, 
+                      fontWeight: fontWeights.bold,
+                      color: exchangeData.change >= 0 ? '#52c41a' : '#ff4d4f',
+                      padding: `${token.paddingXXS}px ${token.paddingXS}px`,
+                      borderRadius: token.borderRadiusSM,
+                      backgroundColor: exchangeData.change >= 0 
+                        ? 'rgba(82, 196, 26, 0.1)' 
+                        : 'rgba(255, 77, 79, 0.1)',
+                    }}>
+                      {exchangeData.change >= 0 ? '+' : ''}{exchangeData.change.toFixed(2)}%
+                    </span>
+                    {exchangeData.volume && (
+                      <span style={{ 
+                        fontSize: token.fontSize,
+                        color: token.colorTextSecondary,
+                        fontWeight: fontWeights.medium,
+                      }}>
+                        24h Vol: {exchangeData.volume}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+            mounted && screens.xl && (
+              <div style={welcomeStyle}>
+                <span style={welcomeTextStyle}>{greeting}</span>
+                <span style={userNameStyle}>{user?.email?.split('@')[0] || 'User'} 👋</span>
+              </div>
+            )
+              )}
+            </>
           )}
         </div>
 
         <div style={headerRightStyle}>
           {/* Search Field */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: token.marginSM,
-            backgroundColor: isDark ? 'rgba(102, 126, 234, 0.15)' : 'rgba(102, 126, 234, 0.08)',
-            borderRadius: 50,
-            padding: `${token.paddingSM}px ${token.paddingLG}px`,
-            marginRight: token.marginMD,
-          }}>
-            <SearchOutlined style={{ 
-              color: '#667eea', 
-              fontSize: token.fontSize,
-            }} />
-            <input
-              type="text"
-              placeholder="Search markets, assets..."
-              style={{
-                border: 'none',
-                outline: 'none',
-                background: 'transparent',
-                color: token.colorText,
-                fontSize: token.fontSize,
-                width: isMobile ? 120 : 200,
-                padding: 0,
-              }}
-            />
-          </div>
-
-          <div
-            onClick={() => router.push('/wallet?action=deposit')}
-            style={{
-              cursor: 'pointer',
-              fontWeight: fontWeights.semibold,
-              fontSize: token.fontSize,
-              color: '#667eea',
+          {mounted && screens.xl && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: token.marginSM,
+              backgroundColor: isDark ? 'rgba(102, 126, 234, 0.15)' : 'rgba(102, 126, 234, 0.08)',
+              borderRadius: 50,
+              padding: `${token.paddingSM}px ${token.paddingLG}px`,
               marginRight: token.marginMD,
-              transition: 'opacity 0.2s ease',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.7'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
-          >
-            Deposit
-          </div>
+            }}>
+              <SearchOutlined style={{ 
+                color: '#667eea', 
+                fontSize: token.fontSize,
+              }} />
+              <input
+                type="text"
+                placeholder="Search markets, assets..."
+                style={{
+                  border: 'none',
+                  outline: 'none',
+                  background: 'transparent',
+                  color: token.colorText,
+                  fontSize: token.fontSize,
+                  width: 200,
+                  padding: 0,
+                }}
+              />
+            </div>
+          )}
+
+          {!isMobile && (
+            <div
+              onClick={() => router.push('/wallet?action=deposit')}
+              style={{
+                cursor: 'pointer',
+                fontWeight: fontWeights.semibold,
+                fontSize: token.fontSize,
+                color: '#667eea',
+                marginRight: token.marginMD,
+                transition: 'opacity 0.2s ease',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.7'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+            >
+              Deposit
+            </div>
+          )}
 
           <div style={themeButtonStyle} onClick={toggleMode}>
             {isDark ? <MoonOutlined /> : <SunOutlined />}
@@ -712,6 +781,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           {children}
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav />
     </div>
   );
 };

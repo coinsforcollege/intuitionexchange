@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { CoinbaseService } from '../coinbase/coinbase.service';
+import { AssetsService } from '../assets/assets.service';
 import { Prisma, TradeStatus, OrderType } from '@prisma/client';
 
 export interface CreateOrderDto {
@@ -36,17 +37,87 @@ export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private coinbaseService: CoinbaseService,
+    private assetsService: AssetsService,
   ) {}
 
   /**
    * Place a market order
+   * Flow:
+   * 1. Check user has sufficient balance in our ledger
+   * 2. Lock the balance
+   * 3. Execute trade on Coinbase (our liquidity provider)
+   * 4. Update user balances in our ledger
+   * 5. Unlock any remaining balance
    */
   async placeOrder(dto: CreateOrderDto): Promise<OrderResponse> {
     const { userId, productId, side, amount } = dto;
     const [asset, quote] = productId.split('-');
 
+    // Validate minimum order size: BUY orders must be at least $1 USD
+    if (side === 'BUY') {
+      let usdValue: number;
+      
+      if (quote === 'USD') {
+        // Direct USD pair - amount is already in USD
+        usdValue = amount;
+      } else {
+        // Non-USD quote (ETH, USDT, etc.) - need to convert to USD
+        try {
+          const quoteUsdPair = `${quote}-USD`;
+          const quoteProduct = await this.coinbaseService.getProduct(quoteUsdPair);
+          const quotePrice = parseFloat(quoteProduct.price || '0');
+          
+          if (quotePrice <= 0) {
+            throw new BadRequestException(`Unable to get price for ${quote}. Please try again later.`);
+          }
+          
+          usdValue = amount * quotePrice;
+        } catch (error) {
+          this.logger.error(`Failed to get USD value for ${quote}:`, error);
+          throw new BadRequestException(`Unable to validate order size. Please try again later.`);
+        }
+      }
+      
+      if (usdValue < 1) {
+        throw new BadRequestException(
+          `Order size is too small. Minimum order size is $1.00 USD. Your order value is $${usdValue.toFixed(2)} USD.`
+        );
+      }
+    }
+
+    // Step 1: Check user balance in our ledger
+    let requiredAsset: string;
+    let requiredAmount: number;
+    
+    if (side === 'BUY') {
+      // BUY: User needs quote currency (USD/ETH/USDT) to buy base asset
+      requiredAsset = quote;
+      requiredAmount = amount; // amount is in quote currency
+    } else {
+      // SELL: User needs base asset to sell
+      requiredAsset = asset;
+      requiredAmount = amount; // amount is in base asset
+    }
+
+    // Check if user has sufficient balance
+    const hasBalance = await this.assetsService.hasSufficientBalance(
+      userId,
+      requiredAsset,
+      requiredAmount,
+    );
+
+    if (!hasBalance) {
+      const balance = await this.assetsService.getOrCreateBalance(userId, requiredAsset);
+      throw new BadRequestException(
+        `Insufficient ${requiredAsset} balance. Available: ${balance.availableBalance}, Required: ${requiredAmount}`,
+      );
+    }
+
+    // Step 2: Lock the balance
+    await this.assetsService.lockBalance(userId, requiredAsset, requiredAmount);
+
     // Create pending order in database
-    const order = await this.prisma.trade.create({
+    const order = await this.prisma.client.trade.create({
       data: {
         userId,
         productId,
@@ -64,51 +135,162 @@ export class OrdersService {
     });
 
     try {
-      // Place order on Coinbase
+      // Step 3: Calculate fees and amount to send to Coinbase
+      let amountToSendCoinbase: string;
+      let platformFee: number;
+      let userPerceivedValue = 0; // For SELL orders, what user thinks their asset is worth
+      
+      if (side === 'BUY') {
+        // BUY: User wants to buy $amount worth of asset
+        // Our fee: 0.5% of requested amount
+        platformFee = amount * (this.PLATFORM_FEE_PERCENT / 100);
+        // Amount sent to Coinbase: requested amount minus our fee
+        amountToSendCoinbase = (amount - platformFee).toString();
+      } else {
+        // SELL: User wants to sell amount of base asset
+        // First, get current price to calculate user's perceived value
+        const product = await this.coinbaseService.getProduct(productId);
+        const currentPrice = parseFloat(product.price || '0');
+        if (currentPrice <= 0) {
+          throw new BadRequestException(
+            'Unable to get current price. Please try again later.',
+          );
+        }
+        
+        // User's perceived value: amount * current price
+        userPerceivedValue = amount * currentPrice;
+        
+        // Our fee: 0.5% of user's perceived value
+        platformFee = userPerceivedValue * (this.PLATFORM_FEE_PERCENT / 100);
+        
+        // Amount sent to Coinbase: full base amount (Coinbase will deduct their fees)
+        amountToSendCoinbase = amount.toString();
+      }
+
+      // Place order on Coinbase (our liquidity provider)
       const coinbaseResult = await this.coinbaseService.placeMarketOrder(
         productId,
         side,
-        side === 'BUY' ? amount.toString() : undefined, // quoteSize for BUY
-        side === 'SELL' ? amount.toString() : undefined, // baseSize for SELL
+        side === 'BUY' ? amountToSendCoinbase : undefined, // quoteSize for BUY (after our fee)
+        side === 'SELL' ? amountToSendCoinbase : undefined, // baseSize for SELL
       );
 
-      if (!coinbaseResult.success) {
-        // Update order as failed
-        await this.prisma.trade.update({
+      // Note: placeMarketOrder now throws on error, so this check may not be needed
+      // But keeping it as a safety check
+      if (!coinbaseResult.success || !coinbaseResult.orderId) {
+        // Unlock balance and mark order as failed
+        await this.assetsService.unlockBalance(userId, requiredAsset, requiredAmount);
+        await this.prisma.client.trade.update({
           where: { id: order.id },
           data: { status: 'FAILED' },
         });
-        throw new Error('Coinbase order failed');
+        throw new BadRequestException('Unable to process trade at this time. Please try again later.');
       }
 
-      // Get order details from Coinbase to get fill info
-      // Note: Market orders fill immediately, but we may need to poll for exact fill details
-      const coinbaseOrder = await this.coinbaseService.getOrder(coinbaseResult.orderId);
+      // Poll for order status until it's filled (market orders should fill quickly)
+      let coinbaseOrder = await this.coinbaseService.getOrder(coinbaseResult.orderId);
+      let attempts = 0;
+      const maxAttempts = 10; // Try for up to 5 seconds (10 attempts * 500ms)
+      
+      this.logger.log(`Order ${coinbaseResult.orderId} initial status: ${coinbaseOrder.status}`);
+      
+      while (coinbaseOrder.status !== 'FILLED' && coinbaseOrder.status !== 'CANCELLED' && coinbaseOrder.status !== 'EXPIRED' && coinbaseOrder.status !== 'FAILED' && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms
+        coinbaseOrder = await this.coinbaseService.getOrder(coinbaseResult.orderId);
+        attempts++;
+        this.logger.log(`Order ${coinbaseResult.orderId} status check ${attempts}: ${coinbaseOrder.status}, filled_size: ${coinbaseOrder.filled_size}, filled_value: ${coinbaseOrder.filled_value}`);
+      }
 
-      // Calculate fees
-      const filledValue = parseFloat(coinbaseOrder.filled_value) || 0;
-      const platformFee = filledValue * (this.PLATFORM_FEE_PERCENT / 100);
+      // Calculate actual filled amounts
+      const filledAmount = parseFloat(coinbaseOrder.filled_size) || 0; // Base asset amount
+      const filledValue = parseFloat(coinbaseOrder.filled_value) || 0; // Quote currency value (after Coinbase fees)
+      const coinbaseCommission = parseFloat(coinbaseOrder.commission || '0'); // Coinbase fee
+      const filledPrice = filledAmount > 0 && filledValue > 0 
+        ? filledValue / filledAmount 
+        : parseFloat(coinbaseOrder.average_filled_price) || 0;
+
+      // Recalculate platform fee if SELL order (we calculated it before, but need to ensure it's correct)
+      if (side === 'SELL' && userPerceivedValue === 0) {
+        // Fallback: calculate from filled value if we didn't get price earlier
+        const product = await this.coinbaseService.getProduct(productId);
+        const currentPrice = parseFloat(product.price || '0');
+        userPerceivedValue = amount * currentPrice;
+        platformFee = userPerceivedValue * (this.PLATFORM_FEE_PERCENT / 100);
+      }
+
+      this.logger.log(`Order ${coinbaseResult.orderId} final status: ${coinbaseOrder.status}, filledAmount: ${filledAmount}, filledValue: ${filledValue}, filledPrice: ${filledPrice}, platformFee: ${platformFee}, coinbaseCommission: ${coinbaseCommission}`);
 
       // Update order with Coinbase details
-      const updatedOrder = await this.prisma.trade.update({
+      const updatedOrder = await this.prisma.client.trade.update({
         where: { id: order.id },
         data: {
           coinbaseOrderId: coinbaseResult.orderId,
-          filledAmount: parseFloat(coinbaseOrder.filled_size) || 0,
-          price: parseFloat(coinbaseOrder.average_filled_price) || 0,
+          filledAmount,
+          price: filledPrice,
           totalValue: filledValue,
           platformFee,
+          exchangeFee: coinbaseCommission, // Store Coinbase commission (hidden from users)
           status: this.mapCoinbaseStatus(coinbaseOrder.status),
           completedAt: coinbaseOrder.status === 'FILLED' ? new Date() : null,
         },
       });
 
+      // Step 4: Update user balances in our ledger
+      if (coinbaseOrder.status === 'FILLED' && filledAmount > 0) {
+        // First, unlock the entire locked amount (it's no longer locked)
+        await this.assetsService.unlockBalance(userId, requiredAsset, requiredAmount);
+        
+        if (side === 'BUY') {
+          // BUY: User pays full requested amount (includes our fee)
+          // Subtract quote currency: full requested amount
+          await this.assetsService.updateBalanceAfterTrade(
+            userId,
+            quote,
+            -amount, // Subtract full requested amount (user pays this)
+          );
+          // Add base asset received from Coinbase
+          await this.assetsService.updateBalanceAfterTrade(
+            userId,
+            asset,
+            filledAmount, // Add base asset
+          );
+          // Add platform fee to revenue ledger
+          await this.addRevenue(userId, quote, platformFee);
+        } else {
+          // SELL: User receives filledValue minus our platform fee
+          // Subtract base asset
+          await this.assetsService.updateBalanceAfterTrade(
+            userId,
+            asset,
+            -filledAmount, // Subtract base asset
+          );
+          // Add quote currency: what Coinbase gave us minus our fee
+          const userReceives = filledValue - platformFee;
+          await this.assetsService.updateBalanceAfterTrade(
+            userId,
+            quote,
+            userReceives, // Add quote currency (after our fee)
+          );
+          // Add platform fee to revenue ledger
+          await this.addRevenue(userId, quote, platformFee);
+        }
+      } else {
+        // Order not filled, unlock the entire locked balance
+        await this.assetsService.unlockBalance(userId, requiredAsset, requiredAmount);
+      }
+
       return this.mapOrderToResponse(updatedOrder);
     } catch (error) {
       this.logger.error(`Order failed for user ${userId}`, error);
       
-      // Update order as failed
-      await this.prisma.trade.update({
+      // Unlock balance and mark order as failed
+      try {
+        await this.assetsService.unlockBalance(userId, requiredAsset, requiredAmount);
+      } catch (unlockError) {
+        this.logger.error(`Failed to unlock balance for user ${userId}`, unlockError);
+      }
+      
+      await this.prisma.client.trade.update({
         where: { id: order.id },
         data: { status: 'FAILED' },
       });
@@ -129,23 +311,20 @@ export class OrdersService {
       offset?: number;
     },
   ): Promise<{ orders: OrderResponse[]; total: number }> {
-    const where: Prisma.TradeWhereInput = { userId };
-
-    if (options?.productId) {
-      where.productId = options.productId;
-    }
-    if (options?.status) {
-      where.status = options.status;
-    }
+    const where: Prisma.TradeWhereInput = { 
+      userId,
+      ...(options?.productId && { productId: options.productId }),
+      ...(options?.status && { status: options.status }),
+    };
 
     const [orders, total] = await Promise.all([
-      this.prisma.trade.findMany({
+      this.prisma.client.trade.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         take: options?.limit || 50,
         skip: options?.offset || 0,
       }),
-      this.prisma.trade.count({ where }),
+      this.prisma.client.trade.count({ where }),
     ]);
 
     return {
@@ -158,7 +337,7 @@ export class OrdersService {
    * Get a single order
    */
   async getOrder(userId: string, orderId: string): Promise<OrderResponse | null> {
-    const order = await this.prisma.trade.findFirst({
+    const order = await this.prisma.client.trade.findFirst({
       where: { id: orderId, userId },
     });
 
@@ -179,6 +358,218 @@ export class OrdersService {
         return 'FAILED';
       default:
         return 'PENDING';
+    }
+  }
+
+  /**
+   * Get quote for a trade (estimate based on current prices)
+   * For synthetic pairs, calculates sequentially with 2 steps
+   */
+  async getQuote(
+    productId: string,
+    side: 'BUY' | 'SELL',
+    amount: number,
+  ): Promise<{
+    estimatedReceive: number;
+    platformFee: number;
+    totalFees: number;
+    estimatedPrice: number;
+  }> {
+    const [asset, quote] = productId.split('-');
+    const isSynthetic = quote === 'ETH' || quote === 'USDT';
+
+    if (isSynthetic) {
+      // Synthetic pair: 2-step calculation
+      // Step 1: Get quote for first trade
+      const step1Product = side === 'BUY' 
+        ? `${quote}-USD`  // BUY: sell quote asset to get USD
+        : `${asset}-USD`; // SELL: sell base asset to get USD
+      
+      const step1ProductData = await this.coinbaseService.getProduct(step1Product);
+      const step1Price = parseFloat(step1ProductData.price || '0');
+      
+      if (step1Price <= 0) {
+        throw new BadRequestException('Unable to get price for quote calculation');
+      }
+
+      let step1UsdValue: number;
+      let step1PlatformFee: number;
+      
+      if (side === 'BUY') {
+        // BUY: User wants to buy asset with quote currency
+        // Step 1: Sell quote currency (e.g., ETH) to get USD
+        const userPerceivedValue = amount * step1Price; // User's perceived value
+        step1PlatformFee = userPerceivedValue * (this.PLATFORM_FEE_PERCENT / 100);
+        // Estimate Coinbase gives us 99% (1% fee estimate)
+        step1UsdValue = userPerceivedValue * 0.99 - step1PlatformFee;
+      } else {
+        // SELL: User wants to sell base asset for quote currency
+        // Step 1: Sell base asset to get USD
+        const userPerceivedValue = amount * step1Price;
+        step1PlatformFee = userPerceivedValue * (this.PLATFORM_FEE_PERCENT / 100);
+        // Estimate Coinbase gives us 99% (1% fee estimate)
+        step1UsdValue = userPerceivedValue * 0.99 - step1PlatformFee;
+      }
+
+      // Step 2: Get quote for second trade
+      const step2Product = side === 'BUY'
+        ? `${asset}-USD`  // BUY: buy base asset with USD
+        : `${quote}-USD`; // SELL: buy quote asset with USD
+      
+      const step2ProductData = await this.coinbaseService.getProduct(step2Product);
+      const step2Price = parseFloat(step2ProductData.price || '0');
+      
+      if (step2Price <= 0) {
+        throw new BadRequestException('Unable to get price for quote calculation');
+      }
+
+      // Step 2: Calculate our fee on available USD
+      const step2PlatformFee = step1UsdValue * (this.PLATFORM_FEE_PERCENT / 100);
+      const step2UsdToSpend = step1UsdValue - step2PlatformFee;
+      
+      // Estimate what we'll get from Coinbase (99% after their fees)
+      const step2Receive = side === 'BUY'
+        ? (step2UsdToSpend / step2Price) * 0.99  // BUY: get base asset
+        : (step2UsdToSpend / step2Price) * 0.99; // SELL: get quote asset
+
+      return {
+        estimatedReceive: step2Receive,
+        platformFee: step1PlatformFee + step2PlatformFee,
+        totalFees: step1PlatformFee + step2PlatformFee, // User only sees our fees
+        estimatedPrice: side === 'BUY' 
+          ? step2Price / step1Price  // Cross rate
+          : step1Price / step2Price,
+      };
+    } else {
+      // Direct pair: single step
+      const product = await this.coinbaseService.getProduct(productId);
+      const currentPrice = parseFloat(product.price || '0');
+      
+      if (currentPrice <= 0) {
+        throw new BadRequestException('Unable to get price for quote calculation');
+      }
+
+      if (side === 'BUY') {
+        // BUY: User wants to buy $amount worth of asset
+        const platformFee = amount * (this.PLATFORM_FEE_PERCENT / 100);
+        // Estimate: amount sent to Coinbase * 0.99 (after their fees) / price
+        const estimatedReceive = ((amount - platformFee) / currentPrice) * 0.99;
+        
+        return {
+          estimatedReceive,
+          platformFee,
+          totalFees: platformFee,
+          estimatedPrice: currentPrice,
+        };
+      } else {
+        // SELL: User wants to sell amount of base asset
+        const userPerceivedValue = amount * currentPrice;
+        const platformFee = userPerceivedValue * (this.PLATFORM_FEE_PERCENT / 100);
+        // Estimate: Coinbase gives us 99% after their fees, minus our fee
+        const estimatedReceive = (userPerceivedValue * 0.99) - platformFee;
+        
+        return {
+          estimatedReceive,
+          platformFee,
+          totalFees: platformFee,
+          estimatedPrice: currentPrice,
+        };
+      }
+    }
+  }
+
+  /**
+   * Get revenue balances (SYSTEM user's REVENUE_* assets)
+   */
+  async getRevenue(): Promise<Array<{ currency: string; amount: number }>> {
+    const systemUserId = await this.getOrCreateSystemUser();
+    const balances = await this.assetsService.getUserBalances(systemUserId);
+    
+    // Filter only REVENUE_* assets and extract currency
+    const revenue = balances
+      .filter((b) => b.asset.startsWith('REVENUE_'))
+      .map((b) => ({
+        currency: b.asset.replace('REVENUE_', ''),
+        amount: b.balance,
+      }))
+      .filter((r) => r.amount > 0); // Only show currencies with revenue
+    
+    return revenue;
+  }
+
+  /**
+   * Get or create SYSTEM user for revenue tracking
+   */
+  private async getOrCreateSystemUser(): Promise<string> {
+    const SYSTEM_EMAIL = 'system@intuitionexchange.internal';
+    const SYSTEM_PHONE = '0000000000';
+    const SYSTEM_PHONE_COUNTRY = '00';
+
+    // Try to find existing SYSTEM user
+    let systemUser = await this.prisma.client.user.findUnique({
+      where: { email: SYSTEM_EMAIL },
+    });
+
+    if (!systemUser) {
+      // Create SYSTEM user if it doesn't exist
+      // Using a dummy password hash (this user will never login)
+      const dummyPasswordHash =
+        '$2b$10$dummy.hash.for.system.user.never.login.1234567890123456789012';
+      
+      try {
+        systemUser = await this.prisma.client.user.create({
+          data: {
+            email: SYSTEM_EMAIL,
+            phone: SYSTEM_PHONE,
+            phoneCountry: SYSTEM_PHONE_COUNTRY,
+            passwordHash: dummyPasswordHash,
+            country: 'US',
+            emailVerified: true,
+            phoneVerified: true,
+            role: 'ADMIN', // SYSTEM user has admin role
+            kycStatus: 'APPROVED', // SYSTEM user is pre-approved
+          },
+        });
+        this.logger.log('Created SYSTEM user for revenue tracking');
+      } catch (error: any) {
+        // If creation fails (e.g., phone conflict), try to find by phone
+        systemUser = await this.prisma.client.user.findUnique({
+          where: { phone: SYSTEM_PHONE },
+        });
+        
+        if (!systemUser) {
+          this.logger.error('Failed to create SYSTEM user for revenue tracking', error);
+          throw error;
+        }
+      }
+    }
+
+    return systemUser.id;
+  }
+
+  /**
+   * Add platform fee to revenue ledger
+   */
+  private async addRevenue(userId: string, currency: string, amount: number): Promise<void> {
+    try {
+      const systemUserId = await this.getOrCreateSystemUser();
+      const REVENUE_ASSET = `REVENUE_${currency}`;
+
+      await this.assetsService.updateBalanceAfterTrade(
+        systemUserId,
+        REVENUE_ASSET,
+        amount,
+      );
+
+      this.logger.log(
+        `Revenue: ${amount} ${currency} from user ${userId} (platform fee)`,
+      );
+    } catch (error: any) {
+      // Log error but don't fail the trade if revenue tracking fails
+      this.logger.error(
+        `Failed to track revenue: ${amount} ${currency} from user ${userId}`,
+        error,
+      );
     }
   }
 

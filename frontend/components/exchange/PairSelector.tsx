@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { theme, Input, Drawer } from 'antd';
 import { SearchOutlined, SwapOutlined, CaretUpOutlined, CaretDownOutlined } from '@ant-design/icons';
 import { fontWeights } from '@/theme/themeConfig';
+import { useThemeMode } from '@/context/ThemeContext';
 
 const { useToken } = theme;
 
@@ -59,9 +60,12 @@ const PairSelector: React.FC<PairSelectorProps> = ({
   isMobile = false,
 }) => {
   const { token } = useToken();
+  const { mode } = useThemeMode();
+  const isDark = mode === 'dark';
   const [search, setSearch] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeQuote, setActiveQuote] = useState('USD');
+  const [hoveredPair, setHoveredPair] = useState<string | null>(null);
 
   const filteredPairs = pairs.filter(pair => {
     const matchesQuote = pair.quote === activeQuote;
@@ -92,11 +96,17 @@ const PairSelector: React.FC<PairSelectorProps> = ({
       <div
         key={pair.symbol}
         onClick={() => handlePairClick(pair.symbol)}
+        onMouseEnter={() => setHoveredPair(pair.symbol)}
+        onMouseLeave={() => setHoveredPair(null)}
         style={{
           display: 'flex',
           alignItems: 'center',
           padding: `${token.paddingXS}px ${token.paddingSM}px`,
-          backgroundColor: isSelected ? token.colorPrimary : 'transparent',
+          backgroundColor: isSelected 
+            ? token.colorPrimary 
+            : (hoveredPair === pair.symbol 
+                ? (isDark ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.1)')
+                : 'transparent'),
           borderRadius: token.borderRadiusSM,
           cursor: 'pointer',
           transition: 'all 0.15s ease',
@@ -120,12 +130,13 @@ const PairSelector: React.FC<PairSelectorProps> = ({
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontSize: token.fontSizeSM,
+            fontSize: token.fontSize,
             fontWeight: fontWeights.semibold,
             color: isSelected ? '#ffffff' : token.colorText,
+            lineHeight: 1.5,
           }}>
             {pair.symbol.split('-')[0]}
-            <span style={{ color: isSelected ? 'rgba(255,255,255,0.7)' : token.colorTextTertiary, fontWeight: fontWeights.normal, fontSize: 11 }}>
+            <span style={{ color: isSelected ? 'rgba(255,255,255,0.7)' : token.colorTextTertiary, fontWeight: fontWeights.normal, fontSize: token.fontSizeSM }}>
               /{pair.quote}
             </span>
           </div>
@@ -133,21 +144,25 @@ const PairSelector: React.FC<PairSelectorProps> = ({
 
         <div style={{ textAlign: 'right' }}>
           <div style={{
-            fontSize: token.fontSizeSM,
-            fontWeight: fontWeights.medium,
+            fontSize: token.fontSize,
+            fontWeight: fontWeights.semibold,
             color: isSelected ? '#ffffff' : token.colorText,
+            lineHeight: 1.5,
           }}>
             {formatPrice(pair.price, pair.quote)}
           </div>
           <div style={{
-            fontSize: 11,
-            color: isSelected ? 'rgba(255,255,255,0.8)' : (isPositive ? token.colorSuccess : token.colorError),
+            fontSize: token.fontSizeSM,
+            color: isSelected 
+              ? 'rgba(255,255,255,0.9)' 
+              : (isPositive ? '#52c41a' : '#ff4d4f'),
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'flex-end',
-            gap: 1,
+            gap: 2,
+            fontWeight: fontWeights.bold,
           }}>
-            {isPositive ? <CaretUpOutlined style={{ fontSize: 9 }} /> : <CaretDownOutlined style={{ fontSize: 9 }} />}
+            {isPositive ? <CaretUpOutlined style={{ fontSize: 10 }} /> : <CaretDownOutlined style={{ fontSize: 10 }} />}
             {Math.abs(pair.change).toFixed(2)}%
           </div>
         </div>
@@ -185,9 +200,20 @@ const PairSelector: React.FC<PairSelectorProps> = ({
             fontSize: token.fontSize,
             fontWeight: activeQuote === quote ? fontWeights.bold : fontWeights.medium,
             color: activeQuote === quote ? token.colorPrimary : token.colorTextSecondary,
-            borderBottom: activeQuote === quote ? `2px solid ${token.colorPrimary}` : '2px solid transparent',
-            marginBottom: -1,
+            borderBottom: activeQuote === quote ? `3px solid ${token.colorPrimary}` : '3px solid transparent',
+            marginBottom: -2,
             cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            if (activeQuote !== quote) {
+              e.currentTarget.style.color = token.colorPrimary;
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (activeQuote !== quote) {
+              e.currentTarget.style.color = token.colorTextSecondary;
+            }
           }}
         >
           {quote}

@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { theme, Button, Modal } from 'antd';
+import { theme, Button, Modal, message } from 'antd';
 import { SwapOutlined, InfoCircleOutlined, ThunderboltOutlined, ClockCircleOutlined, SafetyOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'motion/react';
 import { fontWeights } from '@/theme/themeConfig';
+import { useThemeMode } from '@/context/ThemeContext';
+import Image from 'next/image';
 
 const { useToken } = theme;
 
@@ -32,6 +34,8 @@ const TradeForm: React.FC<TradeFormProps> = ({
   isLoading = false,
 }) => {
   const { token } = useToken();
+  const { mode } = useThemeMode();
+  const isDark = mode === 'dark';
   const [side, setSide] = useState<OrderSide>('BUY');
   const [amount, setAmount] = useState<string>('');
   const [total, setTotal] = useState<string>('');
@@ -42,12 +46,22 @@ const TradeForm: React.FC<TradeFormProps> = ({
   const amountNum = parseFloat(amount) || 0;
   const totalNum = parseFloat(total) || 0;
 
+  // Reset form when pair changes
+  useEffect(() => {
+    setAmount('');
+    setTotal('');
+    setShowConfirm(false);
+  }, [symbol, baseAsset, quoteAsset]);
+
   // Calculate total when amount changes
   const handleAmountChange = (value: string) => {
     setAmount(value);
     const num = parseFloat(value) || 0;
-    if (num && price) {
-      setTotal((num * price).toFixed(2));
+    if (num > 0 && price > 0) {
+      const totalValue = num * price;
+      // Use 2 decimals for USD, 8 for other currencies (ETH, USDT, etc.)
+      const decimals = quoteAsset === 'USD' ? 2 : 8;
+      setTotal(totalValue.toFixed(decimals));
     } else {
       setTotal('');
     }
@@ -57,7 +71,7 @@ const TradeForm: React.FC<TradeFormProps> = ({
   const handleTotalChange = (value: string) => {
     setTotal(value);
     const num = parseFloat(value) || 0;
-    if (num && price) {
+    if (num > 0 && price > 0) {
       setAmount((num / price).toFixed(8));
     } else {
       setAmount('');
@@ -66,14 +80,26 @@ const TradeForm: React.FC<TradeFormProps> = ({
 
   // Percentage buttons
   const handlePercentage = (percent: number) => {
+    if (price <= 0) return; // Don't calculate if price is invalid
+    
+    const totalDecimals = quoteAsset === 'USD' ? 2 : 8;
+    
     if (isBuy) {
-      const maxTotal = quoteBalance * (percent / 100);
-      setTotal(maxTotal.toFixed(2));
-      setAmount((maxTotal / price).toFixed(8));
+      // For BUY: user pays the total amount
+      // Use Math.floor to avoid floating point precision issues when using 100%
+      const maxTotal = percent === 100 
+        ? Math.floor(quoteBalance * 100) / 100  // Round down to avoid exceeding balance
+        : quoteBalance * (percent / 100);
+      setTotal(maxTotal.toFixed(totalDecimals));
+      if (price > 0) {
+        setAmount((maxTotal / price).toFixed(8));
+      }
     } else {
       const maxAmount = baseBalance * (percent / 100);
       setAmount(maxAmount.toFixed(8));
-      setTotal((maxAmount * price).toFixed(2));
+      if (price > 0) {
+        setTotal((maxAmount * price).toFixed(totalDecimals));
+      }
     }
   };
 
@@ -81,22 +107,61 @@ const TradeForm: React.FC<TradeFormProps> = ({
   const handleSubmit = async () => {
     if (!amountNum || !totalNum) return;
     
+    // Double-check balance before submitting (in case balance changed)
+    // For BUY: user pays totalNum (which includes our fee already deducted from amount sent to Coinbase)
+    // So we check if they have enough for totalNum
+    // Use small tolerance (0.01) for floating point precision issues
+    if (isBuy && totalNum > quoteBalance + 0.01) {
+      if (quoteBalance === 0) {
+        message.error(`You don't have any ${quoteAsset} to complete this trade`);
+      } else {
+        message.error(`Insufficient ${quoteAsset} balance. You need ${totalNum.toFixed(2)} but only have ${quoteBalance.toFixed(2)}`);
+      }
+      setShowConfirm(false);
+      return;
+    }
+    
+    if (!isBuy && amountNum > baseBalance) {
+      if (baseBalance === 0) {
+        message.error(`You don't have any ${baseAsset} to sell`);
+      } else {
+        message.error(`Insufficient ${baseAsset} balance. You want to sell ${amountNum.toFixed(8)} but only have ${baseBalance.toFixed(8)}`);
+      }
+      setShowConfirm(false);
+      return;
+    }
+    
     setShowConfirm(false);
     
     try {
       if (onTrade) {
         await onTrade(side, amountNum, totalNum);
       }
+      // Only clear form if trade was successful
       setAmount('');
       setTotal('');
-    } catch (error) {
-      console.error('Trade failed:', error);
+    } catch (error: any) {
+      // Error should already be handled by onTrade callback
+      // This catch is just to prevent unhandled promise rejection
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Trade failed in TradeForm:', error);
+      }
     }
   };
 
   // Fee calculation (0.5%)
-  const fee = totalNum * 0.005;
-  const receiveAmount = isBuy ? amountNum : totalNum - fee;
+  // For BUY: fee on requested amount (totalNum)
+  // For SELL: fee on user's perceived value (amountNum * price)
+  const fee = isBuy 
+    ? totalNum * 0.005  // BUY: fee on what user wants to spend
+    : amountNum * price * 0.005;  // SELL: fee on user's perceived value (amount * price)
+  
+  // What user receives
+  // BUY: amount of base asset (no fee deduction, fee is on quote)
+  // SELL: total value minus our fee (but we need to account for Coinbase fees too - estimated)
+  const receiveAmount = isBuy 
+    ? amountNum  // BUY: user receives the amount of base asset
+    : (amountNum * price) - fee;  // SELL: user receives perceived value minus our fee
 
   // Custom input with addon - proper rounded corners
   const InputWithAddon = ({ 
@@ -112,7 +177,7 @@ const TradeForm: React.FC<TradeFormProps> = ({
   }) => (
     <div style={{
       display: 'flex',
-      border: `1px solid ${token.colorBorder}`,
+      border: `2px solid ${token.colorBorder}`,
       borderRadius: token.borderRadiusSM,
       overflow: 'hidden',
       backgroundColor: token.colorBgContainer,
@@ -127,7 +192,7 @@ const TradeForm: React.FC<TradeFormProps> = ({
           padding: `${token.paddingSM}px ${token.paddingMD}px`,
           border: 'none',
           outline: 'none',
-          fontSize: token.fontSize,
+          fontSize: token.fontSizeLG,
           fontWeight: fontWeights.medium,
           color: token.colorText,
           backgroundColor: 'transparent',
@@ -151,57 +216,90 @@ const TradeForm: React.FC<TradeFormProps> = ({
 
   return (
     <div>
-      {/* Buy/Sell Toggle - Grouped */}
+      {/* Buy/Sell Toggle - Segmented Control Style */}
       <div style={{
         display: 'flex',
         marginBottom: token.marginMD,
-        border: `1px solid ${token.colorBorder}`,
-        borderRadius: token.borderRadius,
-        overflow: 'hidden',
+        gap: token.marginXS,
       }}>
-        {/* Buy Button - Left side rounded */}
+        {/* Buy Toggle */}
         <div
           onClick={() => setSide('BUY')}
           style={{
             flex: 1,
-            padding: `${token.paddingSM + 2}px`,
+            padding: `${token.paddingSM}px ${token.paddingMD}px`,
             textAlign: 'center',
             cursor: 'pointer',
-            backgroundColor: side === 'BUY' ? token.colorSuccess : 'transparent',
-            borderRight: `1px solid ${token.colorBorder}`,
+            backgroundColor: side === 'BUY' ? 'rgba(24, 144, 255, 0.15)' : 'transparent',
+            borderBottom: side === 'BUY' ? `3px solid #1890ff` : `1px solid ${token.colorBorderSecondary}`,
+            borderTop: 'none',
+            borderLeft: 'none',
+            borderRight: 'none',
             transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            if (side !== 'BUY') {
+              e.currentTarget.style.borderBottomColor = '#1890ff';
+              e.currentTarget.style.borderBottomWidth = '2px';
+              e.currentTarget.style.backgroundColor = 'rgba(24, 144, 255, 0.08)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (side !== 'BUY') {
+              e.currentTarget.style.borderBottomColor = token.colorBorderSecondary;
+              e.currentTarget.style.borderBottomWidth = '1px';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }
           }}
         >
           <span style={{
             fontSize: token.fontSize,
-            fontWeight: fontWeights.bold,
-            color: side === 'BUY' ? '#ffffff' : token.colorText,
+            fontWeight: side === 'BUY' ? fontWeights.bold : fontWeights.medium,
+            color: side === 'BUY' ? '#1890ff' : token.colorTextSecondary,
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
           }}>
-            BUY
+            Buy
           </span>
         </div>
-        {/* Sell Button - Right side rounded */}
+        {/* Sell Toggle */}
         <div
           onClick={() => setSide('SELL')}
           style={{
             flex: 1,
-            padding: `${token.paddingSM + 2}px`,
+            padding: `${token.paddingSM}px ${token.paddingMD}px`,
             textAlign: 'center',
             cursor: 'pointer',
-            backgroundColor: side === 'SELL' ? token.colorError : 'transparent',
+            backgroundColor: side === 'SELL' ? 'rgba(255, 77, 79, 0.15)' : 'transparent',
+            borderBottom: side === 'SELL' ? `3px solid #ff4d4f` : `1px solid ${token.colorBorderSecondary}`,
+            borderTop: 'none',
+            borderLeft: 'none',
+            borderRight: 'none',
             transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            if (side !== 'SELL') {
+              e.currentTarget.style.borderBottomColor = '#ff4d4f';
+              e.currentTarget.style.borderBottomWidth = '2px';
+              e.currentTarget.style.backgroundColor = 'rgba(255, 77, 79, 0.08)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (side !== 'SELL') {
+              e.currentTarget.style.borderBottomColor = token.colorBorderSecondary;
+              e.currentTarget.style.borderBottomWidth = '1px';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }
           }}
         >
           <span style={{
             fontSize: token.fontSize,
-            fontWeight: fontWeights.bold,
-            color: side === 'SELL' ? '#ffffff' : token.colorText,
+            fontWeight: side === 'SELL' ? fontWeights.bold : fontWeights.medium,
+            color: side === 'SELL' ? '#ff4d4f' : token.colorTextSecondary,
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
           }}>
-            SELL
+            Sell
           </span>
         </div>
       </div>
@@ -217,7 +315,10 @@ const TradeForm: React.FC<TradeFormProps> = ({
           Price
         </span>
         <span style={{ fontSize: token.fontSizeLG, fontWeight: fontWeights.bold, color: token.colorText }}>
-          ${price.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+          {quoteAsset === 'USD' 
+            ? `$${price.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
+            : `${price.toLocaleString('en-US', { maximumFractionDigits: 8 })} ${quoteAsset}`
+          }
         </span>
       </div>
 
@@ -231,7 +332,7 @@ const TradeForm: React.FC<TradeFormProps> = ({
           <span style={{ fontSize: token.fontSizeSM, color: token.colorTextSecondary }}>
             Amount
           </span>
-          <span style={{ fontSize: 11, color: token.colorTextTertiary }}>
+          <span style={{ fontSize: token.fontSizeSM, color: token.colorTextTertiary }}>
             Avail: {baseBalance.toFixed(4)} {baseAsset}
           </span>
         </div>
@@ -257,7 +358,7 @@ const TradeForm: React.FC<TradeFormProps> = ({
               flex: 1,
               padding: `${token.paddingXS}px 0`,
               textAlign: 'center',
-              fontSize: 10,
+              fontSize: token.fontSizeSM,
               fontWeight: fontWeights.medium,
               color: token.colorTextTertiary,
               border: `1px solid ${token.colorBorderSecondary}`,
@@ -292,8 +393,11 @@ const TradeForm: React.FC<TradeFormProps> = ({
           <span style={{ fontSize: token.fontSizeSM, color: token.colorTextSecondary }}>
             Total
           </span>
-          <span style={{ fontSize: 11, color: token.colorTextTertiary }}>
-            Avail: ${quoteBalance.toFixed(2)}
+          <span style={{ fontSize: token.fontSizeSM, color: token.colorTextTertiary }}>
+            Avail: {quoteAsset === 'USD' 
+              ? `$${quoteBalance.toFixed(2)}`
+              : `${quoteBalance.toFixed(4)} ${quoteAsset}`
+            }
           </span>
         </div>
         <InputWithAddon
@@ -303,6 +407,42 @@ const TradeForm: React.FC<TradeFormProps> = ({
           placeholder="0.00"
         />
       </div>
+
+      {/* Insufficient Balance Warning */}
+      <AnimatePresence>
+        {amountNum > 0 && (
+          (isBuy && totalNum > quoteBalance + 0.01) || (!isBuy && amountNum > baseBalance) ? (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              style={{
+                marginBottom: token.marginSM,
+                padding: token.paddingSM,
+                backgroundColor: token.colorErrorBg,
+                borderRadius: token.borderRadiusSM,
+                border: `1px solid ${token.colorErrorBorder}`,
+                fontSize: token.fontSizeSM,
+                color: token.colorError,
+              }}
+            >
+              <InfoCircleOutlined style={{ marginRight: token.marginXS }} />
+              Insufficient balance. {isBuy 
+                ? quoteBalance === 0 
+                  ? `You don't have any ${quoteAsset} to complete this trade`
+                  : totalNum > quoteBalance + 0.01
+                    ? `You need ${totalNum.toFixed(2)} ${quoteAsset} but only have ${quoteBalance.toFixed(2)}`
+                    : null
+                : baseBalance === 0
+                  ? `You don't have any ${baseAsset} to sell`
+                  : amountNum > baseBalance
+                    ? `You want to sell ${amountNum.toFixed(8)} ${baseAsset} but only have ${baseBalance.toFixed(8)}`
+                    : null
+              }
+            </motion.div>
+          ) : null
+        )}
+      </AnimatePresence>
 
       {/* Fee Info - inline */}
       <AnimatePresence>
@@ -319,14 +459,21 @@ const TradeForm: React.FC<TradeFormProps> = ({
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
               <span>Fee (0.5%)</span>
-              <span>${fee.toFixed(2)}</span>
+              <span>
+                {quoteAsset === 'USD' 
+                  ? `$${fee.toFixed(2)}`
+                  : `${fee.toFixed(8)} ${quoteAsset}`
+                }
+              </span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>You {isBuy ? 'receive' : 'get'}</span>
               <span style={{ color: token.colorText, fontWeight: fontWeights.semibold }}>
                 {isBuy 
                   ? `${receiveAmount.toFixed(6)} ${baseAsset}`
-                  : `$${receiveAmount.toFixed(2)}`
+                  : quoteAsset === 'USD'
+                  ? `$${receiveAmount.toFixed(2)}`
+                  : `${receiveAmount.toFixed(8)} ${quoteAsset}`
                 }
               </span>
             </div>
@@ -340,7 +487,15 @@ const TradeForm: React.FC<TradeFormProps> = ({
         size="large"
         block
         loading={loading}
-        disabled={!amountNum || amountNum <= 0}
+        disabled={
+          !amountNum || 
+          amountNum <= 0 || 
+          !totalNum || 
+          totalNum <= 0 || 
+          price <= 0 ||
+          (isBuy && totalNum > quoteBalance + 0.01) || // BUY: Check if user has enough quote currency (with tolerance for floating point)
+          (!isBuy && amountNum > baseBalance) // SELL: Check if user has enough base asset
+        }
         onClick={() => setShowConfirm(true)}
         style={{
           height: token.controlHeightLG,
@@ -350,8 +505,8 @@ const TradeForm: React.FC<TradeFormProps> = ({
           letterSpacing: '0.5px',
           fontSize: token.fontSize,
           background: isBuy 
-            ? token.colorSuccess
-            : token.colorError,
+            ? '#52c41a'
+            : '#ff4d4f',
           border: 'none',
           color: '#ffffff',
         }}
@@ -403,6 +558,77 @@ const TradeForm: React.FC<TradeFormProps> = ({
         </div>
       </div>
 
+      {/* College Coins CTA */}
+      <div style={{ marginTop: 'auto', paddingTop: token.marginLG }}>
+        <div style={{
+          position: 'relative',
+          backgroundImage: 'url(https://images.unsplash.com/photo-1637825891028-564f672aa42c?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          padding: token.paddingMD,
+          borderRadius: token.borderRadius,
+          display: 'flex',
+          alignItems: 'center',
+          gap: token.marginMD,
+        }}>
+          {/* Dark overlay */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.05)',
+            borderRadius: token.borderRadius,
+            zIndex: 1,
+          }} />
+          <div style={{
+            width: 48,
+            height: 48,
+            flexShrink: 0,
+            position: 'relative',
+            zIndex: 2,
+          }}>
+            <Image
+              src="/images/collegen-icon.svg"
+              alt="College Coins"
+              width={48}
+              height={48}
+              style={{ objectFit: 'contain' }}
+            />
+          </div>
+          <div style={{ flex: 1, position: 'relative', zIndex: 2 }}>
+            <div style={{
+              fontSize: token.fontSize,
+              fontWeight: fontWeights.bold,
+              color: '#ffffff',
+              marginBottom: token.marginXS,
+            }}>
+              Earn College Coins
+            </div>
+            <div style={{
+              fontSize: token.fontSizeSM,
+              color: '#ffffff',
+              lineHeight: 1.5,
+            }}>
+              Complete tasks and earn TUIT tokens for your education. Trade them here or redeem for tuition credits.
+            </div>
+            <a
+              href="https://coinsforcollege.org/college-coins"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-block',
+                marginTop: token.marginXS,
+                fontSize: token.fontSizeSM,
+                color: '#ffffff',
+                fontWeight: fontWeights.semibold,
+                textDecoration: 'none',
+              }}
+            >
+              Learn more →
+            </a>
+          </div>
+        </div>
+      </div>
+
       {/* Confirmation Modal */}
       <Modal
         title={`Confirm ${side} Order`}
@@ -417,7 +643,7 @@ const TradeForm: React.FC<TradeFormProps> = ({
             type="primary"
             onClick={handleSubmit}
             style={{
-              background: isBuy ? token.colorSuccess : token.colorError,
+              background: isBuy ? '#52c41a' : '#ff4d4f',
               color: '#ffffff',
               border: 'none',
             }}
@@ -460,7 +686,10 @@ const TradeForm: React.FC<TradeFormProps> = ({
           }}>
             <span style={{ color: token.colorTextSecondary }}>Price</span>
             <span style={{ color: token.colorText }}>
-              ${price.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+              {quoteAsset === 'USD' 
+                ? `$${price.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
+                : `${price.toLocaleString('en-US', { maximumFractionDigits: 8 })} ${quoteAsset}`
+              }
             </span>
           </div>
           <div style={{
@@ -470,7 +699,12 @@ const TradeForm: React.FC<TradeFormProps> = ({
             fontSize: token.fontSize,
           }}>
             <span style={{ color: token.colorTextSecondary }}>Fee (0.5%)</span>
-            <span style={{ color: token.colorText }}>${fee.toFixed(2)}</span>
+            <span style={{ color: token.colorText }}>
+              {quoteAsset === 'USD' 
+                ? `$${fee.toFixed(2)}`
+                : `${fee.toFixed(8)} ${quoteAsset}`
+              }
+            </span>
           </div>
           <div style={{
             display: 'flex',
@@ -479,9 +713,19 @@ const TradeForm: React.FC<TradeFormProps> = ({
             borderTop: `1px solid ${token.colorBorderSecondary}`,
             fontSize: token.fontSizeLG,
           }}>
-            <span style={{ color: token.colorTextSecondary }}>Total</span>
+            <span style={{ color: token.colorTextSecondary }}>You {isBuy ? 'pay' : 'receive'}</span>
             <span style={{ color: token.colorText, fontWeight: fontWeights.bold }}>
-              ${totalNum.toFixed(2)} {quoteAsset}
+              {isBuy ? (
+                // BUY: User pays totalNum
+                quoteAsset === 'USD' 
+                  ? `$${totalNum.toFixed(2)}`
+                  : `${totalNum.toFixed(8)} ${quoteAsset}`
+              ) : (
+                // SELL: User receives receiveAmount
+                quoteAsset === 'USD'
+                  ? `$${receiveAmount.toFixed(2)}`
+                  : `${receiveAmount.toFixed(8)} ${quoteAsset}`
+              )}
             </span>
           </div>
         </div>

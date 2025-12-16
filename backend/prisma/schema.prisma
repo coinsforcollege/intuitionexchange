@@ -9,7 +9,6 @@ datasource db {
   provider = "postgresql"
 }
 
-
 // ============================================
 // USER & AUTHENTICATION
 // ============================================
@@ -29,17 +28,18 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   // Relations
-  kyc              Kyc?
-  fiatBalance      FiatBalance?
-  cryptoBalances   CryptoBalance[]
-  depositAddresses DepositAddress[]
-  trades           Trade[]
-  p2pOrders        P2POrder[]
-  fiatTransactions FiatTransaction[]
-  cryptoTransactions CryptoTransaction[]
-  creditCards      CreditCard[]
-  bankAccounts     BankAccount[]
+  kyc                 Kyc?
+  fiatBalance         FiatBalance?
+  cryptoBalances      CryptoBalance[]
+  depositAddresses    DepositAddress[]
+  trades              Trade[]
+  p2pOrders           P2POrder[]
+  fiatTransactions    FiatTransaction[]
+  cryptoTransactions  CryptoTransaction[]
+  creditCards         CreditCard[]
+  bankAccounts        BankAccount[]
   withdrawalAddresses WithdrawalAddress[]
+  watchlistItems      WatchlistItem[]
 
   @@map("users")
 }
@@ -61,41 +61,41 @@ enum UserRole {
 // ============================================
 
 model Kyc {
-  id               String    @id @default(uuid())
-  userId           String    @unique
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   // Personal Details
-  firstName        String?
-  middleName       String?
-  lastName         String?
-  dateOfBirth      DateTime?
-  
+  firstName   String?
+  middleName  String?
+  lastName    String?
+  dateOfBirth DateTime?
+
   // Address
-  street1          String?
-  street2          String?
-  city             String?
-  region           String?
-  postalCode       String?
-  country          String?
-  
+  street1    String?
+  street2    String?
+  city       String?
+  region     String?
+  postalCode String?
+  country    String?
+
   // Veriff Integration
   veriffSessionId    String?   @unique
   veriffAttemptId    String?
   veriffDecisionTime DateTime?
-  veriffStatus       String?   // approved, declined, resubmission_requested, expired, abandoned
-  veriffReason       String?   // Decline reason if applicable
-  
+  veriffStatus       String? // approved, declined, resubmission_requested, expired, abandoned
+  veriffReason       String? // Decline reason if applicable
+
   // Onboarding Progress
-  currentStep      Int       @default(0) // 0: welcome, 1: personal, 2: address, 3: verify, 4: complete
-  
-  status           KycStatus @default(PENDING)
-  reviewNotes      String?
-  reviewedAt       DateTime?
-  reviewedBy       String?
-  
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  currentStep Int @default(0) // 0: welcome, 1: personal, 2: address, 3: verify, 4: complete
+
+  status      KycStatus @default(PENDING)
+  reviewNotes String?
+  reviewedAt  DateTime?
+  reviewedBy  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("kyc")
 }
@@ -105,66 +105,67 @@ model Kyc {
 // ============================================
 
 model FiatBalance {
-  id               String  @id @default(uuid())
-  userId           String  @unique
-  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   currency         String  @default("USD")
   balance          Decimal @default(0) @db.Decimal(20, 8)
   availableBalance Decimal @default(0) @db.Decimal(20, 8)
   lockedBalance    Decimal @default(0) @db.Decimal(20, 8)
-  
-  updatedAt        DateTime @updatedAt
+
+  updatedAt DateTime @updatedAt
 
   @@map("fiat_balances")
 }
 
 model BankAccount {
-  id            String   @id @default(uuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  accountNumber String   // Encrypted
-  routingNumber String   // Encrypted
-  accountType   String   // checking, savings
-  accountName   String
-  isVerified    Boolean  @default(false)
-  
-  createdAt     DateTime @default(now())
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  accountNumber       String // Last 4 digits for display
+  routingNumber       String // Masked for display
+  accountType         String // checking, savings
+  accountName         String
+  stripeBankAccountId String? @unique // Stripe payment method ID or bank account ID
+  isVerified          Boolean @default(false)
+
+  createdAt DateTime @default(now())
 
   @@map("bank_accounts")
 }
 
 model CreditCard {
-  id           String   @id @default(uuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  stripeCardId String   @unique
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  stripeCardId String @unique
   last4        String
   brand        String
   expiryMonth  Int
   expiryYear   Int
-  
-  createdAt    DateTime @default(now())
+
+  createdAt DateTime @default(now())
 
   @@map("credit_cards")
 }
 
 model FiatTransaction {
-  id        String              @id @default(uuid())
-  userId    String
-  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   type      FiatTransactionType // deposit, withdrawal
-  method    String              // wire, card, bank
+  method    String // wire, card, bank
   amount    Decimal             @db.Decimal(20, 8)
   status    TransactionStatus   @default(PENDING)
   reference String?
-  metadata  Json?               // Additional data (Stripe payment intent, etc.)
-  
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
+  metadata  Json? // Additional data (Stripe payment intent, etc.)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("fiat_transactions")
 }
@@ -179,69 +180,68 @@ enum FiatTransactionType {
 // ============================================
 
 model CryptoBalance {
-  id               String  @id @default(uuid())
-  userId           String
-  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  asset            String  // BTC, ETH, etc.
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  asset            String // BTC, ETH, etc.
   balance          Decimal @default(0) @db.Decimal(20, 8)
   availableBalance Decimal @default(0) @db.Decimal(20, 8)
   lockedBalance    Decimal @default(0) @db.Decimal(20, 8)
-  
-  updatedAt        DateTime @updatedAt
+
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, asset])
   @@map("crypto_balances")
 }
 
 model DepositAddress {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  asset     String   // BTC, ETH, etc.
-  address   String   @unique
-  network   String
-  memo      String?
-  
+  id      String  @id @default(uuid())
+  userId  String
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asset   String // BTC, ETH, etc.
+  address String  @unique
+  network String
+  memo    String?
+
   createdAt DateTime @default(now())
 
   @@unique([userId, asset])
   @@map("deposit_addresses")
 }
 
-
 model WithdrawalAddress {
-  id            String   @id @default(uuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   asset         String
   address       String
   label         String
   network       String
-  isWhitelisted Boolean  @default(false)
-  
-  createdAt     DateTime @default(now())
+  isWhitelisted Boolean @default(false)
+
+  createdAt DateTime @default(now())
 
   @@map("withdrawal_addresses")
 }
 
 model CryptoTransaction {
-  id            String            @id @default(uuid())
-  userId        String
-  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   asset         String
   type          CryptoTransactionType // deposit, withdrawal
-  amount        Decimal           @db.Decimal(20, 8)
+  amount        Decimal               @db.Decimal(20, 8)
   address       String
   txHash        String?
-  status        TransactionStatus @default(PENDING)
-  confirmations Int               @default(0)
+  status        TransactionStatus     @default(PENDING)
+  confirmations Int                   @default(0)
   metadata      Json?
-  
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("crypto_transactions")
 }
@@ -264,32 +264,32 @@ enum TransactionStatus {
 // ============================================
 
 model Trade {
-  id              String      @id @default(uuid())
-  userId          String
-  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  productId       String      // BTC-USD (Coinbase format)
-  asset           String      // BTC
-  quote           String      // USD
-  side            OrderType   // BUY, SELL
-  
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  productId String // BTC-USD (Coinbase format)
+  asset     String // BTC
+  quote     String // USD
+  side      OrderType // BUY, SELL
+
   // Order amounts
-  requestedAmount Decimal     @db.Decimal(20, 8) // Amount user requested
-  filledAmount    Decimal     @db.Decimal(20, 8) @default(0) // Amount actually filled
-  price           Decimal     @db.Decimal(20, 8) // Execution price
-  totalValue      Decimal     @db.Decimal(20, 8) // Total value in quote currency
-  
+  requestedAmount Decimal @db.Decimal(20, 8) // Amount user requested
+  filledAmount    Decimal @default(0) @db.Decimal(20, 8) // Amount actually filled
+  price           Decimal @db.Decimal(20, 8) // Execution price
+  totalValue      Decimal @db.Decimal(20, 8) // Total value in quote currency
+
   // Fees
-  platformFee     Decimal     @db.Decimal(20, 8) @default(0)
-  exchangeFee     Decimal     @db.Decimal(20, 8) @default(0)
-  
+  platformFee Decimal @default(0) @db.Decimal(20, 8)
+  exchangeFee Decimal @default(0) @db.Decimal(20, 8)
+
   // Status & external reference
   status          TradeStatus @default(PENDING)
   coinbaseOrderId String?     @unique
-  
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  completedAt     DateTime?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
 
   @@index([userId])
   @@index([productId])
@@ -314,24 +314,24 @@ enum TradeStatus {
 // ============================================
 
 model P2POrder {
-  id                String         @id @default(uuid())
-  userId            String
-  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   asset             String
   base              String
   orderType         OrderType
-  quantity          Decimal        @db.Decimal(20, 8)
-  quantityRemaining Decimal        @db.Decimal(20, 8)
-  price             Decimal        @db.Decimal(20, 8)
-  
-  status            P2POrderStatus @default(ACTIVE)
-  expiresAt         DateTime
-  
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  
-  transactions      P2PTransaction[]
+  quantity          Decimal   @db.Decimal(20, 8)
+  quantityRemaining Decimal   @db.Decimal(20, 8)
+  price             Decimal   @db.Decimal(20, 8)
+
+  status    P2POrderStatus @default(ACTIVE)
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions P2PTransaction[]
 
   @@map("p2p_orders")
 }
@@ -345,18 +345,18 @@ enum P2POrderStatus {
 }
 
 model P2PTransaction {
-  id         String      @id @default(uuid())
-  orderId    String
-  order      P2POrder    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  
+  id      String   @id @default(uuid())
+  orderId String
+  order   P2POrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
   buyerId    String
   sellerId   String
-  quantity   Decimal     @db.Decimal(20, 8)
-  price      Decimal     @db.Decimal(20, 8)
-  totalValue Decimal     @db.Decimal(20, 8)
-  
-  status     TradeStatus @default(COMPLETED)
-  createdAt  DateTime    @default(now())
+  quantity   Decimal @db.Decimal(20, 8)
+  price      Decimal @db.Decimal(20, 8)
+  totalValue Decimal @db.Decimal(20, 8)
+
+  status    TradeStatus @default(COMPLETED)
+  createdAt DateTime    @default(now())
 
   @@map("p2p_transactions")
 }
@@ -366,11 +366,11 @@ model P2PTransaction {
 // ============================================
 
 model TradingPair {
-  id        String   @id @default(uuid())
-  asset     String   // BTC
-  base      String   // USD
-  isActive  Boolean  @default(true)
-  
+  id       String  @id @default(uuid())
+  asset    String // BTC
+  base     String // USD
+  isActive Boolean @default(true)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -383,11 +383,27 @@ model OtpCode {
   email     String?
   phone     String?
   code      String
-  type      String   // REGISTER, LOGIN, RESET, UPDATE_EMAIL, UPDATE_PHONE
+  type      String // REGISTER, LOGIN, RESET, UPDATE_EMAIL, UPDATE_PHONE
   expiresAt DateTime
   verified  Boolean  @default(false)
-  
+
   createdAt DateTime @default(now())
 
   @@map("otp_codes")
+}
+
+// ============================================
+// WATCHLIST
+// ============================================
+
+model WatchlistItem {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  asset     String // BTC, ETH, etc. (base currency)
+  addedAt   DateTime @default(now())
+
+  @@unique([userId, asset])
+  @@map("watchlist_items")
 }

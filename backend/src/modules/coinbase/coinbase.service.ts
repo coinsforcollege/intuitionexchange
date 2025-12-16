@@ -35,6 +35,7 @@ export interface CoinbaseOrder {
   average_filled_price: string;
   created_time: string;
   completion_percentage: string;
+  commission?: string; // Coinbase trading fee in quote currency
 }
 
 export interface CoinbaseAccount {
@@ -205,6 +206,84 @@ export class CoinbaseService implements OnModuleInit {
   }
 
   /**
+   * Format order size to avoid scientific notation and ensure proper precision
+   * Coinbase requires order sizes to be in fixed decimal format, not scientific notation
+   * @param size - The order size to format
+   * @param increment - The minimum increment allowed (e.g., 0.01 for USD, 0.00000001 for BTC)
+   * @returns Formatted size string matching Coinbase precision requirements
+   */
+  private formatOrderSize(size: string | number, increment?: number): string {
+    // Convert to number if it's a string
+    const numSize = typeof size === 'string' ? parseFloat(size) : size;
+    
+    // Check if the number is valid
+    if (isNaN(numSize) || !isFinite(numSize) || numSize <= 0) {
+      throw new Error(`Invalid order size: ${size}`);
+    }
+
+    // If increment is provided, round to the nearest increment
+    if (increment && increment > 0) {
+      // Calculate decimal places from increment
+      // Use logarithm to determine precision: log10(1/increment) gives decimal places
+      let decimalPlaces = 0;
+      
+      if (increment >= 1) {
+        // For increments >= 1, no decimal places needed
+        decimalPlaces = 0;
+      } else {
+        // Calculate decimal places using logarithm
+        // For 0.01: log10(1/0.01) = log10(100) = 2
+        // For 1e-8: log10(1/1e-8) = log10(100000000) = 8
+        const logValue = Math.log10(1 / increment);
+        decimalPlaces = Math.ceil(logValue);
+        
+        // Clamp to reasonable range (0-18 decimals)
+        decimalPlaces = Math.max(0, Math.min(18, decimalPlaces));
+        
+        // Verify by checking if increment * 10^decimalPlaces is close to an integer
+        // This handles floating point precision issues
+        const multiplier = Math.pow(10, decimalPlaces);
+        const checkValue = increment * multiplier;
+        // If not close to integer, we might need more precision
+        if (Math.abs(checkValue - Math.round(checkValue)) > 0.0001) {
+          // Try one more decimal place
+          decimalPlaces = Math.min(18, decimalPlaces + 1);
+        }
+      }
+      
+      // Round to the calculated decimal places
+      const rounded = Math.round(numSize * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces);
+      
+      // Safety check: if rounding resulted in zero but original was not zero, there's a precision issue
+      if (rounded === 0 && numSize > 0) {
+        this.logger.warn(`Rounding ${numSize} with increment ${increment} (${decimalPlaces} decimals) resulted in 0. Using original value with calculated precision.`);
+        // Fall back to formatting original value with calculated decimal places
+        const formatted = numSize.toFixed(decimalPlaces);
+        return formatted.replace(/\.?0+$/, '');
+      }
+      
+      // Format with the calculated decimal places
+      const formatted = rounded.toFixed(decimalPlaces);
+      
+      // Remove trailing zeros for cleaner output, but ensure we don't return empty string
+      const result = formatted.replace(/\.?0+$/, '');
+      return result || '0';
+    }
+
+    // Default behavior: avoid scientific notation, use reasonable precision
+    const str = numSize.toString();
+    
+    // If it's already in scientific notation, convert it
+    if (str.includes('e') || str.includes('E')) {
+      // Use toFixed with max decimals, then remove trailing zeros
+      const fixed = numSize.toFixed(18);
+      return fixed.replace(/\.?0+$/, '');
+    }
+    
+    return str;
+  }
+
+  /**
    * Place a market order
    */
   async placeMarketOrder(
@@ -216,7 +295,33 @@ export class CoinbaseService implements OnModuleInit {
     this.ensureInitialized();
 
     try {
-      const clientOrderId = `intuition-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      // Fetch product details to get precision requirements and minimum order size
+      let quoteIncrement: number | undefined;
+      let baseIncrement: number | undefined;
+      let minMarketFunds: number | undefined;
+      let productPrice: number | undefined;
+      
+      try {
+        const product = await this.client.getProduct({ product_id: productId });
+        // Coinbase products have quote_increment, base_increment, and min_market_funds fields
+        quoteIncrement = product.quote_increment ? parseFloat(product.quote_increment) : undefined;
+        baseIncrement = product.base_increment ? parseFloat(product.base_increment) : undefined;
+        minMarketFunds = product.min_market_funds ? parseFloat(product.min_market_funds) : undefined;
+        productPrice = product.price ? parseFloat(product.price) : undefined;
+        
+        this.logger.log(`Product ${productId} increments: quote=${quoteIncrement}, base=${baseIncrement}, min_market_funds=${minMarketFunds}, price=${productPrice}`);
+      } catch (error) {
+        this.logger.warn(`Failed to fetch product details for ${productId}, using default precision`, error);
+        // Fallback: use common defaults
+        // USD typically has 0.01 increment (2 decimals)
+        if (productId.includes('-USD')) {
+          quoteIncrement = 0.01;
+        }
+      }
+
+      // Generate client_order_id with required "cbnode" prefix
+      // Coinbase requires client_order_id to be prefixed with "cbnode"
+      const clientOrderId = `cbnode-intuition-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
       const orderConfig: any = {
         client_order_id: clientOrderId,
@@ -228,18 +333,67 @@ export class CoinbaseService implements OnModuleInit {
       };
 
       if (side === 'BUY' && quoteSize) {
-        orderConfig.order_configuration.market_market_ioc.quote_size = quoteSize;
+        // Format quote size to match product's quote_increment precision
+        const formattedQuoteSize = this.formatOrderSize(quoteSize, quoteIncrement);
+        
+        // Check minimum order size
+        const quoteSizeNum = parseFloat(formattedQuoteSize);
+        if (minMarketFunds && quoteSizeNum < minMarketFunds) {
+          this.logger.error(`Order size ${formattedQuoteSize} is below minimum ${minMarketFunds} for ${productId}`);
+          throw new Error(`Order size is too small. Minimum order size is ${minMarketFunds} ${productId.split('-')[1]}.`);
+        }
+        
+        orderConfig.order_configuration.market_market_ioc.quote_size = formattedQuoteSize;
+        this.logger.log(`Formatted quote_size: ${quoteSize} -> ${formattedQuoteSize} (increment: ${quoteIncrement}, min: ${minMarketFunds})`);
       } else if (side === 'SELL' && baseSize) {
-        orderConfig.order_configuration.market_market_ioc.base_size = baseSize;
+        // Format base size to match product's base_increment precision
+        const formattedBaseSize = this.formatOrderSize(baseSize, baseIncrement);
+        
+        // For SELL orders, we need to estimate the quote value to check minimum
+        if (minMarketFunds && productPrice) {
+          const baseSizeNum = parseFloat(formattedBaseSize);
+          const estimatedQuoteValue = baseSizeNum * productPrice;
+          
+          if (estimatedQuoteValue < minMarketFunds) {
+            this.logger.error(`Estimated order value ${estimatedQuoteValue} is below minimum ${minMarketFunds} for ${productId}`);
+            throw new Error(`Order size is too small. Minimum order value is ${minMarketFunds} ${productId.split('-')[1]}.`);
+          }
+        }
+        
+        orderConfig.order_configuration.market_market_ioc.base_size = formattedBaseSize;
+        this.logger.log(`Formatted base_size: ${baseSize} -> ${formattedBaseSize} (increment: ${baseIncrement}, min: ${minMarketFunds})`);
       } else {
         throw new Error('Invalid order parameters');
       }
 
-      const response = await this.client.createOrder(orderConfig);
+      const response = await this.client.submitOrder(orderConfig);
+      
+      this.logger.log(`Order submitted: ${JSON.stringify(response)}`);
+
+      // Check for error response from Coinbase
+      if (response?.error_response || response?.success === false) {
+        const errorMsg = response?.error_response?.message || 'Order submission failed';
+        const errorCode = response?.error_response?.error || 'UNKNOWN_ERROR';
+        this.logger.error(`Coinbase order error: ${errorCode} - ${errorMsg}`);
+        // Return generic error message for users, log technical details
+        throw new Error('Unable to process trade at this time. Please try again later.');
+      }
+
+      // Handle different response structures for successful orders
+      const orderId = 
+        response?.order_id || 
+        response?.success_response?.order_id ||
+        response?.order?.order_id ||
+        response?.data?.order_id;
+
+      if (!orderId) {
+        this.logger.warn('Order submitted but no order_id in response', response);
+        throw new Error('Order submitted but no order ID returned from Coinbase');
+      }
 
       return {
-        orderId: response.order_id || response.success_response?.order_id,
-        success: response.success || !!response.success_response,
+        orderId,
+        success: true,
       };
     } catch (error) {
       this.logger.error('Failed to place order', error);
@@ -278,6 +432,7 @@ export class CoinbaseService implements OnModuleInit {
         average_filled_price: o.average_filled_price || '0',
         created_time: o.created_time,
         completion_percentage: o.completion_percentage || '0',
+        commission: o.commission || '0',
       }));
     } catch (error) {
       this.logger.error('Failed to get orders', error);
@@ -292,7 +447,10 @@ export class CoinbaseService implements OnModuleInit {
     this.ensureInitialized();
 
     try {
-      const order = await this.client.getOrder({ order_id: orderId });
+      const response = await this.client.getOrder({ order_id: orderId });
+      
+      // Handle nested response structure: { order: { ... } } or direct order object
+      const order = response?.order || response;
 
       return {
         order_id: order.order_id,
@@ -304,6 +462,7 @@ export class CoinbaseService implements OnModuleInit {
         average_filled_price: order.average_filled_price || '0',
         created_time: order.created_time,
         completion_percentage: order.completion_percentage || '0',
+        commission: order.commission || '0',
       };
     } catch (error) {
       this.logger.error(`Failed to get order ${orderId}`, error);
