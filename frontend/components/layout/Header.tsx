@@ -13,7 +13,7 @@ import {
   MoonOutlined,
   TeamOutlined,
   DollarOutlined,
-  DashboardOutlined,
+  AppstoreOutlined,
 } from "@ant-design/icons";
 import { fontWeights } from "@/theme/themeConfig";
 import { useThemeMode } from "@/context/ThemeContext";
@@ -31,7 +31,7 @@ const navItems = [
   { key: "trade", label: "Trade", icon: <SwapOutlined />, href: "/trade" },
   { key: "p2p", label: "P2P", icon: <TeamOutlined />, href: "/p2p" },
   { key: "markets", label: "Markets", icon: <LineChartOutlined />, href: "/markets" },
-  { key: "wallet", label: "Wallet", icon: <WalletOutlined />, href: "/wallet" },
+  { key: "portfolio", label: "Portfolio", icon: <WalletOutlined />, href: "/portfolio" },
 ];
 
 export default function Header() {
@@ -164,16 +164,16 @@ export default function Header() {
             )}
           </div>
           {isLoggedIn ? (
-            <Link href="/dashboard">
+            <Link href="/overview">
               <Button
                 type="primary"
-                icon={<DashboardOutlined />}
+                icon={<AppstoreOutlined />}
                 style={{
                   fontWeight: fontWeights.semibold,
                   paddingInline: token.paddingMD,
                 }}
               >
-                Dashboard
+                Overview
               </Button>
             </Link>
           ) : (
@@ -248,8 +248,8 @@ export default function Header() {
               ? [
                   {
                     key: "dashboard",
-                    icon: <DashboardOutlined />,
-                    label: <Link href="/dashboard">Dashboard</Link>,
+                    icon: <AppstoreOutlined />,
+                    label: <Link href="/overview">Overview</Link>,
                   },
                 ]
               : [

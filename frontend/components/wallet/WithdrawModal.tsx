@@ -128,7 +128,7 @@ export default function WithdrawModal({ visible, onClose, onSuccess, availableBa
                   icon={<PlusOutlined />}
                   onClick={() => {
                     onClose();
-                    window.location.href = '/wallet/bank-accounts/add';
+                    window.location.href = '/portfolio/bank-accounts/add';
                   }}
                 >
                   Add Bank Account
@@ -152,7 +152,7 @@ export default function WithdrawModal({ visible, onClose, onSuccess, availableBa
                       block
                       onClick={() => {
                         onClose();
-                        window.location.href = '/wallet/bank-accounts/add';
+                        window.location.href = '/portfolio/bank-accounts/add';
                       }}
                       style={{ textAlign: 'left' }}
                     >

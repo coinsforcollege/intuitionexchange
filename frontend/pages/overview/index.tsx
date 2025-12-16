@@ -304,7 +304,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        router.push('/login?redirect=/dashboard');
+        router.push('/login?redirect=/overview');
         return;
       }
       if (user.kycStatus !== 'APPROVED' && user.kycStatus !== 'PENDING') {
@@ -377,12 +377,22 @@ export default function DashboardPage() {
       .filter(Boolean) as typeof usdPairs;
   }, [watchlistAssets, usdPairs]);
 
-  // Top gainers & losers - memoized
+  // Top gainers & losers - memoized, sorted by volume
   const marketMovers = useMemo(() => {
-    const sorted = [...usdPairs].sort((a, b) => b.change - a.change);
+    // Separate gainers and losers first
+    const gainers = usdPairs.filter(p => p.change > 0);
+    const losers = usdPairs.filter(p => p.change < 0);
+    
+    // Sort each by volume (descending) - using _usdVolume if available
+    const sortByVolume = (a: typeof usdPairs[0], b: typeof usdPairs[0]) => {
+      const aVol = (a as { _usdVolume?: number })._usdVolume || 0;
+      const bVol = (b as { _usdVolume?: number })._usdVolume || 0;
+      return bVol - aVol;
+    };
+    
     return {
-      gainers: sorted.slice(0, 4),
-      losers: sorted.slice(-4).reverse(),
+      gainers: [...gainers].sort(sortByVolume).slice(0, 10),
+      losers: [...losers].sort(sortByVolume).slice(0, 10),
     };
   }, [usdPairs]);
 
@@ -393,11 +403,11 @@ export default function DashboardPage() {
 
   // Stable callbacks
   const handleNavigateToExchange = useCallback(() => {
-    router.push('/exchange');
+    router.push('/trade');
   }, [router]);
 
   const handleNavigateToWatchlist = useCallback(() => {
-    router.push('/dashboard/watchlist');
+    router.push('/overview/watchlist');
   }, [router]);
 
   const handleRemoveFromWatchlist = useCallback((asset: string) => {
@@ -407,24 +417,24 @@ export default function DashboardPage() {
   }, []);
 
   const handleBuyAsset = useCallback((asset: string) => {
-    router.push(`/exchange?pair=${asset}-USD`);
+    router.push(`/trade?pair=${asset}-USD`);
   }, [router]);
 
   // Quick actions - memoized
   const quickActions = useMemo(() => [
-    { key: 'deposit', icon: <PlusOutlined />, label: 'Deposit', color: token.colorSuccess, href: '/wallet?action=deposit' },
-    { key: 'trade', icon: <SwapOutlined />, label: 'Trade', color: token.colorWarning, href: '/exchange' },
-    { key: 'withdraw', icon: <BankOutlined />, label: 'Withdraw', color: token.colorError, href: '/wallet?action=withdraw' },
-    { key: 'wallet', icon: <WalletOutlined />, label: 'Wallet', color: token.colorPrimary, href: '/wallet' },
+    { key: 'deposit', icon: <PlusOutlined />, label: 'Deposit', color: token.colorSuccess, href: '/portfolio?action=deposit' },
+    { key: 'trade', icon: <SwapOutlined />, label: 'Trade', color: token.colorWarning, href: '/trade' },
+    { key: 'withdraw', icon: <BankOutlined />, label: 'Withdraw', color: token.colorError, href: '/portfolio?action=withdraw' },
+    { key: 'portfolio', icon: <WalletOutlined />, label: 'Portfolio', color: token.colorPrimary, href: '/portfolio' },
   ], [token]);
 
   if (pageLoading) {
     return (
       <>
         <Head>
-          <title>Dashboard - InTuition Exchange</title>
+          <title>Overview - InTuition Exchange</title>
         </Head>
-        <DashboardLayout activeKey="dashboard">
+        <DashboardLayout activeKey="overview">
           <Skeleton active paragraph={{ rows: 12 }} />
         </DashboardLayout>
       </>
@@ -434,11 +444,11 @@ export default function DashboardPage() {
   return (
     <>
       <Head>
-        <title>Dashboard - InTuition Exchange</title>
-        <meta name="description" content="Your InTuition Exchange dashboard" />
+        <title>Overview - InTuition Exchange</title>
+        <meta name="description" content="Your InTuition Exchange overview" />
       </Head>
 
-      <DashboardLayout activeKey="dashboard">
+      <DashboardLayout activeKey="overview">
         {/* Desktop: 2-column layout */}
         <div
           style={{
@@ -652,10 +662,10 @@ export default function DashboardPage() {
                     alignItems: 'center',
                     gap: token.marginSM,
                     padding: token.paddingXL,
-                    background: isMobile ? 'transparent' : token.colorBgContainer,
+                    background: 'transparent',
                     borderRadius: token.borderRadius,
                     cursor: 'pointer',
-                    border: `2px dashed ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(102, 126, 234, 0.2)'}`,
+                    border: isMobile ? 'none' : `2px dashed ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(102, 126, 234, 0.2)'}`,
                   }}
                 >
                   <StarOutlined style={{ fontSize: 32, color: token.colorTextSecondary, opacity: 0.5 }} />
@@ -708,172 +718,8 @@ export default function DashboardPage() {
               )}
             </Section>
 
-            {/* Market Movers - Only on mobile/tablet */}
-            {(isMobile || isTablet) && (
-              <>
-                {/* Top Gainers */}
-                <Section title="Top Gainers" isMobile={isMobile}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 0 : token.marginXS }}>
-                    {marketMovers.gainers.slice(0, 3).map((pair) => (
-                      <TokenRow
-                        key={pair.baseCurrency}
-                        baseCurrency={pair.baseCurrency}
-                        name={pair.name}
-                        iconUrl={pair.iconUrl}
-                        price={pair.price}
-                        change={pair.change}
-                        onRowClick={handleNavigateToExchange}
-                        isMobile={isMobile}
-                      />
-                    ))}
-                  </div>
-                </Section>
-
-                {/* Top Losers */}
-                <Section title="Top Losers" isMobile={isMobile}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 0 : token.marginXS }}>
-                    {marketMovers.losers.slice(0, 3).map((pair) => (
-                      <TokenRow
-                        key={pair.baseCurrency}
-                        baseCurrency={pair.baseCurrency}
-                        name={pair.name}
-                        iconUrl={pair.iconUrl}
-                        price={pair.price}
-                        change={pair.change}
-                        onRowClick={handleNavigateToExchange}
-                        isMobile={isMobile}
-                      />
-                    ))}
-                  </div>
-                </Section>
-              </>
-            )}
-          </div>
-
-          {/* Sidebar Column - Desktop only */}
-          {!isMobile && !isTablet && (
-            <div>
-              {/* Market Movers */}
-              <Section title="Market Movers" isMobile={isMobile}>
-                <div
-                  style={{
-                    background: token.colorBgContainer,
-                    borderRadius: token.borderRadius,
-                    overflow: 'hidden',
-                  }}
-                >
-                  {/* Gainers */}
-                  <div style={{ padding: token.paddingMD }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: token.marginXS,
-                        marginBottom: token.marginSM,
-                        color: token.colorSuccess,
-                        fontSize: token.fontSizeSM,
-                        fontWeight: fontWeights.semibold,
-                      }}
-                    >
-                      <RiseOutlined />
-                      Top Gainers
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginXS }}>
-                      {marketMovers.gainers.slice(0, 4).map((pair, index) => (
-                        <div
-                          key={pair.baseCurrency}
-                          onClick={handleNavigateToExchange}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: token.marginSM,
-                            cursor: 'pointer',
-                            padding: `${token.paddingXS}px 0`,
-                          }}
-                        >
-                          <span style={{ width: 16, color: token.colorTextSecondary, fontSize: token.fontSizeSM }}>
-                            {index + 1}
-                          </span>
-                          <img
-                            src={pair.iconUrl}
-                            alt={pair.baseCurrency}
-                            width={24}
-                            height={24}
-                            style={{ borderRadius: '50%' }}
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${pair.baseCurrency}&background=667eea&color=fff&size=24`;
-                            }}
-                          />
-                          <span style={{ flex: 1, fontWeight: fontWeights.medium, color: token.colorText }}>
-                            {pair.baseCurrency}
-                          </span>
-                          <span style={{ color: token.colorSuccess, fontWeight: fontWeights.semibold }}>
-                            +{pair.change.toFixed(2)}%
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Divider */}
-                  <div style={{ height: 1, background: token.colorBorderSecondary, margin: `0 ${token.paddingMD}px` }} />
-
-                  {/* Losers */}
-                  <div style={{ padding: token.paddingMD }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: token.marginXS,
-                        marginBottom: token.marginSM,
-                        color: token.colorError,
-                        fontSize: token.fontSizeSM,
-                        fontWeight: fontWeights.semibold,
-                      }}
-                    >
-                      <FallOutlined />
-                      Top Losers
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginXS }}>
-                      {marketMovers.losers.slice(0, 4).map((pair, index) => (
-                        <div
-                          key={pair.baseCurrency}
-                          onClick={handleNavigateToExchange}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: token.marginSM,
-                            cursor: 'pointer',
-                            padding: `${token.paddingXS}px 0`,
-                          }}
-                        >
-                          <span style={{ width: 16, color: token.colorTextSecondary, fontSize: token.fontSizeSM }}>
-                            {index + 1}
-                          </span>
-                          <img
-                            src={pair.iconUrl}
-                            alt={pair.baseCurrency}
-                            width={24}
-                            height={24}
-                            style={{ borderRadius: '50%' }}
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${pair.baseCurrency}&background=667eea&color=fff&size=24`;
-                            }}
-                          />
-                          <span style={{ flex: 1, fontWeight: fontWeights.medium, color: token.colorText }}>
-                            {pair.baseCurrency}
-                          </span>
-                          <span style={{ color: token.colorError, fontWeight: fontWeights.semibold }}>
-                            {pair.change.toFixed(2)}%
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </Section>
-
-              {/* Recent Activity */}
+            {/* Recent Activity - Desktop (below watchlist in main area) */}
+            {!isMobile && !isTablet && (
               <Section title="Recent Activity" isMobile={isMobile}>
                 {isLoadingOrders ? (
                   <Skeleton active paragraph={{ rows: 3 }} />
@@ -952,6 +798,235 @@ export default function DashboardPage() {
                   </div>
                 )}
               </Section>
+            )}
+
+            {/* Market Movers - Only on mobile/tablet */}
+            {(isMobile || isTablet) && (
+              <>
+                {/* Top Gainers */}
+                <Section title="Top Gainers" isMobile={isMobile}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 0 : token.marginXS }}>
+                    {marketMovers.gainers.slice(0, 3).map((pair) => (
+                      <TokenRow
+                        key={pair.baseCurrency}
+                        baseCurrency={pair.baseCurrency}
+                        name={pair.name}
+                        iconUrl={pair.iconUrl}
+                        price={pair.price}
+                        change={pair.change}
+                        onRowClick={handleNavigateToExchange}
+                        isMobile={isMobile}
+                      />
+                    ))}
+                  </div>
+                </Section>
+
+                {/* Top Losers */}
+                <Section title="Top Losers" isMobile={isMobile}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 0 : token.marginXS }}>
+                    {marketMovers.losers.slice(0, 3).map((pair) => (
+                      <TokenRow
+                        key={pair.baseCurrency}
+                        baseCurrency={pair.baseCurrency}
+                        name={pair.name}
+                        iconUrl={pair.iconUrl}
+                        price={pair.price}
+                        change={pair.change}
+                        onRowClick={handleNavigateToExchange}
+                        isMobile={isMobile}
+                      />
+                    ))}
+                  </div>
+                </Section>
+              </>
+            )}
+          </div>
+
+          {/* Sidebar Column - Desktop only - Sticky with internal scroll */}
+          {!isMobile && !isTablet && (
+            <div
+              style={{
+                position: 'sticky',
+                top: token.paddingXL,
+                height: `calc(100vh - ${token.paddingXL * 2}px - 64px)`,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: token.marginMD,
+              }}
+            >
+              {/* Top Gainers */}
+              <div
+                style={{
+                  flex: 1,
+                  minHeight: 0,
+                  background: token.colorBgContainer,
+                  borderRadius: token.borderRadius,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: token.marginXS,
+                    padding: token.paddingMD,
+                    paddingBottom: token.paddingSM,
+                    color: token.colorSuccess,
+                    fontSize: token.fontSizeSM,
+                    fontWeight: fontWeights.semibold,
+                    borderBottom: `1px solid ${token.colorBorderSecondary}`,
+                    flexShrink: 0,
+                  }}
+                >
+                  <RiseOutlined />
+                  Top Gainers (by Volume)
+                </div>
+                <div 
+                  style={{ 
+                    flex: 1,
+                    overflowY: 'auto',
+                    padding: `${token.paddingSM}px ${token.paddingMD}px`,
+                  }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {marketMovers.gainers.map((pair, index) => (
+                      <div
+                        key={pair.baseCurrency}
+                        onClick={handleNavigateToExchange}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: token.marginSM,
+                          cursor: 'pointer',
+                          padding: `${token.paddingXS}px 0`,
+                          borderRadius: token.borderRadiusSM,
+                          transition: 'background 0.15s',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                        }}
+                      >
+                        <span style={{ width: 18, color: token.colorTextTertiary, fontSize: token.fontSizeSM, textAlign: 'center' }}>
+                          {index + 1}
+                        </span>
+                        <img
+                          src={pair.iconUrl}
+                          alt={pair.baseCurrency}
+                          width={24}
+                          height={24}
+                          style={{ borderRadius: '50%' }}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${pair.baseCurrency}&background=667eea&color=fff&size=24`;
+                          }}
+                        />
+                        <span style={{ flex: 1, fontWeight: fontWeights.medium, color: token.colorText, fontSize: token.fontSizeSM }}>
+                          {pair.baseCurrency}
+                        </span>
+                        <span style={{ color: token.colorSuccess, fontWeight: fontWeights.semibold, fontSize: token.fontSizeSM }}>
+                          +{pair.change.toFixed(2)}%
+                        </span>
+                      </div>
+                    ))}
+                    {marketMovers.gainers.length === 0 && (
+                      <div style={{ padding: token.paddingMD, textAlign: 'center', color: token.colorTextSecondary, fontSize: token.fontSizeSM }}>
+                        No gainers today
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Top Losers */}
+              <div
+                style={{
+                  flex: 1,
+                  minHeight: 0,
+                  background: token.colorBgContainer,
+                  borderRadius: token.borderRadius,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: token.marginXS,
+                    padding: token.paddingMD,
+                    paddingBottom: token.paddingSM,
+                    color: token.colorError,
+                    fontSize: token.fontSizeSM,
+                    fontWeight: fontWeights.semibold,
+                    borderBottom: `1px solid ${token.colorBorderSecondary}`,
+                    flexShrink: 0,
+                  }}
+                >
+                  <FallOutlined />
+                  Top Losers (by Volume)
+                </div>
+                <div 
+                  style={{ 
+                    flex: 1,
+                    overflowY: 'auto',
+                    padding: `${token.paddingSM}px ${token.paddingMD}px`,
+                  }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {marketMovers.losers.map((pair, index) => (
+                      <div
+                        key={pair.baseCurrency}
+                        onClick={handleNavigateToExchange}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: token.marginSM,
+                          cursor: 'pointer',
+                          padding: `${token.paddingXS}px 0`,
+                          borderRadius: token.borderRadiusSM,
+                          transition: 'background 0.15s',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                        }}
+                      >
+                        <span style={{ width: 18, color: token.colorTextTertiary, fontSize: token.fontSizeSM, textAlign: 'center' }}>
+                          {index + 1}
+                        </span>
+                        <img
+                          src={pair.iconUrl}
+                          alt={pair.baseCurrency}
+                          width={24}
+                          height={24}
+                          style={{ borderRadius: '50%' }}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${pair.baseCurrency}&background=667eea&color=fff&size=24`;
+                          }}
+                        />
+                        <span style={{ flex: 1, fontWeight: fontWeights.medium, color: token.colorText, fontSize: token.fontSizeSM }}>
+                          {pair.baseCurrency}
+                        </span>
+                        <span style={{ color: token.colorError, fontWeight: fontWeights.semibold, fontSize: token.fontSizeSM }}>
+                          {pair.change.toFixed(2)}%
+                        </span>
+                      </div>
+                    ))}
+                    {marketMovers.losers.length === 0 && (
+                      <div style={{ padding: token.paddingMD, textAlign: 'center', color: token.colorTextSecondary, fontSize: token.fontSizeSM }}>
+                        No losers today
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -964,7 +1039,7 @@ export default function DashboardPage() {
             ) : recentOrders.length === 0 ? (
               <div
                 style={{
-                  background: token.colorBgContainer,
+                  background: 'transparent',
                   borderRadius: token.borderRadius,
                   padding: token.paddingLG,
                   textAlign: 'center',
@@ -979,7 +1054,7 @@ export default function DashboardPage() {
             ) : (
               <div
                 style={{
-                  background: token.colorBgContainer,
+                  background: 'transparent',
                   borderRadius: token.borderRadius,
                   overflow: 'hidden',
                 }}
@@ -991,7 +1066,7 @@ export default function DashboardPage() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: token.marginSM,
-                      padding: token.paddingMD,
+                      padding: isMobile ? `${token.paddingSM}px 0` : token.paddingMD,
                       borderBottom: index < 2 ? `1px solid ${token.colorBorderSecondary}` : 'none',
                     }}
                   >

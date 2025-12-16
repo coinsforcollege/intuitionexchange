@@ -51,7 +51,7 @@ export default function LoginPage() {
       login(response.user);
       message.success('Welcome back!');
       
-      const redirectTo = (router.query.redirect as string) || '/wallet';
+      const redirectTo = (router.query.redirect as string) || '/overview';
       router.push(redirectTo);
     } catch (error) {
       const apiError = error as ApiError;

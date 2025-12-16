@@ -92,7 +92,7 @@ function ExchangePageContent() {
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        router.push('/login?redirect=/exchange');
+        router.push('/login?redirect=/trade');
         return;
       }
       if (user.kycStatus !== 'APPROVED' && user.kycStatus !== 'PENDING') {
@@ -242,7 +242,7 @@ function ExchangePageContent() {
         <Head>
           <title>Trade - InTuition Exchange</title>
         </Head>
-        <DashboardLayout activeKey="exchange" fullWidth>
+        <DashboardLayout activeKey="trade" fullWidth>
           <div style={{ display: 'flex', width: '100%' }}>
             {/* Left - Markets skeleton */}
             <div style={{ 
@@ -312,7 +312,7 @@ function ExchangePageContent() {
         <Head>
           <title>Trade {selectedPair} - InTuition Exchange</title>
         </Head>
-        <DashboardLayout activeKey="exchange" fullWidth>
+        <DashboardLayout activeKey="trade" fullWidth>
           <motion.div
             style={sectionStyle}
             initial={{ opacity: 0, y: 20 }}
@@ -420,7 +420,7 @@ function ExchangePageContent() {
         <title>Trade {selectedPair} - InTuition Exchange</title>
       </Head>
       <DashboardLayout 
-        activeKey="exchange" 
+        activeKey="trade" 
         fullWidth
         exchangeData={{
           pair: selectedPair,

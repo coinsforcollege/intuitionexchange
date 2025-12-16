@@ -67,7 +67,7 @@ export default function OnboardingWelcome() {
         
         // Redirect based on status
         if (status.status === 'APPROVED') {
-          router.push('/wallet');
+          router.push('/overview');
         } else if (status.currentStep >= 1) {
           // Resume from where they left off
           const stepRoutes = ['/onboarding', '/onboarding/personal', '/onboarding/address', '/onboarding/verify', '/onboarding/status'];

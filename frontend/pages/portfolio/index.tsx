@@ -65,7 +65,7 @@ export default function WalletPage() {
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        router.push('/login?redirect=/wallet');
+        router.push('/login?redirect=/portfolio');
         return;
       }
       if (user.kycStatus !== 'APPROVED' && user.kycStatus !== 'PENDING') {
@@ -137,7 +137,7 @@ export default function WalletPage() {
       setDepositSuccessVisible(true);
       
       // Clear query parameter from URL
-      router.replace('/wallet', undefined, { shallow: true });
+      router.replace('/portfolio', undefined, { shallow: true });
     }
     
     // Cleanup on unmount
@@ -428,7 +428,7 @@ export default function WalletPage() {
         <Head>
           <title>Wallet - InTuition Exchange</title>
         </Head>
-        <DashboardLayout activeKey="wallet">
+        <DashboardLayout activeKey="portfolio">
           <Skeleton active paragraph={{ rows: 12 }} />
         </DashboardLayout>
       </>
@@ -442,7 +442,7 @@ export default function WalletPage() {
         <meta name="description" content="Manage your crypto assets" />
       </Head>
 
-      <DashboardLayout activeKey="wallet">
+      <DashboardLayout activeKey="portfolio">
         {/* Balance Stats */}
         <motion.div
           style={sectionStyle}
@@ -558,7 +558,7 @@ export default function WalletPage() {
               </Button>
               <Button 
                 style={buttonStyle}
-                onClick={() => router.push('/wallet/bank-accounts')}
+                onClick={() => router.push('/portfolio/bank-accounts')}
               >
                 <BankOutlined /> Bank Accounts
               </Button>
@@ -597,7 +597,7 @@ export default function WalletPage() {
                   color: token.colorPrimary,
                   border: `1px solid ${token.colorPrimary}40`,
                 }}
-                onClick={() => router.push('/wallet/bank-accounts')}
+                onClick={() => router.push('/portfolio/bank-accounts')}
               >
                 <BankOutlined />
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>Banks</span>

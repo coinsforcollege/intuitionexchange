@@ -73,10 +73,10 @@ const MobileBottomNav: React.FC = () => {
     // Initialize from current path on mount
     if (typeof window === 'undefined') return 'overview';
     const path = window.location.pathname;
-    if (path.startsWith('/dashboard')) return 'overview';
+    if (path.startsWith('/overview')) return 'overview';
     if (path.startsWith('/buy-sell')) return 'buy-sell';
-    if (path.startsWith('/exchange') || path.startsWith('/trade')) return 'trade';
-    if (path.startsWith('/wallet')) return 'portfolio';
+    if (path.startsWith('/trade')) return 'trade';
+    if (path.startsWith('/portfolio')) return 'portfolio';
     if (path.startsWith('/markets')) return 'markets';
     return 'overview';
   });
@@ -85,10 +85,10 @@ const MobileBottomNav: React.FC = () => {
   const isMobile = mounted ? !screens.md : false;
 
   const navItems: NavItem[] = useMemo(() => [
-    { key: 'overview', label: 'Overview', href: '/dashboard' },
+    { key: 'overview', label: 'Overview', href: '/overview' },
     { key: 'buy-sell', label: 'Buy & Sell', href: '/buy-sell' },
-    { key: 'trade', label: 'Trade', href: '/exchange' },
-    { key: 'portfolio', label: 'Portfolio', href: '/wallet' },
+    { key: 'trade', label: 'Trade', href: '/trade' },
+    { key: 'portfolio', label: 'Portfolio', href: '/portfolio' },
     { key: 'markets', label: 'Markets', href: '/markets' },
   ], []);
 
@@ -118,8 +118,13 @@ const MobileBottomNav: React.FC = () => {
   const BUBBLE_SIZE = 50;
 
   const primaryColor = '#6366F1';
-  const inactiveColor = isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)';
-  const bgColor = isDark ? 'rgba(20, 20, 35, 0.98)' : 'rgba(255, 255, 255, 0.98)';
+  // Solid colored background
+  const bgColor = '#4F46E5';
+  const inactiveColor = 'rgba(255, 255, 255, 0.6)';
+  const activeIconColor = '#FFFFFF';
+  // Page base color for bubble stroke - matches theme
+  // Dark: custom colorBgBase, Light: Ant Design default colorBgLayout
+  const pageBaseColor = isDark ? '#0f0f1a' : '#f5f5f5';
 
   return (
     <>
@@ -197,6 +202,7 @@ const MobileBottomNav: React.FC = () => {
                             borderRadius: BUBBLE_SIZE / 2,
                             background: `linear-gradient(135deg, ${primaryColor} 0%, #8B5CF6 100%)`,
                             boxShadow: `0 6px 20px ${primaryColor}50`,
+                            border: `5px solid ${pageBaseColor}`,
                             willChange: 'transform',
                             transform: 'translateZ(0)',
                           }}
@@ -218,7 +224,7 @@ const MobileBottomNav: React.FC = () => {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          color: isActive ? '#fff' : inactiveColor,
+                          color: isActive ? activeIconColor : inactiveColor,
                           zIndex: 1,
                           transition: 'top 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease',
                         }}
@@ -230,7 +236,7 @@ const MobileBottomNav: React.FC = () => {
                       <span
                         style={{
                           fontSize: 10,
-                          color: isActive ? primaryColor : inactiveColor,
+                          color: isActive ? activeIconColor : inactiveColor,
                           fontWeight: isActive ? 600 : 500,
                           transition: 'color 0.2s ease',
                           marginTop: 26,
@@ -247,7 +253,7 @@ const MobileBottomNav: React.FC = () => {
                             width: 5,
                             height: 5,
                             borderRadius: 2.5,
-                            background: primaryColor,
+                            background: activeIconColor,
                             marginTop: 3,
                           }}
                           transition={{
@@ -273,7 +279,7 @@ const MobileBottomNav: React.FC = () => {
           left: 0,
           right: 0,
           height: 'env(safe-area-inset-bottom, 0)',
-          background: 'transparent',
+          background: bgColor,
           zIndex: token.zIndexPopupBase + 9,
           pointerEvents: 'none',
         }}

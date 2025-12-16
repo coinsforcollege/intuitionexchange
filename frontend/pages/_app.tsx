@@ -18,9 +18,21 @@ const inter = Inter({
 function ThemedApp({ Component, pageProps }: AppProps) {
   const { mode } = useThemeMode();
 
+  const darkModeTokens = mode === "dark" ? {
+    // Slightly colored dark background (dark navy/indigo tint)
+    colorBgBase: '#0f0f1a',
+    colorBgContainer: '#16162a',
+    colorBgElevated: '#1e1e38',
+    colorBgLayout: '#0a0a14',
+  } : {};
+
   const themeWithAlgorithm = {
     ...themeConfig,
     algorithm: mode === "dark" ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+    token: {
+      ...themeConfig.token,
+      ...darkModeTokens,
+    },
   };
 
   // Handle unhandled promise rejections

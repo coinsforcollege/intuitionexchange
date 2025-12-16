@@ -93,21 +93,21 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const SIDEBAR_WIDTH = sidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED;
   const HEADER_HEIGHT = token.controlHeightLG * 1.5;
 
-  // Gradients for nav items
+  // Gradients for nav items - sequence: Overview, Trade, Buy & Sell, P2P, Markets, Portfolio, Transactions
   const navItems: NavItem[] = [
     { 
-      key: 'dashboard', 
+      key: 'overview', 
       label: 'Overview', 
       icon: <AppstoreOutlined />, 
-      href: '/dashboard',
+      href: '/overview',
       gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     },
     { 
-      key: 'wallet', 
-      label: 'Portfolio', 
-      icon: <WalletOutlined />, 
-      href: '/wallet',
-      gradient: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+      key: 'trade', 
+      label: 'Trade', 
+      icon: <SwapOutlined />, 
+      href: '/trade',
+      gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
     },
     { 
       key: 'buy-sell', 
@@ -115,20 +115,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       icon: <ShoppingCartOutlined />, 
       href: '/buy-sell',
       gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-    },
-    { 
-      key: 'exchange', 
-      label: 'Trade', 
-      icon: <SwapOutlined />, 
-      href: '/exchange',
-      gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-    },
-    { 
-      key: 'orders', 
-      label: 'Orders', 
-      icon: <FileTextOutlined />, 
-      href: '/orders',
-      gradient: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
     },
     { 
       key: 'p2p', 
@@ -143,6 +129,20 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       icon: <LineChartOutlined />, 
       href: '/markets',
       gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+    },
+    { 
+      key: 'portfolio', 
+      label: 'Portfolio', 
+      icon: <WalletOutlined />, 
+      href: '/portfolio',
+      gradient: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+    },
+    { 
+      key: 'transactions', 
+      label: 'Transactions', 
+      icon: <FileTextOutlined />, 
+      href: '/transactions',
+      gradient: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
     },
   ];
 
@@ -547,7 +547,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       <aside style={sidebarStyle}>
 
         <div style={logoContainerStyle}>
-          <Link href="/dashboard" style={logoStyle}>
+          <Link href="/overview" style={logoStyle}>
             <Image
               src="/images/intuition-logo-no-text.svg"
               alt="InTuition"
@@ -741,7 +741,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
           {!isMobile && (
             <div
-              onClick={() => router.push('/wallet?action=deposit')}
+              onClick={() => router.push('/portfolio?action=deposit')}
               style={{
                 cursor: 'pointer',
                 fontWeight: fontWeights.semibold,

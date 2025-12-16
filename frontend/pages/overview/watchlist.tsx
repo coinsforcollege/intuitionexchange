@@ -38,7 +38,7 @@ export default function WatchlistPage() {
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        router.push('/login?redirect=/dashboard/watchlist');
+        router.push('/login?redirect=/overview/watchlist');
         return;
       }
       if (user.kycStatus !== 'APPROVED' && user.kycStatus !== 'PENDING') {
@@ -120,7 +120,7 @@ export default function WatchlistPage() {
 
   // Navigate to exchange with the asset pair
   const handleBuy = (asset: string) => {
-    router.push(`/exchange?pair=${asset}-USD`);
+    router.push(`/trade?pair=${asset}-USD`);
   };
 
   if (pageLoading || isLoadingPairs) {
@@ -129,7 +129,7 @@ export default function WatchlistPage() {
         <Head>
           <title>Add to Watchlist - InTuition Exchange</title>
         </Head>
-        <DashboardLayout activeKey="dashboard">
+        <DashboardLayout activeKey="overview">
           <Skeleton active paragraph={{ rows: 12 }} />
         </DashboardLayout>
       </>
@@ -143,7 +143,7 @@ export default function WatchlistPage() {
         <meta name="description" content="Add cryptocurrencies to your watchlist" />
       </Head>
 
-      <DashboardLayout activeKey="dashboard">
+      <DashboardLayout activeKey="overview">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}

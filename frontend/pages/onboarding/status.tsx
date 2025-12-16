@@ -168,7 +168,7 @@ export default function StatusPage() {
       <Button
         type="primary"
         size="large"
-        onClick={() => router.push('/dashboard')}
+        onClick={() => router.push('/overview')}
         style={{
           width: '100%',
           maxWidth: 400,

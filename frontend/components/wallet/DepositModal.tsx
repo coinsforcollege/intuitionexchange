@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Modal, Form, InputNumber, Button, message, theme, Typography, Space } from 'antd';
-import { DollarOutlined, ArrowRightOutlined, LockOutlined, CheckCircleOutlined, CreditCardOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { Modal, Form, InputNumber, Button, message, theme, Typography, Space, Grid } from 'antd';
+import { DollarOutlined, ArrowRightOutlined, LockOutlined, CheckCircleOutlined, CreditCardOutlined, CloseOutlined } from '@ant-design/icons';
 import { createDepositIntent } from '@/services/api/fiat';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { fontWeights } from '@/theme/themeConfig';
 
 const { useToken } = theme;
+const { useBreakpoint } = Grid;
 const { Text, Title } = Typography;
 
 interface DepositModalProps {
@@ -66,7 +67,7 @@ function DepositForm({
         elements,
         clientSecret,
         confirmParams: {
-          return_url: `${window.location.origin}/wallet?deposit=success`,
+          return_url: `${window.location.origin}/portfolio?deposit=success`,
         },
       });
 
@@ -195,17 +196,55 @@ export default function DepositModal({ visible, onClose, onSuccess }: DepositMod
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
   const { token } = useToken();
+  const screens = useBreakpoint();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isMobile = mounted ? !screens.md : false;
 
   // Check if Stripe is configured
   if (!STRIPE_PUBLISHABLE_KEY || !stripePromise) {
     return (
       <Modal
-        title="Deposit Funds"
+        title={isMobile ? undefined : "Deposit Funds"}
         open={visible}
         onCancel={onClose}
         footer={null}
-        width={520}
+        width={isMobile ? '100vw' : 520}
+        centered={!isMobile}
+        closable={!isMobile}
+        zIndex={isMobile ? token.zIndexPopupBase + 20 : undefined}
+        styles={isMobile ? {
+          body: { padding: token.paddingLG, paddingTop: 60 },
+          content: { borderRadius: 0 },
+          mask: { background: token.colorBgContainer },
+        } : undefined}
+        style={isMobile ? { top: 0, margin: 0, padding: 0, maxWidth: '100vw' } : undefined}
+        wrapClassName={isMobile ? 'mobile-fullscreen-modal' : undefined}
       >
+        {isMobile && (
+          <Button
+            type="text"
+            icon={<CloseOutlined style={{ fontSize: 20 }} />}
+            onClick={onClose}
+            style={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              zIndex: 10,
+              width: 40,
+              height: 40,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '50%',
+              color: token.colorTextSecondary,
+            }}
+          />
+        )}
         <div style={{ padding: token.paddingLG, textAlign: 'center' }}>
           <Text style={{ color: token.colorError }}>
             Stripe is not configured. Please add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to your .env file.
@@ -256,15 +295,60 @@ export default function DepositModal({ visible, onClose, onSuccess }: DepositMod
       open={visible}
       onCancel={handleClose}
       footer={null}
-      width={520}
-      centered
+      width={isMobile ? '100vw' : 520}
+      centered={!isMobile}
+      closable={false}
+      zIndex={isMobile ? token.zIndexPopupBase + 20 : undefined}
       styles={{
         body: {
-          padding: token.paddingXL,
+          padding: isMobile ? token.paddingLG : token.paddingXL,
+          paddingTop: isMobile ? 60 : token.paddingXL,
+          minHeight: isMobile ? '100vh' : undefined,
+          boxSizing: 'border-box',
         },
+        content: isMobile ? {
+          borderRadius: 0,
+          minHeight: '100vh',
+          boxShadow: 'none',
+        } : undefined,
+        wrapper: isMobile ? {
+          overflow: 'hidden',
+        } : undefined,
+        mask: isMobile ? {
+          background: token.colorBgContainer,
+        } : undefined,
       }}
-      closeIcon={null}
+      style={isMobile ? {
+        top: 0,
+        left: 0,
+        margin: 0,
+        padding: 0,
+        maxWidth: '100vw',
+        height: '100vh',
+      } : undefined}
+      wrapClassName={isMobile ? 'mobile-fullscreen-modal' : undefined}
     >
+      {/* Custom Close Button for Mobile */}
+      {isMobile && (
+        <Button
+          type="text"
+          icon={<CloseOutlined style={{ fontSize: 20 }} />}
+          onClick={handleClose}
+          style={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            zIndex: 10,
+            width: 40,
+            height: 40,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '50%',
+            color: token.colorTextSecondary,
+          }}
+        />
+      )}
       <AnimatePresence mode="wait">
         {!clientSecret ? (
           <motion.div

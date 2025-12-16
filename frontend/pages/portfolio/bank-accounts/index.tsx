@@ -32,7 +32,7 @@ export default function BankAccountsPage() {
   useEffect(() => {
     if (!authLoading) {
       if (!user) {
-        router.push('/login?redirect=/wallet/bank-accounts');
+        router.push('/login?redirect=/portfolio/bank-accounts');
         return;
       }
       if (user.kycStatus !== 'APPROVED' && user.kycStatus !== 'PENDING') {
@@ -72,7 +72,7 @@ export default function BankAccountsPage() {
         <Head>
           <title>Bank Accounts - InTuition Exchange</title>
         </Head>
-        <DashboardLayout activeKey="wallet">
+        <DashboardLayout activeKey="portfolio">
           <Skeleton active paragraph={{ rows: 8 }} />
         </DashboardLayout>
       </>
@@ -86,11 +86,11 @@ export default function BankAccountsPage() {
         <meta name="description" content="Manage your bank accounts for withdrawals" />
       </Head>
 
-      <DashboardLayout activeKey="wallet">
+      <DashboardLayout activeKey="portfolio">
         {/* Breadcrumbs */}
         <div style={{ marginBottom: token.marginLG }}>
           <Space>
-            <Link href="/wallet" style={{ color: token.colorTextSecondary, textDecoration: 'none' }}>
+            <Link href="/portfolio" style={{ color: token.colorTextSecondary, textDecoration: 'none' }}>
               Portfolio
             </Link>
             <span style={{ color: token.colorTextTertiary }}>/</span>
@@ -118,7 +118,7 @@ export default function BankAccountsPage() {
             type="primary"
             icon={<PlusOutlined />}
             size="large"
-            onClick={() => router.push('/wallet/bank-accounts/add')}
+            onClick={() => router.push('/portfolio/bank-accounts/add')}
           >
             Add Bank Account
           </Button>
@@ -141,7 +141,7 @@ export default function BankAccountsPage() {
                 <Button
                   type="primary"
                   icon={<PlusOutlined />}
-                  onClick={() => router.push('/wallet/bank-accounts/add')}
+                  onClick={() => router.push('/portfolio/bank-accounts/add')}
                 >
                   Add Your First Bank Account
                 </Button>
@@ -216,6 +216,8 @@ export default function BankAccountsPage() {
     </>
   );
 }
+
+
 
 
 

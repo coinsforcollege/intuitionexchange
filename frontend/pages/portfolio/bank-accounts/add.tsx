@@ -63,7 +63,7 @@ function AddBankAccountForm() {
       await addBankAccount(paymentMethod.id, values.accountName);
       
       message.success('Bank account added successfully');
-      router.push('/wallet/bank-accounts');
+      router.push('/portfolio/bank-accounts');
     } catch (error: any) {
       message.error(error.message || 'Failed to add bank account');
     } finally {
@@ -133,7 +133,7 @@ export default function AddBankAccountPage() {
   React.useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        router.push('/login?redirect=/wallet/bank-accounts/add');
+        router.push('/login?redirect=/portfolio/bank-accounts/add');
         return;
       }
       if (user.kycStatus !== 'APPROVED' && user.kycStatus !== 'PENDING') {
@@ -150,7 +150,7 @@ export default function AddBankAccountPage() {
         <Head>
           <title>Add Bank Account - InTuition Exchange</title>
         </Head>
-        <DashboardLayout activeKey="wallet">
+        <DashboardLayout activeKey="portfolio">
           <Skeleton active paragraph={{ rows: 8 }} />
         </DashboardLayout>
       </>
@@ -164,7 +164,7 @@ export default function AddBankAccountPage() {
         <Head>
           <title>Add Bank Account - InTuition Exchange</title>
         </Head>
-        <DashboardLayout activeKey="wallet">
+        <DashboardLayout activeKey="portfolio">
           <Card>
             <div style={{ textAlign: 'center', padding: token.paddingXL }}>
               <Text type="danger">
@@ -193,15 +193,15 @@ export default function AddBankAccountPage() {
         <meta name="description" content="Add a new bank account for withdrawals" />
       </Head>
 
-      <DashboardLayout activeKey="wallet">
+      <DashboardLayout activeKey="portfolio">
         {/* Breadcrumbs */}
         <div style={{ marginBottom: token.marginLG }}>
           <Space>
-            <Link href="/wallet" style={{ color: token.colorTextSecondary, textDecoration: 'none' }}>
+            <Link href="/portfolio" style={{ color: token.colorTextSecondary, textDecoration: 'none' }}>
               Portfolio
             </Link>
             <span style={{ color: token.colorTextTertiary }}>/</span>
-            <Link href="/wallet/bank-accounts" style={{ color: token.colorTextSecondary, textDecoration: 'none' }}>
+            <Link href="/portfolio/bank-accounts" style={{ color: token.colorTextSecondary, textDecoration: 'none' }}>
               Bank Accounts
             </Link>
             <span style={{ color: token.colorTextTertiary }}>/</span>
@@ -236,6 +236,8 @@ export default function AddBankAccountPage() {
     </>
   );
 }
+
+
 
 
 

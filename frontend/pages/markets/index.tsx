@@ -1,9 +1,16 @@
 import React, { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { theme, Grid, Input, Skeleton, Empty, Tabs } from 'antd';
-import { SearchOutlined, StarOutlined, StarFilled, RiseOutlined, FallOutlined } from '@ant-design/icons';
-import { motion } from 'motion/react';
+import { theme, Grid, Input, Skeleton, Empty } from 'antd';
+import {
+  SearchOutlined,
+  StarOutlined,
+  StarFilled,
+  RiseOutlined,
+  FallOutlined,
+  FireOutlined,
+} from '@ant-design/icons';
+import { motion, AnimatePresence } from 'motion/react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
@@ -14,112 +21,395 @@ import { getWatchlist, toggleWatchlist } from '@/services/api/watchlist';
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
 
-interface MarketRowProps {
+type SortField = 'volume' | 'price' | 'change' | 'name';
+type SortOrder = 'asc' | 'desc';
+type FilterTab = 'all' | 'watchlist' | 'gainers' | 'losers';
+
+interface TradingPairExtended {
+  symbol: string;
+  name: string;
+  price: number;
+  change: number;
+  volume: string;
+  quote: string;
+  baseCurrency: string;
+  quoteCurrency: string;
+  iconUrl: string;
+  _usdVolume?: number;
+}
+
+// Filter pill component - responsive sizing
+const FilterPill = memo(({
+  active,
+  onClick,
+  children,
+  gradient,
+  icon,
+  compact,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  gradient: string;
+  icon?: React.ReactNode;
+  compact?: boolean;
+}) => {
+  const { token } = useToken();
+  const { mode } = useThemeMode();
+  const isDark = mode === 'dark';
+
+  return (
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: compact ? 4 : 6,
+        padding: compact 
+          ? `${token.paddingXS}px ${token.paddingSM}px`
+          : `${token.paddingSM}px ${token.paddingMD}px`,
+        borderRadius: 50,
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: compact ? token.fontSizeSM : token.fontSize,
+        fontWeight: fontWeights.semibold,
+        transition: 'all 0.2s',
+        background: active 
+          ? gradient 
+          : isDark ? 'rgba(255,255,255,0.08)' : 'rgba(102, 126, 234, 0.08)',
+        color: active ? '#fff' : token.colorText,
+        boxShadow: active ? '0 4px 12px rgba(102, 126, 234, 0.3)' : 'none',
+        whiteSpace: 'nowrap',
+        flexShrink: 0,
+      }}
+    >
+      {icon}
+      {children}
+    </motion.button>
+  );
+});
+FilterPill.displayName = 'FilterPill';
+
+// Sort pill
+const SortPill = memo(({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) => {
+  const { token } = useToken();
+  const { mode } = useThemeMode();
+  const isDark = mode === 'dark';
+
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: `${token.paddingXS}px ${token.paddingSM}px`,
+        borderRadius: token.borderRadiusSM,
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: token.fontSizeSM,
+        fontWeight: active ? fontWeights.semibold : fontWeights.medium,
+        background: active 
+          ? (isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.15)')
+          : 'transparent',
+        color: active ? token.colorPrimary : token.colorTextSecondary,
+        transition: 'all 0.15s',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {children}
+    </button>
+  );
+});
+SortPill.displayName = 'SortPill';
+
+// Market card component - mobile and small screens
+const MarketCard = memo(({
+  baseCurrency,
+  name,
+  iconUrl,
+  price,
+  change,
+  volume,
+  isWatchlisted,
+  onCardClick,
+  onStarClick,
+  compact,
+}: {
   baseCurrency: string;
   name: string;
   iconUrl: string;
   price: number;
   change: number;
+  volume: string;
   isWatchlisted: boolean;
-  onRowClick: () => void;
+  onCardClick: () => void;
   onStarClick: () => void;
-  isMobile: boolean;
-}
+  compact?: boolean;
+}) => {
+  const { token } = useToken();
+  const { mode } = useThemeMode();
+  const isDark = mode === 'dark';
+  const isPositive = change >= 0;
 
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      whileHover={{ y: -2, boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : '0 8px 24px rgba(102, 126, 234, 0.15)' }}
+      onClick={onCardClick}
+      style={{
+        background: isDark 
+          ? 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.06) 100%)'
+          : 'linear-gradient(135deg, #fff 0%, #f8f9ff 100%)',
+        borderRadius: token.borderRadiusLG,
+        padding: compact ? token.paddingSM : token.paddingMD,
+        cursor: 'pointer',
+        border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(102, 126, 234, 0.1)'}`,
+        transition: 'all 0.2s',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+
+      {/* Top row: icon + name + star */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: compact ? token.marginXS : token.marginSM, marginBottom: compact ? token.marginXS : token.marginSM }}>
+        <img
+          src={iconUrl}
+          alt={baseCurrency}
+          width={compact ? 32 : 40}
+          height={compact ? 32 : 40}
+          style={{ borderRadius: '50%', flexShrink: 0 }}
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${baseCurrency}&background=667eea&color=fff&size=64`;
+          }}
+        />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: compact ? token.fontSize : token.fontSizeLG,
+            fontWeight: fontWeights.bold,
+            color: token.colorText,
+          }}>
+            {baseCurrency}
+          </div>
+          <div style={{
+            fontSize: compact ? 11 : token.fontSizeSM,
+            color: token.colorTextSecondary,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}>
+            {name}
+          </div>
+        </div>
+        <div
+          onClick={(e) => { e.stopPropagation(); onStarClick(); }}
+          style={{
+            width: compact ? 28 : 32,
+            height: compact ? 28 : 32,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: isWatchlisted ? '#f6c343' : token.colorTextTertiary,
+            fontSize: compact ? 14 : 18,
+            cursor: 'pointer',
+            borderRadius: '50%',
+            transition: 'all 0.2s',
+          }}
+        >
+          {isWatchlisted ? <StarFilled /> : <StarOutlined />}
+        </div>
+      </div>
+
+      {/* Price and change */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{
+            fontSize: compact ? token.fontSize : token.fontSizeHeading4,
+            fontWeight: fontWeights.bold,
+            color: token.colorText,
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+            ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: price < 1 ? 4 : 2 })}
+          </div>
+          <div style={{
+            fontSize: compact ? 10 : token.fontSizeSM,
+            color: token.colorTextTertiary,
+            marginTop: 2,
+          }}>
+            Vol {volume}
+          </div>
+        </div>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: compact ? 2 : 4,
+          color: isPositive ? '#16C47F' : '#fc6f03',
+          fontWeight: fontWeights.semibold,
+          fontSize: compact ? token.fontSizeSM : token.fontSize,
+        }}>
+          {isPositive ? <RiseOutlined /> : <FallOutlined />}
+          {isPositive ? '+' : ''}{change.toFixed(2)}%
+        </div>
+      </div>
+    </motion.div>
+  );
+});
+MarketCard.displayName = 'MarketCard';
+
+// Market row for list view - responsive columns
 const MarketRow = memo(({
   baseCurrency,
   name,
   iconUrl,
   price,
   change,
+  volume,
   isWatchlisted,
   onRowClick,
   onStarClick,
-  isMobile,
-}: MarketRowProps) => {
+  rank,
+  showVolume,
+}: {
+  baseCurrency: string;
+  name: string;
+  iconUrl: string;
+  price: number;
+  change: number;
+  volume: string;
+  isWatchlisted: boolean;
+  onRowClick: () => void;
+  onStarClick: () => void;
+  rank: number;
+  showVolume: boolean;
+}) => {
   const { token } = useToken();
-  
+  const { mode } = useThemeMode();
+  const isDark = mode === 'dark';
+  const isPositive = change >= 0;
+
+  // Responsive grid: hide volume column on medium screens
+  const gridColumns = showVolume 
+    ? '40px 1.5fr 1fr 1fr 1fr 40px'
+    : '40px 1.5fr 1fr 1fr 40px';
+
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      whileHover={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(102, 126, 234, 0.03)' }}
+      onClick={onRowClick}
       style={{
-        display: 'flex',
+        display: 'grid',
+        gridTemplateColumns: gridColumns,
         alignItems: 'center',
         gap: token.marginSM,
-        padding: isMobile ? `${token.paddingMD}px 0` : `${token.paddingMD}px ${token.paddingLG}px`,
-        background: isMobile ? 'transparent' : token.colorBgContainer,
-        borderRadius: isMobile ? 0 : token.borderRadius,
-        borderBottom: isMobile ? `1px solid ${token.colorBorderSecondary}` : 'none',
+        padding: `${token.paddingSM}px ${token.paddingMD}px`,
+        borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
         cursor: 'pointer',
-        transition: 'background-color 0.2s',
+        transition: 'background-color 0.15s',
       }}
-      onClick={onRowClick}
     >
-      <img
-        src={iconUrl}
-        alt={baseCurrency}
-        width={44}
-        height={44}
-        style={{ borderRadius: '50%' }}
-        onError={(e) => {
-          (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${baseCurrency}&background=667eea&color=fff`;
-        }}
-      />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: token.fontSizeLG, fontWeight: fontWeights.semibold, color: token.colorText }}>
-          {baseCurrency}
-        </div>
-        <div
-          style={{
+      {/* Rank */}
+      <div style={{
+        fontSize: token.fontSizeSM,
+        color: rank <= 3 ? token.colorPrimary : token.colorTextTertiary,
+        fontWeight: rank <= 3 ? fontWeights.bold : fontWeights.medium,
+        textAlign: 'center',
+      }}>
+        {rank}
+      </div>
+
+      {/* Token */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM, minWidth: 0 }}>
+        <img
+          src={iconUrl}
+          alt={baseCurrency}
+          width={36}
+          height={36}
+          style={{ borderRadius: '50%', flexShrink: 0 }}
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${baseCurrency}&background=667eea&color=fff&size=64`;
+          }}
+        />
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: fontWeights.semibold, color: token.colorText }}>
+            {baseCurrency}
+          </div>
+          <div style={{
             fontSize: token.fontSizeSM,
             color: token.colorTextSecondary,
-            whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-          }}
-        >
-          {name}
+            whiteSpace: 'nowrap',
+          }}>
+            {name}
+          </div>
         </div>
       </div>
-      <div style={{ textAlign: 'right', marginRight: token.marginSM }}>
-        <div style={{ fontSize: token.fontSizeLG, fontWeight: fontWeights.semibold, color: token.colorText }}>
-          ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: price < 1 ? 4 : 2 })}
-        </div>
-        <div
-          style={{
-            fontSize: token.fontSizeSM,
-            fontWeight: fontWeights.medium,
-            color: change >= 0 ? token.colorSuccess : token.colorError,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            gap: 4,
-          }}
-        >
-          {change >= 0 ? <RiseOutlined /> : <FallOutlined />}
-          {change >= 0 ? '+' : ''}{change.toFixed(2)}%
-        </div>
+
+      {/* Price */}
+      <div style={{
+        fontWeight: fontWeights.semibold,
+        color: token.colorText,
+        fontVariantNumeric: 'tabular-nums',
+        fontSize: token.fontSize,
+      }}>
+        ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: price < 1 ? 4 : 2 })}
       </div>
+
+      {/* Change */}
+      <div style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        padding: '4px 8px',
+        borderRadius: 6,
+        background: isPositive ? 'rgba(22, 196, 127, 0.12)' : 'rgba(252, 111, 3, 0.12)',
+        color: isPositive ? '#16C47F' : '#fc6f03',
+        fontWeight: fontWeights.semibold,
+        fontSize: token.fontSizeSM,
+        width: 'fit-content',
+      }}>
+        {isPositive ? <RiseOutlined /> : <FallOutlined />}
+        {isPositive ? '+' : ''}{change.toFixed(2)}%
+      </div>
+
+      {/* Volume - only if showVolume */}
+      {showVolume && (
+        <div style={{
+          color: token.colorTextSecondary,
+          fontSize: token.fontSizeSM,
+          fontVariantNumeric: 'tabular-nums',
+        }}>
+          {volume}
+        </div>
+      )}
+
+      {/* Star */}
       <div
-        onClick={(e) => {
-          e.stopPropagation();
-          onStarClick();
-        }}
+        onClick={(e) => { e.stopPropagation(); onStarClick(); }}
         style={{
-          width: 36,
-          height: 36,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: isWatchlisted ? '#f6d365' : token.colorTextSecondary,
-          fontSize: token.fontSizeLG,
+          color: isWatchlisted ? '#f6c343' : token.colorTextTertiary,
+          fontSize: 16,
           cursor: 'pointer',
-          borderRadius: '50%',
-          transition: 'background-color 0.2s',
         }}
       >
         {isWatchlisted ? <StarFilled /> : <StarOutlined />}
       </div>
-    </div>
+    </motion.div>
   );
 });
 MarketRow.displayName = 'MarketRow';
@@ -136,14 +426,25 @@ export default function MarketsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [watchlistAssets, setWatchlistAssets] = useState<string[]>([]);
   const [loadingWatchlist, setLoadingWatchlist] = useState(true);
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState<FilterTab>('all');
+  const [sortField, setSortField] = useState<SortField>('volume');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
   const isDark = mode === 'dark';
-  const isMobile = mounted ? !screens.md : false;
+  
+  // More granular breakpoint checks for responsive design
+  const isMobile = mounted ? !screens.sm : true;
+  const isSmall = mounted ? screens.sm && !screens.md : false;
+  const isMedium = mounted ? screens.md && !screens.lg : false;
+  
+  // Use card view on mobile and small screens, list view on md+
+  const useCardView = isMobile || isSmall;
+  // Show volume column only on lg+ screens
+  const showVolumeColumn = mounted ? !!screens.lg : true;
+  // Use compact filter pills on mobile and small-medium screens
+  const useCompactFilters = isMobile || isSmall || isMedium;
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     if (!isLoading) {
@@ -159,7 +460,6 @@ export default function MarketsPage() {
     }
   }, [user, isLoading, router]);
 
-  // Fetch watchlist
   useEffect(() => {
     if (!pageLoading && user) {
       const fetchWatchlist = async () => {
@@ -167,8 +467,7 @@ export default function MarketsPage() {
           setLoadingWatchlist(true);
           const items = await getWatchlist();
           setWatchlistAssets(items.map((item) => item.asset));
-        } catch (error) {
-          console.error('Failed to fetch watchlist:', error);
+        } catch {
           setWatchlistAssets([]);
         } finally {
           setLoadingWatchlist(false);
@@ -178,39 +477,43 @@ export default function MarketsPage() {
     }
   }, [pageLoading, user]);
 
-  // Get USD pairs
-  const usdPairs = useMemo(() => {
-    return pairs.filter((p) => p.quote === 'USD');
-  }, [pairs]);
+  const usdPairs = useMemo(() => pairs.filter((p) => p.quote === 'USD'), [pairs]);
 
-  // Filtered and sorted pairs
   const filteredPairs = useMemo(() => {
     let result = [...usdPairs];
-    
-    // Search filter
+
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
-        (p) =>
-          p.baseCurrency.toLowerCase().includes(query) ||
-          p.name.toLowerCase().includes(query)
+        (p) => p.baseCurrency.toLowerCase().includes(query) || p.name.toLowerCase().includes(query)
       );
     }
 
-    // Tab filter
     if (activeTab === 'watchlist') {
       result = result.filter((p) => watchlistAssets.includes(p.baseCurrency));
     } else if (activeTab === 'gainers') {
-      result = result.filter((p) => p.change > 0).sort((a, b) => b.change - a.change);
+      result = result.filter((p) => p.change > 0);
     } else if (activeTab === 'losers') {
-      result = result.filter((p) => p.change < 0).sort((a, b) => a.change - b.change);
-    } else {
-      // Sort by market cap / volume (use price as proxy for now)
-      result = result.sort((a, b) => b.price - a.price);
+      result = result.filter((p) => p.change < 0);
     }
 
+    result.sort((a, b) => {
+      let comparison = 0;
+      const aVolume = (a as TradingPairExtended)._usdVolume || 0;
+      const bVolume = (b as TradingPairExtended)._usdVolume || 0;
+
+      switch (sortField) {
+        case 'volume': comparison = bVolume - aVolume; break;
+        case 'price': comparison = b.price - a.price; break;
+        case 'change': comparison = b.change - a.change; break;
+        case 'name': comparison = a.name.localeCompare(b.name); break;
+      }
+
+      return sortOrder === 'desc' ? comparison : -comparison;
+    });
+
     return result;
-  }, [usdPairs, searchQuery, activeTab, watchlistAssets]);
+  }, [usdPairs, searchQuery, activeTab, watchlistAssets, sortField, sortOrder]);
 
   const handleToggleWatchlist = useCallback(async (asset: string) => {
     try {
@@ -223,22 +526,32 @@ export default function MarketsPage() {
     }
   }, []);
 
-  const handleNavigateToExchange = useCallback((pair: string) => {
-    router.push(`/exchange?pair=${pair}-USD`);
+  const handleNavigateToToken = useCallback((symbol: string) => {
+    router.push(`/markets/${symbol}`);
   }, [router]);
+
+  const formatVolume = (vol: number) => {
+    if (vol >= 1e9) return `$${(vol / 1e9).toFixed(1)}B`;
+    if (vol >= 1e6) return `$${(vol / 1e6).toFixed(1)}M`;
+    if (vol >= 1e3) return `$${(vol / 1e3).toFixed(0)}K`;
+    return `$${vol.toFixed(0)}`;
+  };
 
   if (pageLoading) {
     return (
       <>
-        <Head>
-          <title>Markets - InTuition Exchange</title>
-        </Head>
+        <Head><title>Markets - InTuition Exchange</title></Head>
         <DashboardLayout activeKey="markets">
           <Skeleton active paragraph={{ rows: 12 }} />
         </DashboardLayout>
       </>
     );
   }
+
+  // Table header grid columns - responsive
+  const headerGridColumns = showVolumeColumn 
+    ? '40px 1.5fr 1fr 1fr 1fr 40px'
+    : '40px 1.5fr 1fr 1fr 40px';
 
   return (
     <>
@@ -248,98 +561,248 @@ export default function MarketsPage() {
       </Head>
 
       <DashboardLayout activeKey="markets">
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          {/* Header */}
+        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+          {/* Search and filters - wraps at all sizes */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            style={{ marginBottom: token.marginLG }}
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: token.marginSM,
+              marginBottom: token.marginLG,
+              alignItems: 'center',
+            }}
           >
-            <h1
-              style={{
-                fontSize: isMobile ? token.fontSizeHeading3 : token.fontSizeHeading2,
-                fontWeight: fontWeights.bold,
-                color: token.colorText,
-                marginBottom: token.marginSM,
-              }}
-            >
-              Markets
-            </h1>
-            <p style={{ color: token.colorTextSecondary, marginBottom: token.marginMD }}>
-              Explore and track cryptocurrency prices
-            </p>
-
-            {/* Search */}
+            {/* Search - responsive width */}
             <Input
-              prefix={<SearchOutlined style={{ color: token.colorTextSecondary }} />}
-              placeholder="Search markets..."
+              prefix={<SearchOutlined style={{ color: token.colorTextTertiary }} />}
+              placeholder="Search tokens..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
-                borderRadius: token.borderRadiusLG,
-                padding: `${token.paddingSM}px ${token.paddingMD}px`,
+                flex: isMobile ? '1 1 100%' : '0 1 260px',
+                minWidth: isMobile ? '100%' : 200,
+                maxWidth: isMobile ? '100%' : 300,
+                borderRadius: 50,
+                background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(102, 126, 234, 0.05)',
               }}
-              size="large"
+              size={useCompactFilters ? 'middle' : 'large'}
+              allowClear
             />
+
+            {/* Filter pills - wrap instead of scroll */}
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: token.marginXS,
+              flex: '1 1 auto',
+            }}>
+              <FilterPill
+                active={activeTab === 'all'}
+                onClick={() => setActiveTab('all')}
+                gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                icon={<FireOutlined />}
+                compact={useCompactFilters}
+              >
+                All
+              </FilterPill>
+              <FilterPill
+                active={activeTab === 'watchlist'}
+                onClick={() => setActiveTab('watchlist')}
+                gradient="linear-gradient(135deg, #f6d365 0%, #fda085 100%)"
+                icon={<StarFilled />}
+                compact={useCompactFilters}
+              >
+                Watchlist
+              </FilterPill>
+              <FilterPill
+                active={activeTab === 'gainers'}
+                onClick={() => setActiveTab('gainers')}
+                gradient="linear-gradient(135deg, #11998e 0%, #38ef7d 100%)"
+                icon={<RiseOutlined />}
+                compact={useCompactFilters}
+              >
+                Gainers
+              </FilterPill>
+              <FilterPill
+                active={activeTab === 'losers'}
+                onClick={() => setActiveTab('losers')}
+                gradient="linear-gradient(135deg, #fc6f03 0%, #ff9966 100%)"
+                icon={<FallOutlined />}
+                compact={useCompactFilters}
+              >
+                Losers
+              </FilterPill>
+            </div>
           </motion.div>
 
-          {/* Tabs */}
-          <Tabs
-            activeKey={activeTab}
-            onChange={setActiveTab}
-            items={[
-              { key: 'all', label: 'All' },
-              { key: 'watchlist', label: 'Watchlist' },
-              { key: 'gainers', label: 'Gainers' },
-              { key: 'losers', label: 'Losers' },
-            ]}
-            style={{ marginBottom: token.marginMD }}
-          />
-
-          {/* Markets list */}
-          {isLoadingPairs || loadingWatchlist ? (
-            <Skeleton active paragraph={{ rows: 8 }} />
-          ) : filteredPairs.length === 0 ? (
-            <Empty
-              description={
-                activeTab === 'watchlist'
-                  ? 'No assets in your watchlist'
-                  : 'No markets found'
-              }
-              style={{ padding: token.paddingXL }}
-            />
-          ) : (
+          {/* Sort options - show on non-mobile, wraps naturally */}
+          {!useCardView && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               style={{
                 display: 'flex',
-                flexDirection: 'column',
-                gap: isMobile ? 0 : token.marginXS,
-                background: isMobile ? 'transparent' : undefined,
-                borderRadius: isMobile ? 0 : token.borderRadiusLG,
-                overflow: 'hidden',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                gap: token.marginXS,
+                marginBottom: token.marginMD,
               }}
             >
-              {filteredPairs.map((pair) => (
-                <MarketRow
-                  key={pair.baseCurrency}
-                  baseCurrency={pair.baseCurrency}
-                  name={pair.name}
-                  iconUrl={pair.iconUrl}
-                  price={pair.price}
-                  change={pair.change}
-                  isWatchlisted={watchlistAssets.includes(pair.baseCurrency)}
-                  onRowClick={() => handleNavigateToExchange(pair.baseCurrency)}
-                  onStarClick={() => handleToggleWatchlist(pair.baseCurrency)}
-                  isMobile={isMobile}
-                />
-              ))}
+              <span style={{ fontSize: token.fontSizeSM, color: token.colorTextTertiary, marginRight: token.marginXS }}>
+                Sort by:
+              </span>
+              <SortPill active={sortField === 'volume'} onClick={() => { setSortField('volume'); setSortOrder('desc'); }}>
+                Volume
+              </SortPill>
+              <SortPill active={sortField === 'price'} onClick={() => { setSortField('price'); setSortOrder('desc'); }}>
+                Price
+              </SortPill>
+              <SortPill active={sortField === 'change'} onClick={() => { setSortField('change'); setSortOrder('desc'); }}>
+                24h Change
+              </SortPill>
+              <SortPill active={sortField === 'name'} onClick={() => { setSortField('name'); setSortOrder('asc'); }}>
+                Name
+              </SortPill>
             </motion.div>
+          )}
+
+          {/* Results */}
+          {isLoadingPairs || loadingWatchlist ? (
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: useCardView 
+                ? 'repeat(auto-fill, minmax(160px, 1fr))' 
+                : '1fr', 
+              gap: token.marginMD 
+            }}>
+              {[...Array(8)].map((_, i) => (
+                <Skeleton.Button key={i} active block style={{ height: useCardView ? 140 : 60, borderRadius: token.borderRadiusLG }} />
+              ))}
+            </div>
+          ) : filteredPairs.length === 0 ? (
+            <div style={{
+              padding: token.paddingXL * 2,
+              textAlign: 'center',
+            }}>
+              <Empty
+                description={
+                  activeTab === 'watchlist'
+                    ? "You haven't added any tokens to your watchlist yet"
+                    : searchQuery
+                    ? 'No tokens match your search'
+                    : 'No markets found'
+                }
+              />
+              {activeTab === 'watchlist' && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setActiveTab('all')}
+                  style={{
+                    marginTop: token.marginLG,
+                    padding: `${token.paddingSM}px ${token.paddingLG}px`,
+                    borderRadius: 50,
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: '#fff',
+                    fontWeight: fontWeights.semibold,
+                    fontSize: token.fontSize,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Browse Markets
+                </motion.button>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Card view for mobile/small screens */}
+              {useCardView ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                    gap: token.marginSM,
+                  }}
+                >
+                  <AnimatePresence mode="popLayout">
+                    {filteredPairs.map((pair) => (
+                      <MarketCard
+                        key={pair.baseCurrency}
+                        baseCurrency={pair.baseCurrency}
+                        name={pair.name}
+                        iconUrl={pair.iconUrl}
+                        price={pair.price}
+                        change={pair.change}
+                        volume={formatVolume((pair as TradingPairExtended)._usdVolume || 0)}
+                        isWatchlisted={watchlistAssets.includes(pair.baseCurrency)}
+                        onCardClick={() => handleNavigateToToken(pair.baseCurrency)}
+                        onStarClick={() => handleToggleWatchlist(pair.baseCurrency)}
+                        compact={isMobile}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </motion.div>
+              ) : (
+                /* Table/List view for md+ screens */
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  style={{
+                    background: isDark ? 'rgba(255,255,255,0.02)' : '#fff',
+                    borderRadius: token.borderRadiusLG,
+                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(102, 126, 234, 0.1)'}`,
+                    overflow: 'hidden',
+                  }}
+                >
+                  {/* Header - responsive columns */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: headerGridColumns,
+                    gap: token.marginSM,
+                    padding: `${token.paddingSM}px ${token.paddingMD}px`,
+                    borderBottom: `2px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(102, 126, 234, 0.1)'}`,
+                    background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(102, 126, 234, 0.03)',
+                  }}>
+                    <div style={{ fontSize: 11, color: token.colorTextTertiary, textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'center' }}>#</div>
+                    <div style={{ fontSize: 11, color: token.colorTextTertiary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Token</div>
+                    <div style={{ fontSize: 11, color: token.colorTextTertiary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Price</div>
+                    <div style={{ fontSize: 11, color: token.colorTextTertiary, textTransform: 'uppercase', letterSpacing: 0.5 }}>24h</div>
+                    {showVolumeColumn && (
+                      <div style={{ fontSize: 11, color: token.colorTextTertiary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Volume</div>
+                    )}
+                    <div />
+                  </div>
+
+                  {/* Rows */}
+                  <AnimatePresence mode="popLayout">
+                    {filteredPairs.map((pair, index) => (
+                      <MarketRow
+                        key={pair.baseCurrency}
+                        baseCurrency={pair.baseCurrency}
+                        name={pair.name}
+                        iconUrl={pair.iconUrl}
+                        price={pair.price}
+                        change={pair.change}
+                        volume={formatVolume((pair as TradingPairExtended)._usdVolume || 0)}
+                        isWatchlisted={watchlistAssets.includes(pair.baseCurrency)}
+                        onRowClick={() => handleNavigateToToken(pair.baseCurrency)}
+                        onStarClick={() => handleToggleWatchlist(pair.baseCurrency)}
+                        rank={index + 1}
+                        showVolume={showVolumeColumn}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+            </>
           )}
         </div>
       </DashboardLayout>
     </>
   );
 }
-

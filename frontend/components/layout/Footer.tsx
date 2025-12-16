@@ -19,7 +19,7 @@ const footerLinks = {
     links: [
       { label: "Trade", href: "/trade" },
       { label: "Markets", href: "/markets" },
-      { label: "Wallet", href: "/wallet" },
+      { label: "Portfolio", href: "/portfolio" },
       { label: "P2P Trading", href: "/p2p" },
     ],
   },
