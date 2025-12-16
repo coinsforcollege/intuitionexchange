@@ -2,10 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { theme, Grid, Skeleton } from 'antd';
-import { ShoppingCartOutlined } from '@ant-design/icons';
 import { motion } from 'motion/react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
-import { fontWeights } from '@/theme/themeConfig';
+import BuySellForm from '@/components/exchange/BuySellForm';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeMode } from '@/context/ThemeContext';
 
@@ -22,7 +21,7 @@ export default function BuySellPage() {
   const [pageLoading, setPageLoading] = useState(true);
 
   const isDark = mode === 'dark';
-  const isMobile = mounted ? !screens.md : false;
+  const isMobile = mounted ? !screens.md : true;
 
   useEffect(() => {
     setMounted(true);
@@ -49,7 +48,17 @@ export default function BuySellPage() {
           <title>Buy & Sell - InTuition Exchange</title>
         </Head>
         <DashboardLayout activeKey="buy-sell">
-          <Skeleton active paragraph={{ rows: 12 }} />
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: 'calc(100vh - 200px)',
+            padding: token.paddingLG,
+          }}>
+            <div style={{ width: '100%', maxWidth: 420 }}>
+              <Skeleton active paragraph={{ rows: 12 }} />
+            </div>
+          </div>
         </DashboardLayout>
       </>
     );
@@ -59,10 +68,46 @@ export default function BuySellPage() {
     <>
       <Head>
         <title>Buy & Sell - InTuition Exchange</title>
-        <meta name="description" content="Buy and sell cryptocurrency instantly" />
+        <meta name="description" content="Buy and sell cryptocurrency instantly with USD" />
       </Head>
 
       <DashboardLayout activeKey="buy-sell">
+        {/* Background Pattern */}
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          pointerEvents: 'none',
+          zIndex: 0,
+          overflow: 'hidden',
+        }}>
+          {/* Gradient orbs */}
+          <div style={{
+            position: 'absolute',
+            top: '10%',
+            left: '5%',
+            width: 400,
+            height: 400,
+            borderRadius: '50%',
+            background: isDark 
+              ? 'radial-gradient(circle, rgba(102, 126, 234, 0.08) 0%, transparent 70%)'
+              : 'radial-gradient(circle, rgba(102, 126, 234, 0.06) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+          }} />
+          <div style={{
+            position: 'absolute',
+            bottom: '20%',
+            right: '10%',
+            width: 350,
+            height: 350,
+            borderRadius: '50%',
+            background: isDark 
+              ? 'radial-gradient(circle, rgba(22, 196, 127, 0.06) 0%, transparent 70%)'
+              : 'radial-gradient(circle, rgba(22, 196, 127, 0.05) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+          }} />
+        </div>
+
+        {/* Main Content */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -71,95 +116,50 @@ export default function BuySellPage() {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: isMobile ? 'calc(100vh - 200px)' : 400,
-            textAlign: 'center',
-            padding: token.paddingXL,
+            justifyContent: 'flex-start',
+            padding: isMobile ? token.paddingSM : token.paddingMD,
+            paddingTop: isMobile ? token.paddingMD : token.paddingSM,
+            position: 'relative',
+            zIndex: 1,
           }}
         >
-          {/* Animated Icon */}
+          {/* Form Widget */}
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            style={{
-              width: 120,
-              height: 120,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: token.marginXL,
-              boxShadow: '0 16px 48px rgba(102, 126, 234, 0.35)',
-            }}
-          >
-            <ShoppingCartOutlined
-              style={{
-                fontSize: 48,
-                color: '#fff',
-              }}
-            />
-          </motion.div>
-
-          {/* Title */}
-          <motion.h1
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            style={{
-              fontSize: isMobile ? token.fontSizeHeading3 : token.fontSizeHeading2,
-              fontWeight: fontWeights.bold,
-              color: token.colorText,
-              marginBottom: token.marginMD,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
-            Buy & Sell
-          </motion.h1>
-
-          {/* Subtitle */}
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            style={{
-              fontSize: token.fontSizeLG,
-              color: token.colorTextSecondary,
-              maxWidth: 400,
-              lineHeight: 1.6,
-            }}
-          >
-            Instantly buy and sell cryptocurrency with your preferred payment method.
-          </motion.p>
-
-          {/* Coming Soon Badge */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.1, duration: 0.4 }}
             style={{
-              marginTop: token.marginXL,
-              padding: `${token.paddingSM}px ${token.paddingLG}px`,
-              borderRadius: 50,
-              background: isDark
-                ? 'rgba(102, 126, 234, 0.2)'
-                : 'rgba(102, 126, 234, 0.1)',
-              border: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.4)' : 'rgba(102, 126, 234, 0.3)'}`,
-              color: token.colorPrimary,
-              fontSize: token.fontSize,
-              fontWeight: fontWeights.semibold,
+              width: '100%',
+              maxWidth: 420,
             }}
           >
-            Coming Soon
+            <BuySellForm />
           </motion.div>
+
+          {/* Info Text - hidden on mobile since it's in the sticky footer */}
+          {!isMobile && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              style={{
+                marginTop: token.marginXL,
+                textAlign: 'center',
+                maxWidth: 400,
+              }}
+            >
+              <p style={{
+                fontSize: token.fontSizeSM,
+                color: token.colorTextTertiary,
+                lineHeight: 1.6,
+                margin: 0,
+              }}>
+                Trade instantly using your USD balance. Market orders execute at the best available price with a 0.5% fee.
+              </p>
+            </motion.div>
+          )}
         </motion.div>
       </DashboardLayout>
     </>
   );
 }
-
-
