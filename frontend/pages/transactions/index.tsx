@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { theme, Grid, Skeleton, Empty, message } from 'antd';
+import { theme, Grid, Skeleton, Empty, message, Select } from 'antd';
 import {
   SwapOutlined,
   ArrowUpOutlined,
@@ -11,6 +11,10 @@ import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   CloseCircleOutlined,
+  LeftOutlined,
+  RightOutlined,
+  DoubleLeftOutlined,
+  DoubleRightOutlined,
 } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'motion/react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
@@ -19,6 +23,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useExchange } from '@/context/ExchangeContext';
 import { useThemeMode } from '@/context/ThemeContext';
 import { getFiatTransactions, FiatTransaction } from '@/services/api/fiat';
+import { getOrders, InternalOrder } from '@/services/api/coinbase';
 
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
@@ -523,17 +528,271 @@ const TransactionRow = memo(({
 });
 TransactionRow.displayName = 'TransactionRow';
 
+// Pagination component
+const Pagination = memo(({
+  currentPage,
+  totalPages,
+  onPageChange,
+  pageSize,
+  onPageSizeChange,
+  totalItems,
+  isMobile,
+}: {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  pageSize: number;
+  onPageSizeChange: (size: number) => void;
+  totalItems: number;
+  isMobile?: boolean;
+}) => {
+  const { token } = useToken();
+  const { mode } = useThemeMode();
+  const isDark = mode === 'dark';
+
+  const startItem = (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, totalItems);
+
+  // Generate page numbers to show
+  const getPageNumbers = () => {
+    const pages: (number | 'ellipsis')[] = [];
+    const maxVisiblePages = isMobile ? 3 : 5;
+    
+    if (totalPages <= maxVisiblePages + 2) {
+      // Show all pages
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Always show first page
+      pages.push(1);
+      
+      if (currentPage <= 3) {
+        // Near start
+        for (let i = 2; i <= Math.min(maxVisiblePages, totalPages - 1); i++) {
+          pages.push(i);
+        }
+        if (totalPages > maxVisiblePages) {
+          pages.push('ellipsis');
+        }
+      } else if (currentPage >= totalPages - 2) {
+        // Near end
+        pages.push('ellipsis');
+        for (let i = Math.max(totalPages - maxVisiblePages + 1, 2); i <= totalPages - 1; i++) {
+          pages.push(i);
+        }
+      } else {
+        // In middle
+        pages.push('ellipsis');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          if (i > 1 && i < totalPages) {
+            pages.push(i);
+          }
+        }
+        pages.push('ellipsis');
+      }
+      
+      // Always show last page
+      if (totalPages > 1) {
+        pages.push(totalPages);
+      }
+    }
+    
+    return pages;
+  };
+
+  const pageNumbers = getPageNumbers();
+
+  const buttonStyle = (disabled: boolean, active?: boolean) => ({
+    width: isMobile ? 32 : 36,
+    height: isMobile ? 32 : 36,
+    borderRadius: 8,
+    border: 'none',
+    background: active 
+      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      : disabled 
+        ? 'transparent'
+        : isDark ? 'rgba(255,255,255,0.08)' : 'rgba(102, 126, 234, 0.08)',
+    color: active 
+      ? '#fff' 
+      : disabled 
+        ? token.colorTextDisabled 
+        : token.colorText,
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: isMobile ? 12 : 14,
+    fontWeight: active ? fontWeights.semibold : fontWeights.medium,
+    transition: 'all 0.2s',
+    flexShrink: 0,
+  });
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: token.marginMD,
+        padding: `${token.paddingMD}px 0`,
+        borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(102, 126, 234, 0.1)'}`,
+        marginTop: token.marginMD,
+      }}
+    >
+      {/* Items info */}
+      <div
+        style={{
+          fontSize: token.fontSizeSM,
+          color: token.colorTextSecondary,
+          order: isMobile ? 2 : 0,
+        }}
+      >
+        Showing {startItem}-{endItem} of {totalItems} transactions
+      </div>
+
+      {/* Page controls */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: isMobile ? 4 : 6,
+          order: isMobile ? 1 : 0,
+        }}
+      >
+        {/* First page */}
+        {!isMobile && (
+          <motion.button
+            whileHover={currentPage > 1 ? { scale: 1.05 } : {}}
+            whileTap={currentPage > 1 ? { scale: 0.95 } : {}}
+            onClick={() => onPageChange(1)}
+            disabled={currentPage === 1}
+            style={buttonStyle(currentPage === 1)}
+            title="First page"
+          >
+            <DoubleLeftOutlined />
+          </motion.button>
+        )}
+        
+        {/* Previous */}
+        <motion.button
+          whileHover={currentPage > 1 ? { scale: 1.05 } : {}}
+          whileTap={currentPage > 1 ? { scale: 0.95 } : {}}
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          style={buttonStyle(currentPage === 1)}
+          title="Previous page"
+        >
+          <LeftOutlined />
+        </motion.button>
+
+        {/* Page numbers */}
+        {pageNumbers.map((page, idx) => (
+          page === 'ellipsis' ? (
+            <span
+              key={`ellipsis-${idx}`}
+              style={{
+                padding: '0 4px',
+                color: token.colorTextSecondary,
+                fontSize: 12,
+              }}
+            >
+              •••
+            </span>
+          ) : (
+            <motion.button
+              key={page}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => onPageChange(page)}
+              style={buttonStyle(false, currentPage === page)}
+            >
+              {page}
+            </motion.button>
+          )
+        ))}
+
+        {/* Next */}
+        <motion.button
+          whileHover={currentPage < totalPages ? { scale: 1.05 } : {}}
+          whileTap={currentPage < totalPages ? { scale: 0.95 } : {}}
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages || totalPages === 0}
+          style={buttonStyle(currentPage === totalPages || totalPages === 0)}
+          title="Next page"
+        >
+          <RightOutlined />
+        </motion.button>
+
+        {/* Last page */}
+        {!isMobile && (
+          <motion.button
+            whileHover={currentPage < totalPages ? { scale: 1.05 } : {}}
+            whileTap={currentPage < totalPages ? { scale: 0.95 } : {}}
+            onClick={() => onPageChange(totalPages)}
+            disabled={currentPage === totalPages || totalPages === 0}
+            style={buttonStyle(currentPage === totalPages || totalPages === 0)}
+            title="Last page"
+          >
+            <DoubleRightOutlined />
+          </motion.button>
+        )}
+      </div>
+
+      {/* Page size selector */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: token.marginXS,
+          order: isMobile ? 3 : 0,
+        }}
+      >
+        <span style={{ fontSize: token.fontSizeSM, color: token.colorTextSecondary }}>
+          Per page:
+        </span>
+        <Select
+          value={pageSize}
+          onChange={onPageSizeChange}
+          size="small"
+          style={{ width: 70 }}
+          options={[
+            { value: 10, label: '10' },
+            { value: 20, label: '20' },
+            { value: 50, label: '50' },
+            { value: 100, label: '100' },
+          ]}
+        />
+      </div>
+    </div>
+  );
+});
+Pagination.displayName = 'Pagination';
+
 export default function TransactionsPage() {
   const router = useRouter();
   const { token } = useToken();
   const { user, isLoading } = useAuth();
-  const { orders, isLoadingOrders, pairs, refreshOrders } = useExchange();
+  const { pairs } = useExchange();
   const { mode } = useThemeMode();
   const screens = useBreakpoint();
   const [mounted, setMounted] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+  
+  // Data state
+  const [orders, setOrders] = useState<InternalOrder[]>([]);
+  const [ordersTotal, setOrdersTotal] = useState(0);
   const [fiatTransactions, setFiatTransactions] = useState<FiatTransaction[]>([]);
+  const [fiatTotal, setFiatTotal] = useState(0);
+  const [loadingOrders, setLoadingOrders] = useState(true);
   const [loadingFiat, setLoadingFiat] = useState(true);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  
+  // Filter state
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
 
   const isDark = mode === 'dark';
@@ -557,28 +816,46 @@ export default function TransactionsPage() {
     }
   }, [user, isLoading, router]);
 
-  // Fetch orders and fiat transactions when page loads
+  // Fetch all orders and fiat transactions (we need all for combined sorting)
+  const fetchAllData = useCallback(async () => {
+    if (!user) return;
+    
+    setLoadingOrders(true);
+    setLoadingFiat(true);
+    
+    try {
+      // Fetch all orders (up to a reasonable limit for combined pagination)
+      const ordersResult = await getOrders({ limit: 500 });
+      setOrders(ordersResult.orders);
+      setOrdersTotal(ordersResult.total);
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+      setOrders([]);
+      setOrdersTotal(0);
+    } finally {
+      setLoadingOrders(false);
+    }
+    
+    try {
+      // Fetch all fiat transactions
+      const fiatResult = await getFiatTransactions({ limit: 500 });
+      setFiatTransactions(fiatResult.transactions);
+      setFiatTotal(fiatResult.total);
+    } catch (error) {
+      console.error('Failed to fetch fiat transactions:', error);
+      setFiatTransactions([]);
+      setFiatTotal(0);
+    } finally {
+      setLoadingFiat(false);
+    }
+  }, [user]);
+
+  // Fetch data when page loads
   useEffect(() => {
     if (!pageLoading && user) {
-      // Fetch orders from exchange context (not fetched on initial context load)
-      refreshOrders();
-      
-      // Fetch fiat transactions
-      const fetchFiat = async () => {
-        try {
-          setLoadingFiat(true);
-          const { transactions } = await getFiatTransactions({ limit: 100 });
-          setFiatTransactions(transactions);
-        } catch (error) {
-          console.error('Failed to fetch fiat transactions:', error);
-          setFiatTransactions([]);
-        } finally {
-          setLoadingFiat(false);
-        }
-      };
-      fetchFiat();
+      fetchAllData();
     }
-  }, [pageLoading, user, refreshOrders]);
+  }, [pageLoading, user, fetchAllData]);
 
   // Get icon URL for an asset
   const getIconUrl = useCallback((asset: string) => {
@@ -643,6 +920,36 @@ export default function TransactionsPage() {
     return result;
   }, [allTransactions, activeTab]);
 
+  // Paginated transactions
+  const paginatedTransactions = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return filteredTransactions.slice(startIndex, endIndex);
+  }, [filteredTransactions, currentPage, pageSize]);
+
+  // Total pages
+  const totalPages = useMemo(() => 
+    Math.ceil(filteredTransactions.length / pageSize),
+  [filteredTransactions.length, pageSize]);
+
+  // Reset page when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
+
+  // Handle page change
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+    // Scroll to top of transactions
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  // Handle page size change
+  const handlePageSizeChange = useCallback((size: number) => {
+    setPageSize(size);
+    setCurrentPage(1); // Reset to first page when changing page size
+  }, []);
+
   // Count by type
   const counts = useMemo(() => ({
     all: allTransactions.length,
@@ -651,11 +958,11 @@ export default function TransactionsPage() {
     withdrawals: allTransactions.filter(t => t.type === 'withdrawal').length,
   }), [allTransactions]);
 
-  // Group transactions by date for mobile
+  // Group transactions by date for mobile (using paginated transactions)
   const groupedByDate = useMemo(() => {
     const groups: { [key: string]: Transaction[] } = {};
     
-    filteredTransactions.forEach(tx => {
+    paginatedTransactions.forEach(tx => {
       const d = new Date(tx.date);
       const today = new Date();
       const yesterday = new Date(today);
@@ -677,9 +984,9 @@ export default function TransactionsPage() {
     });
     
     return groups;
-  }, [filteredTransactions]);
+  }, [paginatedTransactions]);
 
-  const isLoadingAll = isLoadingOrders || loadingFiat;
+  const isLoadingAll = loadingOrders || loadingFiat;
 
   if (pageLoading) {
     return (
@@ -951,7 +1258,7 @@ export default function TransactionsPage() {
 
                 {/* Rows */}
                 <AnimatePresence mode="popLayout">
-                  {filteredTransactions.map((tx) => (
+                  {paginatedTransactions.map((tx) => (
                     <TransactionRow
                       key={tx.id}
                       transaction={tx}
@@ -960,10 +1267,23 @@ export default function TransactionsPage() {
                 </AnimatePresence>
               </motion.div>
             )}
+
+            {/* Pagination */}
+            {filteredTransactions.length > 0 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                pageSize={pageSize}
+                onPageSizeChange={handlePageSizeChange}
+                totalItems={filteredTransactions.length}
+                isMobile={isMobile}
+              />
+            )}
           </>
         )}
 
-        {/* Summary stats at bottom on mobile */}
+        {/* Summary stats at bottom on mobile - shows totals for all filtered transactions (not just current page) */}
         {!isLoadingAll && filteredTransactions.length > 0 && isMobile && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -978,7 +1298,7 @@ export default function TransactionsPage() {
             }}
           >
             <div style={{ fontSize: token.fontSizeSM, color: token.colorTextSecondary, marginBottom: token.marginXS }}>
-              Summary
+              Summary (All {activeTab === 'all' ? 'Transactions' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)})
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: token.marginMD }}>
               <div>

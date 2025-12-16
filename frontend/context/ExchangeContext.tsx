@@ -506,7 +506,7 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const refreshOrders = useCallback(async () => {
     try {
       setIsLoadingOrders(true);
-      const orderData = await getOrders(undefined, 50);
+      const { orders: orderData } = await getOrders({ limit: 50 });
       setOrders(orderData);
     } catch (error) {
       console.error('Failed to fetch orders:', error);

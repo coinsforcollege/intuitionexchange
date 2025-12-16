@@ -218,17 +218,20 @@ export async function placeOrder(
 /**
  * Get user's order history (from our database)
  */
-export async function getOrders(
-  productId?: string,
-  limit = 50,
-): Promise<InternalOrder[]> {
-  const params = new URLSearchParams({ limit: limit.toString() });
-  if (productId) params.append('productId', productId);
+export async function getOrders(options?: {
+  productId?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<{ orders: InternalOrder[]; total: number }> {
+  const params = new URLSearchParams();
+  if (options?.limit) params.append('limit', options.limit.toString());
+  if (options?.offset) params.append('offset', options.offset.toString());
+  if (options?.productId) params.append('productId', options.productId);
 
   const data = await apiCall<{ success: boolean; orders: InternalOrder[]; total: number }>(
     `/orders?${params.toString()}`,
   );
-  return data.orders;
+  return { orders: data.orders, total: data.total };
 }
 
 /**
