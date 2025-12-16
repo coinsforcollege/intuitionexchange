@@ -988,6 +988,11 @@ export default function TransactionsPage() {
 
   const isLoadingAll = loadingOrders || loadingFiat;
 
+  // Don't render anything while checking auth or if not logged in
+  if (isLoading || !user) {
+    return null;
+  }
+
   if (pageLoading) {
     return (
       <>

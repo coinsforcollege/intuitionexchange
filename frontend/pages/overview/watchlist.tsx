@@ -142,6 +142,11 @@ export default function WatchlistPage() {
     router.push(`/buy-sell?asset=${asset}`);
   };
 
+  // Don't render anything while checking auth or if not logged in
+  if (isLoading || !user) {
+    return null;
+  }
+
   if (pageLoading || isLoadingPairs) {
     return (
       <>

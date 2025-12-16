@@ -72,20 +72,92 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [greeting, setGreeting] = useState('Welcome');
+  const [appMode, setAppMode] = useState<'learner' | 'investor'>('investor');
 
   // Wait for client-side mount to avoid hydration mismatch with useBreakpoint
   const isMobile = mounted ? !screens.md : false;
 
   const isDark = mode === 'dark';
+  const isLearnerMode = appMode === 'learner';
 
-  // Set mounted and greeting on client side only to avoid hydration mismatch
+  // Set mounted, greeting, and load app mode on client side
   React.useEffect(() => {
     setMounted(true);
     const hour = new Date().getHours();
     if (hour < 12) setGreeting('Good morning');
     else if (hour < 18) setGreeting('Good afternoon');
     else setGreeting('Good evening');
-  }, []);
+    
+    // Load app mode from localStorage
+    const savedMode = localStorage.getItem('appMode') as 'learner' | 'investor' | null;
+    if (savedMode) {
+      setAppMode(savedMode);
+    }
+
+    // Listen for storage changes (when mode is changed in settings)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'appMode' && e.newValue) {
+        setAppMode(e.newValue as 'learner' | 'investor');
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also poll for changes within the same tab
+    const interval = setInterval(() => {
+      const currentMode = localStorage.getItem('appMode') as 'learner' | 'investor' | null;
+      if (currentMode && currentMode !== appMode) {
+        setAppMode(currentMode);
+      }
+    }, 500);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [appMode]);
+
+  // Prevent back button from exiting dashboard
+  React.useEffect(() => {
+    // Dashboard routes that should be contained
+    const dashboardRoutes = [
+      '/overview',
+      '/dashboard',
+      '/trade',
+      '/buy-sell',
+      '/markets',
+      '/portfolio',
+      '/transactions',
+      '/settings',
+      '/p2p',
+    ];
+
+    const isInsideDashboard = (path: string) => {
+      return dashboardRoutes.some(route => 
+        path === route || path.startsWith(`${route}/`)
+      );
+    };
+
+    // Push a state to mark we're in dashboard
+    const currentPath = window.location.pathname;
+    if (isInsideDashboard(currentPath)) {
+      window.history.pushState({ dashboard: true, path: currentPath }, '', currentPath);
+    }
+
+    const handlePopState = (event: PopStateEvent) => {
+      const targetPath = window.location.pathname;
+      
+      // If navigating outside dashboard, push back to current dashboard page
+      if (!isInsideDashboard(targetPath)) {
+        window.history.pushState({ dashboard: true, path: currentPath }, '', currentPath);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [router.pathname]);
 
   // Dimensions
   const SIDEBAR_WIDTH_EXPANDED = token.sizeXXL * 6; // 288px
@@ -93,58 +165,21 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const SIDEBAR_WIDTH = sidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED;
   const HEADER_HEIGHT = token.controlHeightLG * 1.5;
 
-  // Gradients for nav items - sequence: Overview, Trade, Buy & Sell, P2P, Markets, Portfolio, Transactions
+  // Navigation items - clean, professional design
   const navItems: NavItem[] = [
-    { 
-      key: 'overview', 
-      label: 'Overview', 
-      icon: <AppstoreOutlined />, 
-      href: '/overview',
-      gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    },
-    { 
-      key: 'trade', 
-      label: 'Trade', 
-      icon: <SwapOutlined />, 
-      href: '/trade',
-      gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-    },
-    { 
-      key: 'buy-sell', 
-      label: 'Buy & Sell', 
-      icon: <ShoppingCartOutlined />, 
-      href: '/buy-sell',
-      gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-    },
-    { 
-      key: 'p2p', 
-      label: 'P2P', 
-      icon: <TeamOutlined />, 
-      href: '/p2p',
-      gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-    },
-    { 
-      key: 'markets', 
-      label: 'Markets', 
-      icon: <LineChartOutlined />, 
-      href: '/markets',
-      gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-    },
-    { 
-      key: 'portfolio', 
-      label: 'Portfolio', 
-      icon: <WalletOutlined />, 
-      href: '/portfolio',
-      gradient: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
-    },
-    { 
-      key: 'transactions', 
-      label: 'Transactions', 
-      icon: <HistoryOutlined />, 
-      href: '/transactions',
-      gradient: 'linear-gradient(135deg, #5f72bd 0%, #9b23ea 100%)',
-    },
+    { key: 'overview', label: 'Overview', icon: <AppstoreOutlined />, href: '/overview', gradient: '' },
+    { key: 'trade', label: 'Trade', icon: <SwapOutlined />, href: '/trade', gradient: '' },
+    { key: 'buy-sell', label: 'Buy & Sell', icon: <ShoppingCartOutlined />, href: '/buy-sell', gradient: '' },
+    { key: 'p2p', label: 'P2P', icon: <TeamOutlined />, href: '/p2p', gradient: '' },
+    { key: 'markets', label: 'Markets', icon: <LineChartOutlined />, href: '/markets', gradient: '' },
+    { key: 'portfolio', label: 'Portfolio', icon: <WalletOutlined />, href: '/portfolio', gradient: '' },
+    { key: 'transactions', label: 'Transactions', icon: <HistoryOutlined />, href: '/transactions', gradient: '' },
   ];
+
+  // Brand accent color - changes based on mode
+  // Learner: Orange/Amber theme, Investor: Indigo theme
+  const accentColor = isLearnerMode ? '#F59E0B' : '#6366F1';
+  const accentColorSecondary = isLearnerMode ? '#EF4444' : '#8B5CF6';
 
   const handleNavClick = (href: string) => {
     router.push(href);
@@ -156,13 +191,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     router.push('/login');
   };
 
+  // Get display name for menus
+  const displayName = user?.firstName && user?.lastName 
+    ? `${user.firstName} ${user.lastName}`
+    : user?.firstName || user?.email?.split('@')[0] || 'User';
+
   const userMenuItems: MenuProps['items'] = [
     {
       key: 'email',
       label: (
         <div>
           <div style={{ fontWeight: fontWeights.semibold, color: token.colorText }}>
-            {user?.email?.split('@')[0] || 'User'}
+            {displayName}
           </div>
           <div style={{ fontSize: token.fontSize, color: token.colorTextSecondary }}>
             {user?.kycStatus === 'APPROVED' ? '✓ Verified' : 'Complete verification'}
@@ -180,18 +220,32 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   // ============ STYLES ============
 
+  // Sidebar background changes in learner mode for visual distinction
+  const getSidebarBackground = () => {
+    if (isLearnerMode) {
+      return isDark 
+        ? 'linear-gradient(180deg, #1a1207 0%, #1f1a0a 100%)' // Dark amber tint
+        : 'linear-gradient(180deg, #FFFBEB 0%, #FEF3C7 100%)'; // Light amber tint
+    }
+    return isDark ? '#0f0f14' : '#ffffff';
+  };
+
   const sidebarStyle: React.CSSProperties = {
     position: 'fixed',
     top: 0,
     left: 0,
     bottom: 0,
     width: isMobile ? SIDEBAR_WIDTH_EXPANDED : SIDEBAR_WIDTH,
-    background: isDark 
-      ? 'linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)'
-      : 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)',
+    background: getSidebarBackground(),
+    borderRight: `1px solid ${
+      isLearnerMode 
+        ? (isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.2)')
+        : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)')
+    }`,
     display: 'flex',
     flexDirection: 'column',
-    zIndex: token.zIndexPopupBase + 1,
+    // On mobile, sidebar needs higher z-index than bottom nav (which uses token.zIndexPopupBase + 10)
+    zIndex: isMobile ? token.zIndexPopupBase + 20 : token.zIndexPopupBase + 1,
     transform: isMobile && !sidebarOpen ? 'translateX(-100%)' : 'translateX(0)',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     overflow: 'hidden',
@@ -210,7 +264,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   const dividerStyle: React.CSSProperties = {
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
     marginLeft: sidebarCollapsed && !isMobile ? token.paddingXS : token.paddingMD,
     marginRight: sidebarCollapsed && !isMobile ? token.paddingXS : token.paddingMD,
     marginTop: token.marginXS,
@@ -228,9 +282,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const logoTextStyle: React.CSSProperties = {
     fontSize: token.fontSizeXL,
     fontWeight: fontWeights.bold,
-    color: token.colorWhite,
-    letterSpacing: '-0.01em',
-    textShadow: '0 1px 2px rgba(0,0,0,0.1)',
+    color: isDark ? '#ffffff' : '#111827',
+    letterSpacing: '-0.02em',
     WebkitFontSmoothing: 'antialiased',
     MozOsxFontSmoothing: 'grayscale',
     opacity: sidebarCollapsed && !isMobile ? 0 : 1,
@@ -253,35 +306,39 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     overflowX: 'hidden',
   };
 
-  const getNavItemStyle = (item: NavItem, isActive: boolean): React.CSSProperties => ({
-    display: 'flex',
-    alignItems: 'center',
-    gap: token.marginSM,
-    padding: sidebarCollapsed && !isMobile 
-      ? `${token.paddingSM}px`
-      : `${token.paddingSM}px ${token.paddingMD}px`,
-    borderRadius: token.borderRadius,
-    background: isActive ? 'rgba(255,255,255,0.25)' : 'transparent',
-    backdropFilter: isActive ? 'blur(10px)' : 'none',
-    color: token.colorWhite,
-    fontSize: token.fontSize,
-    fontWeight: isActive ? fontWeights.semibold : fontWeights.medium,
-    cursor: 'pointer',
-    transition: 'all 0.15s ease',
-    justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
-  });
+  const getNavItemStyle = (item: NavItem, isActive: boolean): React.CSSProperties => {
+    const activeBackground = isLearnerMode
+      ? (isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.12)')
+      : (isDark ? 'rgba(99, 102, 241, 0.12)' : 'rgba(99, 102, 241, 0.08)');
+    
+    return {
+      display: 'flex',
+      alignItems: 'center',
+      gap: token.marginSM,
+      padding: sidebarCollapsed && !isMobile 
+        ? `${token.paddingSM}px`
+        : `${token.paddingSM}px ${token.paddingMD}px`,
+      borderRadius: token.borderRadiusSM,
+      background: isActive ? activeBackground : 'transparent',
+      color: isActive 
+        ? accentColor
+        : (isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)'),
+      fontSize: token.fontSize,
+      fontWeight: isActive ? fontWeights.semibold : fontWeights.medium,
+      cursor: 'pointer',
+      transition: 'all 0.15s ease',
+      justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
+    };
+  };
 
   const navIconContainerStyle = (item: NavItem, isActive: boolean): React.CSSProperties => ({
-    width: token.controlHeightSM + 4,
-    height: token.controlHeightSM + 4,
-    borderRadius: token.borderRadiusSM,
-    background: isActive ? item.gradient : item.gradient,
-    opacity: isActive ? 1 : 0.6,
+    width: 20,
+    height: 20,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: token.fontSize,
-    color: token.colorWhite,
+    fontSize: token.fontSizeLG,
+    color: 'inherit',
     transition: 'all 0.15s ease',
     flexShrink: 0,
   });
@@ -327,8 +384,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     alignItems: 'center',
     gap: token.marginSM,
     padding: token.paddingSM,
-    borderRadius: token.borderRadius,
-    background: 'rgba(255,255,255,0.1)',
+    borderRadius: token.borderRadiusSM,
+    background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
     cursor: 'pointer',
     justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
   };
@@ -337,11 +394,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     width: token.controlHeightLG,
     height: token.controlHeightLG,
     borderRadius: '50%',
-    background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+    background: accentColor,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: token.colorWhite,
+    color: '#ffffff',
     fontSize: token.fontSizeLG,
     fontWeight: fontWeights.bold,
     flexShrink: 0,
@@ -354,14 +411,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     left: isMobile ? 0 : SIDEBAR_WIDTH,
     right: 0,
     height: HEADER_HEIGHT,
-    background: isDark ? token.colorBgContainer : token.colorBgContainer,
+    background: isLearnerMode 
+      ? (isDark ? '#1a1207' : '#FFFBEB')
+      : (isDark ? token.colorBgContainer : token.colorBgContainer),
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: `0 ${token.paddingLG}px`,
     zIndex: token.zIndexPopupBase,
-    borderBottom: `1px solid ${token.colorBorderSecondary}`,
-    transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    borderBottom: isLearnerMode 
+      ? `2px solid ${isDark ? 'rgba(245, 158, 11, 0.3)' : 'rgba(245, 158, 11, 0.4)'}`
+      : `1px solid ${token.colorBorderSecondary}`,
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   };
 
   const headerLeftStyle: React.CSSProperties = {
@@ -429,7 +490,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     width: token.controlHeightLG,
     height: token.controlHeightLG,
     borderRadius: '50%',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColorSecondary} 100%)`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -438,10 +499,28 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     fontWeight: fontWeights.bold,
     cursor: 'pointer',
     border: `2px solid ${token.colorBgContainer}`,
-    boxShadow: `0 0 0 2px ${token.colorPrimary}40`,
+    boxShadow: `0 0 0 2px ${accentColor}40`,
   };
 
-  // Main
+  // Main - background changes in learner mode
+  const getMainBackground = () => {
+    if (fullWidth) {
+      if (isLearnerMode) {
+        return isDark 
+          ? 'linear-gradient(180deg, #1a1508 0%, #1f1a0a 100%)' // Dark amber gradient
+          : 'linear-gradient(180deg, #FFFBEB 0%, #FEF3C7 100%)'; // Light amber gradient
+      }
+      return isDark 
+        ? 'linear-gradient(180deg, #0f0f23 0%, #1a1a2e 100%)' // Deep navy gradient
+        : 'linear-gradient(180deg, #f8f9fc 0%, #eef1f8 100%)'; // Soft blue-gray gradient
+    }
+    // Non-fullWidth pages
+    if (isLearnerMode) {
+      return isDark ? '#141008' : '#FFFDF5';
+    }
+    return token.colorBgLayout;
+  };
+
   const mainStyle: React.CSSProperties = {
     marginLeft: isMobile ? 0 : SIDEBAR_WIDTH,
     marginTop: HEADER_HEIGHT,
@@ -451,12 +530,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     } : {
     minHeight: `calc(100vh - ${HEADER_HEIGHT}px)`,
     }),
-    background: fullWidth 
-      ? (isDark 
-          ? 'linear-gradient(180deg, #0f0f23 0%, #1a1a2e 100%)' // Deep navy gradient
-          : 'linear-gradient(180deg, #f8f9fc 0%, #eef1f8 100%)') // Soft blue-gray gradient
-      : token.colorBgLayout,
-    transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    background: getMainBackground(),
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   };
 
   // Mobile bottom nav height for padding (includes margin and safe area)
@@ -484,23 +559,27 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.6)',
     backdropFilter: 'blur(4px)',
-    zIndex: token.zIndexPopupBase,
+    // Overlay needs to be above bottom nav (token.zIndexPopupBase + 10) but below sidebar (token.zIndexPopupBase + 20)
+    zIndex: token.zIndexPopupBase + 15,
   };
 
   // Nav item with tooltip wrapper
   const NavItemWithTooltip: React.FC<{ item: NavItem; isActive: boolean }> = ({ item, isActive }) => {
+    const hoverBg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
     const content = (
       <div
         style={getNavItemStyle(item, isActive)}
         onClick={() => handleNavClick(item.href)}
         onMouseEnter={(e) => {
           if (!isActive) {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+            e.currentTarget.style.background = hoverBg;
+            e.currentTarget.style.color = isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)';
           }
         }}
         onMouseLeave={(e) => {
           if (!isActive) {
             e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
           }
         }}
       >
@@ -559,7 +638,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </Link>
           {isMobile && (
             <CloseOutlined
-              style={{ fontSize: token.fontSizeLG, color: token.colorWhite, cursor: 'pointer' }}
+              style={{ fontSize: token.fontSizeLG, color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)', cursor: 'pointer' }}
               onClick={() => setSidebarOpen(false)}
             />
           )}
@@ -579,57 +658,80 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
         <div style={bottomSectionStyle}>
           {/* Settings */}
-          {sidebarCollapsed && !isMobile ? (
-            <Tooltip title="Settings" placement="right">
+          {(() => {
+            const isSettingsActive = activeKey === 'settings';
+            const settingsHoverBg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
+            
+            const settingsContent = (
               <div
-                style={getNavItemStyle({ key: 'settings', label: 'Settings', icon: <SettingOutlined />, href: '/settings', gradient: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)' }, activeKey === 'settings')}
+                style={getNavItemStyle({ key: 'settings', label: 'Settings', icon: <SettingOutlined />, href: '/settings', gradient: '' }, isSettingsActive)}
                 onClick={() => handleNavClick('/settings')}
+                onMouseEnter={(e) => {
+                  if (!isSettingsActive) {
+                    e.currentTarget.style.background = settingsHoverBg;
+                    e.currentTarget.style.color = isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSettingsActive) {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
+                  }
+                }}
               >
-                <div style={navIconContainerStyle({ gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' } as NavItem, activeKey === 'settings')}>
+                <div style={navIconContainerStyle({ gradient: '' } as NavItem, isSettingsActive)}>
                   <SettingOutlined />
                 </div>
+                {!(sidebarCollapsed && !isMobile) && <span style={navLabelStyle}>Settings</span>}
               </div>
-            </Tooltip>
-          ) : (
-          <div
-            style={getNavItemStyle({ key: 'settings', label: 'Settings', icon: <SettingOutlined />, href: '/settings', gradient: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)' }, activeKey === 'settings')}
-            onClick={() => handleNavClick('/settings')}
-          >
-            <div style={navIconContainerStyle({ gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' } as NavItem, activeKey === 'settings')}>
-              <SettingOutlined />
-            </div>
-              <span style={navLabelStyle}>Settings</span>
-          </div>
-          )}
+            );
+
+            if (sidebarCollapsed && !isMobile) {
+              return (
+                <Tooltip title="Settings" placement="right">
+                  {settingsContent}
+                </Tooltip>
+              );
+            }
+            return settingsContent;
+          })()}
 
           {/* User card */}
-          {sidebarCollapsed && !isMobile ? (
-            <Tooltip title={user?.email?.split('@')[0] || 'User'} placement="right">
+          {(() => {
+            // Get full name or fallback to email username
+            const fullName = user?.firstName && user?.lastName 
+              ? `${user.firstName} ${user.lastName}`
+              : user?.firstName || user?.email?.split('@')[0] || 'User';
+            const avatarInitial = user?.firstName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U';
+            
+            return sidebarCollapsed && !isMobile ? (
+              <Tooltip title={fullName} placement="right">
+                <div style={{ ...userCardStyle, marginTop: token.marginMD }}>
+                  <div style={userAvatarStyle}>
+                    {avatarInitial}
+                  </div>
+                </div>
+              </Tooltip>
+            ) : (
               <div style={{ ...userCardStyle, marginTop: token.marginMD }}>
                 <div style={userAvatarStyle}>
-                  {user?.email?.charAt(0).toUpperCase() || 'U'}
+                  {avatarInitial}
                 </div>
+                <div style={{ flex: 1, overflow: 'hidden' }}>
+                  <div style={{ fontSize: token.fontSize, fontWeight: fontWeights.semibold, color: isDark ? '#ffffff' : '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {fullName}
+                  </div>
+                  <div style={{ fontSize: token.fontSizeSM, color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }}>
+                    {user?.kycStatus === 'APPROVED' ? '✓ Verified' : 'Pending'}
+                  </div>
+                </div>
+                <PoweroffOutlined
+                  style={{ fontSize: token.fontSizeLG, color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)', cursor: 'pointer' }}
+                  onClick={(e) => { e.stopPropagation(); handleLogout(); }}
+                />
               </div>
-            </Tooltip>
-          ) : (
-          <div style={{ ...userCardStyle, marginTop: token.marginMD }}>
-            <div style={userAvatarStyle}>
-              {user?.email?.charAt(0).toUpperCase() || 'U'}
-            </div>
-            <div style={{ flex: 1, overflow: 'hidden' }}>
-              <div style={{ fontSize: token.fontSize, fontWeight: fontWeights.semibold, color: token.colorWhite, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {user?.email?.split('@')[0] || 'User'}
-              </div>
-              <div style={{ fontSize: token.fontSize, color: 'rgba(255,255,255,0.7)' }}>
-                {user?.kycStatus === 'APPROVED' ? '✓ Verified' : 'Pending'}
-              </div>
-            </div>
-            <PoweroffOutlined
-              style={{ fontSize: token.fontSizeLG, color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}
-              onClick={(e) => { e.stopPropagation(); handleLogout(); }}
-            />
-          </div>
-          )}
+            );
+          })()}
         </div>
       </aside>
 
@@ -700,11 +802,59 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             mounted && screens.xl && (
               <div style={welcomeStyle}>
                 <span style={welcomeTextStyle}>{greeting}</span>
-                <span style={userNameStyle}>{user?.email?.split('@')[0] || 'User'} 👋</span>
+                <span style={userNameStyle}>{user?.firstName || user?.email?.split('@')[0] || 'User'} 👋</span>
               </div>
             )
               )}
             </>
+          )}
+          
+          {/* Learner Mode Badge with Tooltip */}
+          {mounted && isLearnerMode && (
+            <Tooltip
+              title={
+                <div style={{ padding: '4px 0' }}>
+                  <div style={{ fontWeight: 600, marginBottom: 4 }}>🎓 Learner Mode Active</div>
+                  <div style={{ fontSize: 12, opacity: 0.9 }}>
+                    You're trading with $10,000 virtual balance.
+                    <br />
+                    No real money is involved.
+                    <br /><br />
+                    Switch to Investor mode in Settings when you're ready for real trading.
+                  </div>
+                </div>
+              }
+              placement="bottom"
+              color="#D97706"
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: token.marginXS,
+                  background: 'linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)',
+                  borderRadius: 50,
+                  padding: `${token.paddingXS}px ${token.paddingMD}px`,
+                  marginLeft: isMobile ? 0 : token.marginMD,
+                  boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)',
+                  animation: 'pulse-learner 2s ease-in-out infinite',
+                  cursor: 'help',
+                }}
+              >
+                <span style={{ fontSize: 14 }}>🎓</span>
+                <span
+                  style={{
+                    fontSize: token.fontSizeSM,
+                    fontWeight: fontWeights.bold,
+                    color: '#fff',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.03em',
+                  }}
+                >
+                  Learner Mode
+                </span>
+              </div>
+            </Tooltip>
           )}
         </div>
 
@@ -715,13 +865,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               display: 'flex',
               alignItems: 'center',
               gap: token.marginSM,
-              backgroundColor: isDark ? 'rgba(102, 126, 234, 0.15)' : 'rgba(102, 126, 234, 0.08)',
+              backgroundColor: isLearnerMode 
+                ? (isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)')
+                : (isDark ? 'rgba(102, 126, 234, 0.15)' : 'rgba(102, 126, 234, 0.08)'),
               borderRadius: 50,
               padding: `${token.paddingSM}px ${token.paddingLG}px`,
               marginRight: token.marginMD,
             }}>
               <SearchOutlined style={{ 
-                color: '#667eea', 
+                color: accentColor, 
                 fontSize: token.fontSize,
               }} />
               <input
@@ -747,7 +899,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 cursor: 'pointer',
                 fontWeight: fontWeights.semibold,
                 fontSize: token.fontSize,
-                color: '#667eea',
+                color: accentColor,
                 marginRight: token.marginMD,
                 transition: 'opacity 0.2s ease',
               }}
@@ -770,7 +922,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={['click']}>
             <div style={headerAvatarStyle}>
-              {user?.email?.charAt(0).toUpperCase() || 'U'}
+              {user?.firstName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
             </div>
           </Dropdown>
         </div>

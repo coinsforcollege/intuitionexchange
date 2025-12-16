@@ -428,6 +428,11 @@ export default function DashboardPage() {
     { key: 'portfolio', icon: <WalletOutlined />, label: 'Portfolio', color: token.colorPrimary, href: '/portfolio' },
   ], [token]);
 
+  // Don't render anything while checking auth or if not logged in (redirect in progress)
+  if (isLoading || !user) {
+    return null;
+  }
+
   if (pageLoading) {
     return (
       <>

@@ -91,3 +91,30 @@ html {
   flex: 1 !important;
   overflow-y: auto !important;
 }
+
+/* Trading Mode Switch Styles */
+.learner-switch.ant-switch {
+  background-color: #F59E0B !important;
+}
+
+.learner-switch.ant-switch:hover:not(.ant-switch-disabled) {
+  background-color: #D97706 !important;
+}
+
+.investor-switch.ant-switch-checked {
+  background-color: #11998e !important;
+}
+
+.investor-switch.ant-switch-checked:hover:not(.ant-switch-disabled) {
+  background-color: #0d7d73 !important;
+}
+
+/* Learner Mode Badge Pulse Animation */
+@keyframes pulse-learner {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.5);
+  }
+}

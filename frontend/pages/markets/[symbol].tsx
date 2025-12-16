@@ -20,6 +20,8 @@ import {
 } from '@ant-design/icons';
 import { motion } from 'motion/react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
+import Header, { HEADER_HEIGHT } from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
 import { useExchange } from '@/context/ExchangeContext';
@@ -180,22 +182,20 @@ export default function TokenDetailsPage() {
   const livePrice = pairData?.price || tokenData?.market_data?.current_price?.usd || 0;
   const liveChange = pairData?.change || tokenData?.market_data?.price_change_percentage_24h || 0;
 
+  // Check if user is authenticated (for conditional layout and features)
+  const isAuthenticated = !!user;
+  const needsOnboarding = user && user.kycStatus !== 'APPROVED' && user.kycStatus !== 'PENDING';
+
   useEffect(() => { setMounted(true); }, []);
 
+  // Page is ready once auth check is done (public access)
   useEffect(() => {
     if (!isLoading) {
-      if (!user) {
-        router.push(`/login?redirect=/markets/${symbol}`);
-        return;
-      }
-      if (user.kycStatus !== 'APPROVED' && user.kycStatus !== 'PENDING') {
-        router.push('/onboarding');
-        return;
-      }
       setPageLoading(false);
     }
-  }, [user, isLoading, router, symbol]);
+  }, [isLoading]);
 
+  // Fetch token data (public)
   useEffect(() => {
     if (!pageLoading && symbol && typeof symbol === 'string') {
       setLoadingToken(true);
@@ -205,16 +205,28 @@ export default function TokenDetailsPage() {
     }
   }, [pageLoading, symbol]);
 
+  // Fetch watchlist (only for authenticated users)
   useEffect(() => {
-    if (!pageLoading && symbol && typeof symbol === 'string') {
+    if (!pageLoading && symbol && typeof symbol === 'string' && isAuthenticated && !needsOnboarding) {
       getWatchlist()
         .then((items) => setIsWatchlisted(items.some((item) => item.asset === symbol.toUpperCase())))
         .catch(() => {});
     }
-  }, [pageLoading, symbol]);
+  }, [pageLoading, symbol, isAuthenticated, needsOnboarding]);
 
   const handleToggleWatchlist = useCallback(async () => {
     if (!symbol || typeof symbol !== 'string') return;
+    // Require login for watchlist
+    if (!isAuthenticated) {
+      message.info('Please log in to add to watchlist');
+      router.push(`/login?redirect=${encodeURIComponent(`/markets/${symbol}`)}`);
+      return;
+    }
+    if (needsOnboarding) {
+      message.info('Please complete onboarding first');
+      router.push('/onboarding');
+      return;
+    }
     setIsTogglingWatchlist(true);
     try {
       await toggleWatchlist(symbol.toUpperCase());
@@ -225,13 +237,24 @@ export default function TokenDetailsPage() {
     } finally {
       setTimeout(() => setIsTogglingWatchlist(false), 300);
     }
-  }, [symbol, isWatchlisted]);
+  }, [symbol, isWatchlisted, isAuthenticated, needsOnboarding, router]);
 
   const handleBuy = useCallback(() => {
     if (!symbol || typeof symbol !== 'string') return;
+    // Require login for buy
+    if (!isAuthenticated) {
+      message.info('Please log in to buy');
+      router.push(`/login?redirect=${encodeURIComponent(`/buy-sell?asset=${symbol.toUpperCase()}`)}`);
+      return;
+    }
+    if (needsOnboarding) {
+      message.info('Please complete onboarding first');
+      router.push('/onboarding');
+      return;
+    }
     setSelectedPair(`${symbol.toUpperCase()}-USD`);
     router.push(`/buy-sell?asset=${symbol.toUpperCase()}`);
-  }, [symbol, router, setSelectedPair]);
+  }, [symbol, router, setSelectedPair, isAuthenticated, needsOnboarding]);
 
   const supplyPercentage = useMemo(() => {
     if (!tokenData?.market_data) return 0;
@@ -246,13 +269,31 @@ export default function TokenDetailsPage() {
     return tokenData.description.replace(/<[^>]*>/g, '').replace(/\n\n+/g, '\n\n').trim();
   }, [tokenData]);
 
+  // Show nothing while auth is loading to prevent layout flash
+  if (isLoading) {
+    return null;
+  }
+
+  // Loading state with appropriate layout
   if (pageLoading || !symbol) {
     return (
       <>
         <Head><title>Token Details - InTuition Exchange</title></Head>
-        <DashboardLayout activeKey="markets">
-          <Skeleton active paragraph={{ rows: 12 }} />
-        </DashboardLayout>
+        {isAuthenticated && !needsOnboarding ? (
+          <DashboardLayout activeKey="markets">
+            <Skeleton active paragraph={{ rows: 12 }} />
+          </DashboardLayout>
+        ) : (
+          <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: themeToken.colorBgLayout }}>
+            <Header />
+            <main style={{ flex: 1, paddingTop: HEADER_HEIGHT }}>
+              <div style={{ maxWidth: 1400, margin: '0 auto', padding: themeToken.paddingLG }}>
+                <Skeleton active paragraph={{ rows: 12 }} />
+              </div>
+            </main>
+            <Footer />
+          </div>
+        )}
       </>
     );
   }
@@ -260,15 +301,9 @@ export default function TokenDetailsPage() {
   const symbolStr = typeof symbol === 'string' ? symbol.toUpperCase() : '';
   const separatorColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(102, 126, 234, 0.15)';
 
-  return (
-    <>
-      <Head>
-        <title>{tokenData?.name || symbolStr} ({symbolStr}) - InTuition Exchange</title>
-        <meta name="description" content={`View ${tokenData?.name || symbolStr} price, market cap, and more`} />
-      </Head>
-
-      <DashboardLayout activeKey="markets">
-        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+  // Page content - shared between layouts
+  const pageContent = (
+    <div style={{ maxWidth: 1400, margin: '0 auto' }}>
           {/* Back link */}
           <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
             <Link
@@ -1005,7 +1040,29 @@ export default function TokenDetailsPage() {
           {/* Bottom padding for mobile CTA */}
           {isMobile && tokenData && <div style={{ height: 190 }} />}
         </div>
-      </DashboardLayout>
+  );
+
+  // Conditional layout based on authentication
+  return (
+    <>
+      <Head>
+        <title>{tokenData?.name || symbolStr} ({symbolStr}) - InTuition Exchange</title>
+        <meta name="description" content={`View ${tokenData?.name || symbolStr} price, market cap, and more`} />
+      </Head>
+
+      {isAuthenticated && !needsOnboarding ? (
+        <DashboardLayout activeKey="markets">
+          {pageContent}
+        </DashboardLayout>
+      ) : (
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: themeToken.colorBgLayout }}>
+          <Header />
+          <main style={{ flex: 1, padding: `${HEADER_HEIGHT + themeToken.paddingLG}px ${themeToken.paddingLG}px ${themeToken.paddingLG}px` }}>
+            {pageContent}
+          </main>
+          <Footer />
+        </div>
+      )}
     </>
   );
 }

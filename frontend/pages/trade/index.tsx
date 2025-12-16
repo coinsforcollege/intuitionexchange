@@ -233,6 +233,11 @@ function ExchangePageContent() {
     marginBottom: token.marginSM,
   };
 
+  // Don't render anything while checking auth or if not logged in
+  if (isLoading || !user) {
+    return null;
+  }
+
   // Loading skeleton that matches 3-column layout
   if (pageLoading || isLoadingPairs) {
     const PAIR_WIDTH = 300;

@@ -30,12 +30,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return;
     }
 
+    // Sync localStorage token to cookie (for middleware) if not already set
+    const token = localStorage.getItem('authToken');
+    if (token && typeof document !== 'undefined') {
+      const hasAuthCookie = document.cookie.includes('authToken=');
+      if (!hasAuthCookie) {
+        document.cookie = `authToken=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+      }
+    }
+
     try {
       const userData = await getCurrentUser();
       setUser(userData);
     } catch {
-      // Token invalid or expired
+      // Token invalid or expired - clear both localStorage and cookie
       localStorage.removeItem('authToken');
+      document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       setUser(null);
     } finally {
       setIsLoading(false);

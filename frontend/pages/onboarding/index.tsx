@@ -65,13 +65,13 @@ export default function OnboardingWelcome() {
         const status = await getKycStatus();
         setKycStatus(status);
         
-        // Redirect based on status
+        // Redirect based on status (use replace to prevent back navigation)
         if (status.status === 'APPROVED') {
-          router.push('/overview');
+          router.replace('/overview');
         } else if (status.currentStep >= 1) {
           // Resume from where they left off
           const stepRoutes = ['/onboarding', '/onboarding/personal', '/onboarding/address', '/onboarding/verify', '/onboarding/status'];
-          router.push(stepRoutes[status.currentStep] || '/onboarding/personal');
+          router.replace(stepRoutes[status.currentStep] || '/onboarding/personal');
         }
       } catch {
         // If API fails, continue to show welcome page

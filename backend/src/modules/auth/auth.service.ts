@@ -150,6 +150,12 @@ export class AuthService {
         emailVerified: true,
         phoneVerified: true,
         createdAt: true,
+        kyc: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
       },
     });
 
@@ -157,7 +163,13 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    return user;
+    // Flatten kyc name fields into user object for convenience
+    return {
+      ...user,
+      firstName: user.kyc?.firstName || null,
+      lastName: user.kyc?.lastName || null,
+      kyc: undefined, // Remove nested kyc object
+    };
   }
 
   /**

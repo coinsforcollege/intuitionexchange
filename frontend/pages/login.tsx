@@ -51,8 +51,9 @@ export default function LoginPage() {
       login(response.user);
       message.success('Welcome back!');
       
+      // Use replace to prevent "back" from going to login page
       const redirectTo = (router.query.redirect as string) || '/overview';
-      router.push(redirectTo);
+      router.replace(redirectTo);
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.message || 'Login failed. Please try again.');

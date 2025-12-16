@@ -418,6 +418,11 @@ export default function DashboardPage() {
     { key: 'wallet', icon: <WalletOutlined />, label: 'Wallet', color: token.colorPrimary, href: '/wallet' },
   ], [token]);
 
+  // Don't render anything while checking auth or if not logged in
+  if (isLoading || !user) {
+    return null;
+  }
+
   if (pageLoading) {
     return (
       <>

@@ -422,6 +422,11 @@ export default function WalletPage() {
     },
   ];
 
+  // Don't render anything while checking auth or if not logged in
+  if (isLoading || !user) {
+    return null;
+  }
+
   if (pageLoading) {
     return (
       <>

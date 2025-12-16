@@ -16,6 +16,7 @@ import {
   PublicTrade,
 } from '@/services/api/coinbase';
 import { getBalances, Balance } from '@/services/api/assets';
+import { useAuth } from '@/context/AuthContext';
 
 // Coinbase fee rate (typically 0.5% for market orders, but may vary)
 // This is used for quote calculations. Actual fees are returned in order responses.
@@ -125,6 +126,9 @@ function getIconUrl(symbol: string): string {
 }
 
 export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Auth state
+  const { isLoggedIn } = useAuth();
+  
   // State
   const [pairs, setPairs] = useState<TradingPair[]>([]);
   const [isLoadingPairs, setIsLoadingPairs] = useState(true);
@@ -489,8 +493,9 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [selectedPair, candleGranularity]);
 
-  // Fetch balances from our ledger
+  // Fetch balances from our ledger (requires auth)
   const refreshBalances = useCallback(async () => {
+    if (!isLoggedIn) return;
     try {
       setIsLoadingBalances(true);
       const balanceData = await getBalances();
@@ -500,10 +505,11 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } finally {
       setIsLoadingBalances(false);
     }
-  }, []);
+  }, [isLoggedIn]);
 
-  // Fetch orders
+  // Fetch orders (requires auth)
   const refreshOrders = useCallback(async () => {
+    if (!isLoggedIn) return;
     try {
       setIsLoadingOrders(true);
       const { orders: orderData } = await getOrders({ limit: 50 });
@@ -513,7 +519,7 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } finally {
       setIsLoadingOrders(false);
     }
-  }, []);
+  }, [isLoggedIn]);
 
   // Fetch public trades
   const refreshTrades = useCallback(async () => {
@@ -790,11 +796,21 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [selectedPair, currentPairData, refreshBalances, refreshOrders]);
 
-  // Initial load
+  // Initial load - products are public, balances require auth
   useEffect(() => {
     refreshProducts();
-    refreshBalances();
-  }, [refreshProducts, refreshBalances]);
+  }, [refreshProducts]);
+
+  // Fetch balances only when logged in, clear on logout
+  useEffect(() => {
+    if (isLoggedIn) {
+      refreshBalances();
+    } else {
+      // Clear user-specific data on logout
+      setBalances([]);
+      setOrders([]);
+    }
+  }, [isLoggedIn, refreshBalances]);
 
   // Fetch candles when pair or granularity changes
   useEffect(() => {

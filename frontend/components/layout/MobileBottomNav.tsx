@@ -69,6 +69,7 @@ const MobileBottomNav: React.FC = () => {
   const { mode } = useThemeMode();
   const screens = useBreakpoint();
   const [mounted, setMounted] = useState(false);
+  const [appMode, setAppMode] = useState<'learner' | 'investor'>('investor');
   const [activeKey, setActiveKey] = useState(() => {
     // Initialize from current path on mount
     if (typeof window === 'undefined') return 'overview';
@@ -83,6 +84,7 @@ const MobileBottomNav: React.FC = () => {
 
   const isDark = mode === 'dark';
   const isMobile = mounted ? !screens.md : false;
+  const isLearnerMode = appMode === 'learner';
 
   const navItems: NavItem[] = useMemo(() => [
     { key: 'overview', label: 'Overview', href: '/overview' },
@@ -94,7 +96,23 @@ const MobileBottomNav: React.FC = () => {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    
+    // Load app mode from localStorage
+    const savedMode = localStorage.getItem('appMode') as 'learner' | 'investor' | null;
+    if (savedMode) {
+      setAppMode(savedMode);
+    }
+
+    // Poll for changes (for same-tab updates from settings)
+    const interval = setInterval(() => {
+      const currentMode = localStorage.getItem('appMode') as 'learner' | 'investor' | null;
+      if (currentMode && currentMode !== appMode) {
+        setAppMode(currentMode);
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [appMode]);
 
   // Handle nav click - update state IMMEDIATELY, then navigate
   // This decouples the animation from page load
@@ -117,14 +135,18 @@ const MobileBottomNav: React.FC = () => {
   const NAV_MARGIN = 16;
   const BUBBLE_SIZE = 50;
 
-  const primaryColor = '#6366F1';
+  // Colors change based on app mode - Learner mode uses orange/amber, Investor uses indigo
+  const primaryColor = isLearnerMode ? '#F59E0B' : '#6366F1';
+  const secondaryColor = isLearnerMode ? '#EF4444' : '#8B5CF6';
   // Solid colored background
-  const bgColor = '#4F46E5';
+  const bgColor = isLearnerMode ? '#D97706' : '#4F46E5';
   const inactiveColor = 'rgba(255, 255, 255, 0.6)';
   const activeIconColor = '#FFFFFF';
   // Page base color for bubble stroke - matches theme
   // Dark: custom colorBgBase, Light: Ant Design default colorBgLayout
-  const pageBaseColor = isDark ? '#0f0f1a' : '#f5f5f5';
+  const pageBaseColor = isDark 
+    ? (isLearnerMode ? '#1a1207' : '#0f0f1a') 
+    : (isLearnerMode ? '#FFFBEB' : '#f5f5f5');
 
   return (
     <>
@@ -200,7 +222,7 @@ const MobileBottomNav: React.FC = () => {
                             width: BUBBLE_SIZE,
                             height: BUBBLE_SIZE,
                             borderRadius: BUBBLE_SIZE / 2,
-                            background: `linear-gradient(135deg, ${primaryColor} 0%, #8B5CF6 100%)`,
+                            background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
                             boxShadow: `0 6px 20px ${primaryColor}50`,
                             border: `5px solid ${pageBaseColor}`,
                             willChange: 'transform',

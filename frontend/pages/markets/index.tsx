@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { theme, Grid, Input, Skeleton, Empty } from 'antd';
+import { theme, Grid, Input, Skeleton, Empty, message } from 'antd';
 import {
   SearchOutlined,
   StarOutlined,
@@ -12,6 +12,8 @@ import {
 } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'motion/react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
+import Header, { HEADER_HEIGHT } from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
 import { useExchange } from '@/context/ExchangeContext';
@@ -444,24 +446,22 @@ export default function MarketsPage() {
   // Use compact filter pills on mobile and small-medium screens
   const useCompactFilters = isMobile || isSmall || isMedium;
 
+  // Check if user is authenticated (for conditional layout and features)
+  const isAuthenticated = !!user;
+  const needsOnboarding = user && user.kycStatus !== 'APPROVED' && user.kycStatus !== 'PENDING';
+
   useEffect(() => { setMounted(true); }, []);
 
+  // Page is ready once auth check is done (we don't redirect unauthenticated users anymore)
   useEffect(() => {
     if (!isLoading) {
-      if (!user) {
-        router.push('/login?redirect=/markets');
-        return;
-      }
-      if (user.kycStatus !== 'APPROVED' && user.kycStatus !== 'PENDING') {
-        router.push('/onboarding');
-        return;
-      }
       setPageLoading(false);
     }
-  }, [user, isLoading, router]);
+  }, [isLoading]);
 
+  // Fetch watchlist only for authenticated users
   useEffect(() => {
-    if (!pageLoading && user) {
+    if (!pageLoading && isAuthenticated && !needsOnboarding) {
       const fetchWatchlist = async () => {
         try {
           setLoadingWatchlist(true);
@@ -474,8 +474,10 @@ export default function MarketsPage() {
         }
       };
       fetchWatchlist();
+    } else if (!isAuthenticated) {
+      setLoadingWatchlist(false);
     }
-  }, [pageLoading, user]);
+  }, [pageLoading, isAuthenticated, needsOnboarding]);
 
   const usdPairs = useMemo(() => pairs.filter((p) => p.quote === 'USD'), [pairs]);
 
@@ -515,7 +517,18 @@ export default function MarketsPage() {
     return result;
   }, [usdPairs, searchQuery, activeTab, watchlistAssets, sortField, sortOrder]);
 
+  // Require login for watchlist actions
   const handleToggleWatchlist = useCallback(async (asset: string) => {
+    if (!isAuthenticated) {
+      message.info('Please log in to add to watchlist');
+      router.push(`/login?redirect=/markets`);
+      return;
+    }
+    if (needsOnboarding) {
+      message.info('Please complete onboarding first');
+      router.push('/onboarding');
+      return;
+    }
     try {
       await toggleWatchlist(asset);
       setWatchlistAssets((prev) =>
@@ -524,8 +537,9 @@ export default function MarketsPage() {
     } catch (error) {
       console.error('Failed to toggle watchlist:', error);
     }
-  }, []);
+  }, [isAuthenticated, needsOnboarding, router]);
 
+  // Navigate to token detail page - public access
   const handleNavigateToToken = useCallback((symbol: string) => {
     router.push(`/markets/${symbol}`);
   }, [router]);
@@ -537,13 +551,31 @@ export default function MarketsPage() {
     return `$${vol.toFixed(0)}`;
   };
 
+  // Show nothing while auth is loading to prevent layout flash
+  if (isLoading) {
+    return null;
+  }
+
+  // Show loading state with appropriate layout
   if (pageLoading) {
     return (
       <>
         <Head><title>Markets - InTuition Exchange</title></Head>
-        <DashboardLayout activeKey="markets">
-          <Skeleton active paragraph={{ rows: 12 }} />
-        </DashboardLayout>
+        {isAuthenticated && !needsOnboarding ? (
+          <DashboardLayout activeKey="markets">
+            <Skeleton active paragraph={{ rows: 12 }} />
+          </DashboardLayout>
+        ) : (
+          <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: token.colorBgLayout }}>
+            <Header />
+            <main style={{ flex: 1, paddingTop: HEADER_HEIGHT }}>
+              <div style={{ maxWidth: 1400, margin: '0 auto', padding: token.paddingLG }}>
+                <Skeleton active paragraph={{ rows: 12 }} />
+              </div>
+            </main>
+            <Footer />
+          </div>
+        )}
       </>
     );
   }
@@ -553,15 +585,9 @@ export default function MarketsPage() {
     ? '40px 1.5fr 1fr 1fr 1fr 40px'
     : '40px 1.5fr 1fr 1fr 40px';
 
-  return (
-    <>
-      <Head>
-        <title>Markets - InTuition Exchange</title>
-        <meta name="description" content="Explore crypto markets on InTuition Exchange" />
-      </Head>
-
-      <DashboardLayout activeKey="markets">
-        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+  // Market content - shared between both layouts
+  const marketContent = (
+    <div style={{ maxWidth: 1400, margin: '0 auto' }}>
           {/* Search and filters - wraps at all sizes */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -607,15 +633,18 @@ export default function MarketsPage() {
               >
                 All
               </FilterPill>
-              <FilterPill
-                active={activeTab === 'watchlist'}
-                onClick={() => setActiveTab('watchlist')}
-                gradient="linear-gradient(135deg, #f6d365 0%, #fda085 100%)"
-                icon={<StarFilled />}
-                compact={useCompactFilters}
-              >
-                Watchlist
-              </FilterPill>
+              {/* Watchlist only available for authenticated users */}
+              {isAuthenticated && !needsOnboarding && (
+                <FilterPill
+                  active={activeTab === 'watchlist'}
+                  onClick={() => setActiveTab('watchlist')}
+                  gradient="linear-gradient(135deg, #f6d365 0%, #fda085 100%)"
+                  icon={<StarFilled />}
+                  compact={useCompactFilters}
+                >
+                  Watchlist
+                </FilterPill>
+              )}
               <FilterPill
                 active={activeTab === 'gainers'}
                 onClick={() => setActiveTab('gainers')}
@@ -802,7 +831,29 @@ export default function MarketsPage() {
             </>
           )}
         </div>
-      </DashboardLayout>
+  );
+
+  // Conditional layout based on authentication
+  return (
+    <>
+      <Head>
+        <title>Markets - InTuition Exchange</title>
+        <meta name="description" content="Explore crypto markets on InTuition Exchange" />
+      </Head>
+
+      {isAuthenticated && !needsOnboarding ? (
+        <DashboardLayout activeKey="markets">
+          {marketContent}
+        </DashboardLayout>
+      ) : (
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: token.colorBgLayout }}>
+          <Header />
+          <main style={{ flex: 1, paddingTop: HEADER_HEIGHT, padding: `${HEADER_HEIGHT + token.paddingLG}px ${token.paddingLG}px ${token.paddingLG}px` }}>
+            {marketContent}
+          </main>
+          <Footer />
+        </div>
+      )}
     </>
   );
 }

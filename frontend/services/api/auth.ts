@@ -35,6 +35,8 @@ export interface LoginResponse {
     phoneCountry: string;
     country: string;
     kycStatus: string;
+    firstName: string | null;
+    lastName: string | null;
   };
 }
 
@@ -143,9 +145,11 @@ export async function loginUser(data: LoginData): Promise<LoginResponse> {
     body: JSON.stringify(data),
   });
 
-  // Store token on successful login
+  // Store token on successful login (both localStorage and cookie for middleware)
   if (response.token && typeof window !== 'undefined') {
     localStorage.setItem('authToken', response.token);
+    // Set cookie for middleware (httpOnly=false so JS can clear it, but middleware can read it)
+    document.cookie = `authToken=${response.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
   }
 
   return response;
@@ -155,16 +159,22 @@ export async function loginUser(data: LoginData): Promise<LoginResponse> {
  * Logout user
  */
 export async function logoutUser(): Promise<ApiResponse> {
-  const response = await apiCall<ApiResponse>('/account/logout', {
-    method: 'POST',
-  });
-
-  // Clear token on logout
+  // Always clear token first, before API call (both localStorage and cookie)
   if (typeof window !== 'undefined') {
     localStorage.removeItem('authToken');
+    // Clear cookie by setting expired date
+    document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
   }
 
-  return response;
+  try {
+    const response = await apiCall<ApiResponse>('/account/logout', {
+      method: 'POST',
+    });
+    return response;
+  } catch {
+    // Token already cleared, return success regardless
+    return { message: 'Logged out successfully' };
+  }
 }
 
 /**

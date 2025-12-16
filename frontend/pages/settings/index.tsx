@@ -43,6 +43,8 @@ import {
   EyeOutlined,
   MobileOutlined,
   SoundOutlined,
+  ExperimentOutlined,
+  RocketOutlined,
 } from '@ant-design/icons';
 import { motion } from 'motion/react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
@@ -221,10 +223,18 @@ export default function SettingsPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
+  // App mode: 'learner' (demo) or 'investor' (production)
+  const [appMode, setAppMode] = useState<'learner' | 'investor'>('investor');
+
   const isMobile = mounted ? !screens.md : false;
 
   useEffect(() => {
     setMounted(true);
+    // Load app mode from localStorage
+    const savedMode = localStorage.getItem('appMode') as 'learner' | 'investor' | null;
+    if (savedMode) {
+      setAppMode(savedMode);
+    }
   }, []);
 
   useEffect(() => {
@@ -333,6 +343,17 @@ export default function SettingsPage() {
     }
   };
 
+  const handleAppModeChange = (isInvestor: boolean) => {
+    const newMode = isInvestor ? 'investor' : 'learner';
+    setAppMode(newMode);
+    localStorage.setItem('appMode', newMode);
+    message.success(
+      isInvestor 
+        ? 'Switched to Investor mode - Real trading enabled'
+        : 'Switched to Learner mode - Demo trading with virtual funds'
+    );
+  };
+
   // Format phone number with country code
   const formatPhone = () => {
     if (!settings) return '—';
@@ -376,7 +397,12 @@ export default function SettingsPage() {
     smsTransactions: false,
   };
 
-  if (loading || authLoading) {
+  // Don't render anything while checking auth or if not logged in
+  if (authLoading || !user) {
+    return null;
+  }
+
+  if (loading) {
     return (
       <>
         <Head>
@@ -427,7 +453,101 @@ export default function SettingsPage() {
                 label="Member Since"
                 value={formatDate(settings?.createdAt || null)}
               />
-              <div style={{ paddingTop: token.paddingSM, display: 'flex', gap: token.marginXS }}>
+
+              {/* App Mode Toggle */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: `${token.paddingMD}px 0`,
+                  marginTop: token.marginSM,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM }}>
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: token.borderRadiusSM,
+                      background: appMode === 'investor' 
+                        ? 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
+                        : 'linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontSize: token.fontSizeLG,
+                      transition: 'all 0.3s ease',
+                      boxShadow: appMode === 'learner' 
+                        ? '0 4px 12px rgba(245, 158, 11, 0.3)'
+                        : '0 4px 12px rgba(17, 153, 142, 0.3)',
+                    }}
+                  >
+                    {appMode === 'investor' ? <RocketOutlined /> : <ExperimentOutlined />}
+                  </div>
+                  <div>
+                    <Text style={{ fontWeight: fontWeights.medium, display: 'block' }}>
+                      Trading Mode
+                    </Text>
+                    <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
+                      {appMode === 'investor' 
+                        ? 'Real trading with actual funds'
+                        : 'Practice trading with virtual funds'}
+                    </Text>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM }}>
+                  <Text 
+                    style={{ 
+                      fontWeight: appMode === 'learner' ? fontWeights.bold : fontWeights.regular,
+                      color: appMode === 'learner' ? '#F59E0B' : token.colorTextSecondary,
+                      fontSize: token.fontSizeSM,
+                    }}
+                  >
+                    Learner
+                  </Text>
+                  <Switch
+                    checked={appMode === 'investor'}
+                    onChange={handleAppModeChange}
+                    className={appMode === 'learner' ? 'learner-switch' : 'investor-switch'}
+                  />
+                  <Text 
+                    style={{ 
+                      fontWeight: appMode === 'investor' ? fontWeights.bold : fontWeights.regular,
+                      color: appMode === 'investor' ? '#11998e' : token.colorTextSecondary,
+                      fontSize: token.fontSizeSM,
+                    }}
+                  >
+                    Investor
+                  </Text>
+                </div>
+              </div>
+              <div 
+                style={{ 
+                  padding: `${token.paddingSM}px ${token.paddingMD}px`,
+                  background: appMode === 'investor' 
+                    ? 'rgba(17, 153, 142, 0.1)' 
+                    : 'rgba(245, 158, 11, 0.1)',
+                  borderRadius: token.borderRadius,
+                  border: `1px solid ${appMode === 'investor' ? 'rgba(17, 153, 142, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+                }}
+              >
+                <Text 
+                  style={{ 
+                    fontSize: token.fontSizeSM, 
+                    display: 'block',
+                    color: appMode === 'investor' ? '#11998e' : '#D97706',
+                    fontWeight: fontWeights.medium,
+                  }}
+                >
+                  {appMode === 'investor' 
+                    ? '⚡ Investor Mode: All trades use real funds. Proceed with caution.'
+                    : '🎓 Learner Mode: Practice with $10,000 virtual balance. No real money involved.'}
+                </Text>
+              </div>
+
+              <div style={{ display: 'flex', gap: token.marginXS, marginTop: token.marginMD }}>
                 {settings?.emailVerified && (
                   <Tag color="success" icon={<CheckCircleOutlined />}>
                     Email Verified
