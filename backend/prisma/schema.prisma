@@ -28,18 +28,19 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   // Relations
-  kyc                 Kyc?
-  fiatBalance         FiatBalance?
-  cryptoBalances      CryptoBalance[]
-  depositAddresses    DepositAddress[]
-  trades              Trade[]
-  p2pOrders           P2POrder[]
-  fiatTransactions    FiatTransaction[]
-  cryptoTransactions  CryptoTransaction[]
-  creditCards         CreditCard[]
-  bankAccounts        BankAccount[]
-  withdrawalAddresses WithdrawalAddress[]
-  watchlistItems      WatchlistItem[]
+  kyc                     Kyc?
+  fiatBalance             FiatBalance?
+  cryptoBalances          CryptoBalance[]
+  depositAddresses        DepositAddress[]
+  trades                  Trade[]
+  p2pOrders               P2POrder[]
+  fiatTransactions        FiatTransaction[]
+  cryptoTransactions      CryptoTransaction[]
+  creditCards             CreditCard[]
+  bankAccounts            BankAccount[]
+  withdrawalAddresses     WithdrawalAddress[]
+  watchlistItems          WatchlistItem[]
+  notificationPreferences NotificationPreferences?
 
   @@map("users")
 }
@@ -408,4 +409,38 @@ model WatchlistItem {
 
   @@unique([userId, asset])
   @@map("watchlist_items")
+}
+
+// ============================================
+// USER SETTINGS
+// ============================================
+
+model NotificationPreferences {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Email Notifications
+  emailMarketing       Boolean @default(true)  // Promotional emails, newsletters
+  emailSecurityAlerts  Boolean @default(true)  // Login alerts, password changes
+  emailTransactions    Boolean @default(true)  // Deposit/withdrawal confirmations
+  emailPriceAlerts     Boolean @default(false) // Price movement notifications
+  emailNewsUpdates     Boolean @default(true)  // Platform news and updates
+
+  // Push Notifications
+  pushEnabled          Boolean @default(true)  // Master toggle for push
+  pushSecurityAlerts   Boolean @default(true)  // Login alerts, suspicious activity
+  pushTransactions     Boolean @default(true)  // Trade confirmations
+  pushPriceAlerts      Boolean @default(false) // Price alerts
+  pushNewsUpdates      Boolean @default(false) // News and updates
+
+  // SMS Notifications
+  smsEnabled           Boolean @default(true)  // Master toggle for SMS
+  smsSecurityAlerts    Boolean @default(true)  // 2FA, login from new device
+  smsTransactions      Boolean @default(false) // Large transaction alerts
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notification_preferences")
 }

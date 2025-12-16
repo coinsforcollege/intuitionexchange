@@ -14,6 +14,7 @@ import { AssetsModule } from './modules/assets/assets.module';
 import { FiatModule } from './modules/fiat/fiat.module';
 import { WatchlistModule } from './modules/watchlist/watchlist.module';
 import { CoinGeckoModule } from './modules/coingecko/coingecko.module';
+import { SettingsModule } from './modules/settings/settings.module';
 
 @Module({
   imports: [
@@ -43,6 +44,8 @@ import { CoinGeckoModule } from './modules/coingecko/coingecko.module';
     WatchlistModule,
     // CoinGecko token data module
     CoinGeckoModule,
+    // User settings module
+    SettingsModule,
   ],
   controllers: [AppController, TestController],
   providers: [AppService, PrismaService, EmailService],
