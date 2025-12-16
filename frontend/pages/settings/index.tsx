@@ -59,6 +59,7 @@ import {
   type NotificationPreferences,
 } from '@/services/api/settings';
 import { getBankAccounts, deleteBankAccount, type BankAccount } from '@/services/api/fiat';
+import { resetLearnerAccount } from '@/services/api/learner';
 import OTPInput from '@/components/auth/OTPInput';
 import dayjs from 'dayjs';
 import { Country, State } from 'country-state-city';
@@ -344,6 +345,12 @@ export default function SettingsPage() {
   };
 
   const handleAppModeChange = (isInvestor: boolean) => {
+    // Block investor mode if KYC not approved
+    if (isInvestor && settings?.kycStatus !== 'APPROVED') {
+      message.warning('Complete identity verification to enable Investor mode');
+      return;
+    }
+    
     const newMode = isInvestor ? 'investor' : 'learner';
     setAppMode(newMode);
     localStorage.setItem('appMode', newMode);
@@ -352,6 +359,20 @@ export default function SettingsPage() {
         ? 'Switched to Investor mode - Real trading enabled'
         : 'Switched to Learner mode - Demo trading with virtual funds'
     );
+  };
+  
+  // Reset learner account
+  const [resetLoading, setResetLoading] = useState(false);
+  const handleResetLearnerAccount = async () => {
+    setResetLoading(true);
+    try {
+      await resetLearnerAccount();
+      message.success('Learner account reset! You now have $10,000 virtual balance.');
+    } catch (error: any) {
+      message.error(error.message || 'Failed to reset learner account');
+    } finally {
+      setResetLoading(false);
+    }
   };
 
   // Format phone number with country code
@@ -546,6 +567,40 @@ export default function SettingsPage() {
                     : '🎓 Learner Mode: Practice with $10,000 virtual balance. No real money involved.'}
                 </Text>
               </div>
+              
+              {/* KYC Required Notice */}
+              {settings?.kycStatus !== 'APPROVED' && (
+                <div 
+                  style={{ 
+                    padding: `${token.paddingSM}px ${token.paddingMD}px`,
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    borderRadius: token.borderRadius,
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    marginTop: token.marginSM,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text 
+                    style={{ 
+                      fontSize: token.fontSizeSM, 
+                      color: '#DC2626',
+                      fontWeight: fontWeights.medium,
+                    }}
+                  >
+                    ⚠️ Complete identity verification to unlock Investor mode
+                  </Text>
+                  <Button 
+                    type="primary" 
+                    size="small" 
+                    danger
+                    onClick={() => router.push('/onboarding')}
+                  >
+                    Verify Now
+                  </Button>
+                </div>
+              )}
 
               <div style={{ display: 'flex', gap: token.marginXS, marginTop: token.marginMD }}>
                 {settings?.emailVerified && (
@@ -562,11 +617,131 @@ export default function SettingsPage() {
             </SectionCard>
           </motion.div>
 
-          {/* KYC Status */}
+          {/* Learner Mode Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.15 }}
+          >
+            <SectionCard
+              title="Learner Mode"
+              icon={<ExperimentOutlined />}
+              gradient="linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)"
+            >
+              <div style={{ marginBottom: token.marginMD }}>
+                <Text type="secondary" style={{ display: 'block', marginBottom: token.marginMD }}>
+                  Learner Mode gives you $10,000 in virtual funds to practice trading without any risk. 
+                  All trades are simulated using real market prices.
+                </Text>
+                
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: token.marginSM,
+                    marginBottom: token.marginMD,
+                  }}
+                >
+                  <div
+                    style={{
+                      padding: token.paddingMD,
+                      background: 'rgba(245, 158, 11, 0.08)',
+                      borderRadius: token.borderRadius,
+                      border: '1px solid rgba(245, 158, 11, 0.2)',
+                    }}
+                  >
+                    <Text style={{ fontSize: token.fontSizeSM, color: '#D97706', fontWeight: fontWeights.semibold }}>
+                      ✓ Real Market Prices
+                    </Text>
+                  </div>
+                  <div
+                    style={{
+                      padding: token.paddingMD,
+                      background: 'rgba(245, 158, 11, 0.08)',
+                      borderRadius: token.borderRadius,
+                      border: '1px solid rgba(245, 158, 11, 0.2)',
+                    }}
+                  >
+                    <Text style={{ fontSize: token.fontSizeSM, color: '#D97706', fontWeight: fontWeights.semibold }}>
+                      ✓ Simulated Trades
+                    </Text>
+                  </div>
+                  <div
+                    style={{
+                      padding: token.paddingMD,
+                      background: 'rgba(245, 158, 11, 0.08)',
+                      borderRadius: token.borderRadius,
+                      border: '1px solid rgba(245, 158, 11, 0.2)',
+                    }}
+                  >
+                    <Text style={{ fontSize: token.fontSizeSM, color: '#D97706', fontWeight: fontWeights.semibold }}>
+                      ✓ No Real Money Risk
+                    </Text>
+                  </div>
+                  <div
+                    style={{
+                      padding: token.paddingMD,
+                      background: 'rgba(245, 158, 11, 0.08)',
+                      borderRadius: token.borderRadius,
+                      border: '1px solid rgba(245, 158, 11, 0.2)',
+                    }}
+                  >
+                    <Text style={{ fontSize: token.fontSizeSM, color: '#D97706', fontWeight: fontWeights.semibold }}>
+                      ✓ Track Performance
+                    </Text>
+                  </div>
+                </div>
+              </div>
+              
+              <Divider style={{ margin: `${token.marginSM}px 0` }} />
+              
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: `${token.paddingMD}px 0`,
+                }}
+              >
+                <div>
+                  <Text style={{ fontWeight: fontWeights.medium, display: 'block' }}>
+                    Reset Learner Account
+                  </Text>
+                  <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
+                    Start fresh with $10,000 virtual balance. All trades and history will be cleared.
+                  </Text>
+                </div>
+                <Popconfirm
+                  title="Reset Learner Account"
+                  description="This will clear all your learner trades and reset your balance to $10,000. Are you sure?"
+                  onConfirm={handleResetLearnerAccount}
+                  okText="Yes, Reset"
+                  cancelText="Cancel"
+                  okButtonProps={{ danger: true, loading: resetLoading }}
+                >
+                  <Button 
+                    danger 
+                    loading={resetLoading}
+                    disabled={appMode !== 'learner'}
+                  >
+                    Reset Account
+                  </Button>
+                </Popconfirm>
+              </div>
+              
+              {appMode !== 'learner' && (
+                <Text type="secondary" style={{ fontSize: token.fontSizeSM, fontStyle: 'italic' }}>
+                  Switch to Learner Mode to enable account reset.
+                </Text>
+              )}
+            </SectionCard>
+          </motion.div>
+
+          {/* KYC Status */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
           >
             <SectionCard
               title="Identity Verification"
@@ -656,7 +831,7 @@ export default function SettingsPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
+            transition={{ duration: 0.3, delay: 0.25 }}
           >
             <SectionCard
               title="Security"
@@ -707,7 +882,7 @@ export default function SettingsPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.25 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
           >
             <SectionCard
               title="Bank Accounts"
@@ -795,7 +970,7 @@ export default function SettingsPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.3 }}
+            transition={{ duration: 0.3, delay: 0.35 }}
             style={{ gridColumn: isMobile ? 'span 1' : 'span 2' }}
           >
             <SectionCard

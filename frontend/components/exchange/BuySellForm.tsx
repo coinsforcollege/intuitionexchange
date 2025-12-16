@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { fontWeights } from '@/theme/themeConfig';
 import { useThemeMode } from '@/context/ThemeContext';
 import { useExchange } from '@/context/ExchangeContext';
-import { placeOrder, InternalOrder } from '@/services/api/coinbase';
+import { InternalOrder } from '@/services/api/coinbase';
 import OrderStatusModal from './OrderStatusModal';
 
 const { useToken } = theme;
@@ -171,6 +171,9 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
     isTrading,
     refreshBalances,
     refreshOrders,
+    appMode,
+    executeTrade,
+    setSelectedPair,
   } = useExchange();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -350,10 +353,11 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
           completedAt: new Date().toISOString(),
         });
       } else {
-        // Use placeOrder API directly with USD pair
-        const orderAmount = isBuy ? cashAmountNum : amountNum;
+        // Set selected pair in context for executeTrade to use
+        setSelectedPair(productId);
         
-        const result = await placeOrder(productId, side, orderAmount);
+        // Use executeTrade from context - handles both learner and investor mode
+        const result = await executeTrade(side, amountNum, cashAmountNum);
         
         if (result.success && result.order) {
           // Update with actual order data
@@ -363,12 +367,22 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
           // Clear form on success
           setAmount('');
           setCashAmount('');
+          
+          // Handle simulated failure in learner mode
+          if (result.isSimulatedFailure) {
+            message.warning('Simulated trade failure - this is normal in learner mode to practice handling failed orders.');
+          }
         } else {
           // Update order to failed
           setCurrentOrder({
             ...pendingOrder,
             status: 'FAILED',
           });
+          
+          // Show message for simulated failure
+          if (result.isSimulatedFailure) {
+            message.warning('Simulated trade failure - this is normal in learner mode to practice handling failed orders.');
+          }
         }
       }
     } catch (error: any) {

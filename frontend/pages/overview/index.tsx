@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef, memo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { theme, Grid, Skeleton, Empty } from 'antd';
+import { theme, Grid, Skeleton, Empty, Tag } from 'antd';
 import {
   WalletOutlined,
   SwapOutlined,
@@ -12,6 +12,8 @@ import {
   StarFilled,
   RiseOutlined,
   FallOutlined,
+  ExperimentOutlined,
+  RocketOutlined,
 } from '@ant-design/icons';
 import { motion } from 'motion/react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
@@ -282,7 +284,9 @@ export default function DashboardPage() {
     isLoadingBalances,
     orders,
     isLoadingOrders,
+    appMode,
   } = useExchange();
+  const isLearnerMode = appMode === 'learner';
   const { mode } = useThemeMode();
   const screens = useBreakpoint();
   const [mounted, setMounted] = useState(false);
@@ -307,10 +311,8 @@ export default function DashboardPage() {
         router.push('/login?redirect=/overview');
         return;
       }
-      if (user.kycStatus !== 'APPROVED' && user.kycStatus !== 'PENDING') {
-        router.push('/onboarding');
-        return;
-      }
+      // Allow access to dashboard regardless of KYC status
+      // KYC banner will be shown in DashboardLayout for non-verified users
       setPageLoading(false);
     }
   }, [user, isLoading, router]);
@@ -504,8 +506,23 @@ export default function DashboardPage() {
                 />
 
                 <div style={{ position: 'relative', zIndex: 1 }}>
+                  {/* Mode Badge */}
+                  <div style={{ position: 'absolute', top: 0, right: 0 }}>
+                    <Tag
+                      icon={isLearnerMode ? <ExperimentOutlined /> : <RocketOutlined />}
+                      style={{
+                        background: isLearnerMode ? 'rgba(245, 158, 11, 0.9)' : 'rgba(16, 185, 129, 0.9)',
+                        border: 'none',
+                        color: '#fff',
+                        fontWeight: fontWeights.semibold,
+                        fontSize: token.fontSizeSM,
+                      }}
+                    >
+                      {isLearnerMode ? 'Learner Mode' : 'Investor Mode'}
+                    </Tag>
+                  </div>
                   <div style={{ fontSize: token.fontSizeSM, opacity: 0.9, marginBottom: token.marginXS }}>
-                    Total Portfolio Value
+                    Total Portfolio Value {isLearnerMode && '(Virtual)'}
                   </div>
                   <div
                     style={{

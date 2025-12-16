@@ -37,10 +37,7 @@ export default function BuySellPage() {
         router.push('/login?redirect=/buy-sell');
         return;
       }
-      if (user.kycStatus !== 'APPROVED' && user.kycStatus !== 'PENDING') {
-        router.push('/onboarding');
-        return;
-      }
+      // Allow access regardless of KYC - banner in DashboardLayout handles notification
       setPageLoading(false);
     }
   }, [user, isLoading, router]);

@@ -16,6 +16,7 @@ import {
   PublicTrade,
 } from '@/services/api/coinbase';
 import { getBalances, Balance } from '@/services/api/assets';
+import { getLearnerBalances, getLearnerOrders, placeLearnerTrade, LearnerOrder, createPortfolioSnapshot } from '@/services/api/learner';
 import { useAuth } from '@/context/AuthContext';
 
 // Coinbase fee rate (typically 0.5% for market orders, but may vary)
@@ -49,6 +50,9 @@ interface TradingPair {
 }
 
 interface ExchangeContextType {
+  // App mode (learner/investor)
+  appMode: 'learner' | 'investor';
+  
   // Products/Pairs
   pairs: TradingPair[];
   isLoadingPairs: boolean;
@@ -88,7 +92,7 @@ interface ExchangeContextType {
   isLoadingOrderBook: boolean;
   
   // Trading
-  executeTrade: (side: 'BUY' | 'SELL', amount: number, total: number) => Promise<{ success: boolean; order?: InternalOrder }>;
+  executeTrade: (side: 'BUY' | 'SELL', amount: number, total: number) => Promise<{ success: boolean; order?: InternalOrder; isSimulatedFailure?: boolean }>;
   isTrading: boolean;
   
   // Refresh functions
@@ -127,7 +131,47 @@ function getIconUrl(symbol: string): string {
 
 export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Auth state
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
+  
+  // App mode state - tracks localStorage value
+  const [appMode, setAppMode] = useState<'learner' | 'investor'>('investor');
+  
+  // Load app mode from localStorage and listen for changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const savedMode = localStorage.getItem('appMode') as 'learner' | 'investor' | null;
+    if (savedMode) {
+      setAppMode(savedMode);
+    } else {
+      // Default to learner mode for new users without KYC
+      if (user && user.kycStatus !== 'APPROVED') {
+        setAppMode('learner');
+        localStorage.setItem('appMode', 'learner');
+      }
+    }
+    
+    // Listen for storage changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'appMode' && e.newValue) {
+        setAppMode(e.newValue as 'learner' | 'investor');
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Poll for changes within same tab
+    const interval = setInterval(() => {
+      const currentMode = localStorage.getItem('appMode') as 'learner' | 'investor' | null;
+      if (currentMode && currentMode !== appMode) {
+        setAppMode(currentMode);
+      }
+    }, 500);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [user, appMode]);
   
   // State
   const [pairs, setPairs] = useState<TradingPair[]>([]);
@@ -494,32 +538,69 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [selectedPair, candleGranularity]);
 
   // Fetch balances from our ledger (requires auth)
+  // Uses learner balances when in learner mode
   const refreshBalances = useCallback(async () => {
     if (!isLoggedIn) return;
     try {
       setIsLoadingBalances(true);
-      const balanceData = await getBalances();
-      setBalances(balanceData);
+      
+      if (appMode === 'learner') {
+        // Fetch learner mode balances
+        const { balances: learnerBalances } = await getLearnerBalances();
+        setBalances(learnerBalances);
+      } else {
+        // Fetch real balances
+        const balanceData = await getBalances();
+        setBalances(balanceData);
+      }
     } catch (error) {
       console.error('Failed to fetch balances:', error);
     } finally {
       setIsLoadingBalances(false);
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, appMode]);
 
   // Fetch orders (requires auth)
+  // Uses learner orders when in learner mode
   const refreshOrders = useCallback(async () => {
     if (!isLoggedIn) return;
     try {
       setIsLoadingOrders(true);
-      const { orders: orderData } = await getOrders({ limit: 50 });
-      setOrders(orderData);
+      
+      if (appMode === 'learner') {
+        // Fetch learner mode orders
+        const { orders: learnerOrders } = await getLearnerOrders({ limit: 50 });
+        // Convert learner orders to internal order format
+        const convertedOrders: InternalOrder[] = learnerOrders.map((order: LearnerOrder) => ({
+          id: order.id,
+          transactionId: order.transactionId,
+          productId: order.productId,
+          asset: order.asset,
+          quote: order.quote,
+          side: order.side,
+          requestedAmount: order.requestedAmount,
+          filledAmount: order.filledAmount,
+          price: order.price,
+          totalValue: order.totalValue,
+          platformFee: order.platformFee,
+          exchangeFee: order.exchangeFee,
+          status: order.status,
+          coinbaseOrderId: null,
+          createdAt: order.createdAt,
+          completedAt: order.completedAt,
+        }));
+        setOrders(convertedOrders);
+      } else {
+        // Fetch real orders
+        const { orders: orderData } = await getOrders({ limit: 50 });
+        setOrders(orderData);
+      }
     } catch (error) {
       console.error('Failed to fetch orders:', error);
     } finally {
       setIsLoadingOrders(false);
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, appMode]);
 
   // Fetch public trades
   const refreshTrades = useCallback(async () => {
@@ -619,11 +700,13 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [balances]);
 
   // Execute trade
+  // In learner mode: simulates trade with virtual balances
+  // In investor mode: executes real trade on Coinbase
   const executeTrade = useCallback(async (
     side: 'BUY' | 'SELL',
     amount: number,
     total: number,
-  ): Promise<{ success: boolean; order?: InternalOrder }> => {
+  ): Promise<{ success: boolean; order?: InternalOrder; isSimulatedFailure?: boolean }> => {
     if (!currentPairData) return { success: false };
     
     try {
@@ -631,6 +714,92 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       const [baseAsset, quoteAsset] = selectedPair.split('-');
       const currentPairs = pairsRef.current;
+      
+      // ============ LEARNER MODE ============
+      if (appMode === 'learner') {
+        // Simulate delay to make it feel realistic (1-3 seconds)
+        const delay = 1000 + Math.random() * 2000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+        
+        // Use current real price for the simulation
+        const currentPrice = currentPairData.price;
+        
+        // Execute learner trade
+        const result = await placeLearnerTrade(
+          selectedPair,
+          side,
+          side === 'BUY' ? total : amount,
+          currentPrice,
+        );
+        
+        // Refresh balances and orders after trade
+        await Promise.all([refreshBalances(), refreshOrders()]);
+        
+        // Create portfolio snapshot with current prices (for growth chart)
+        if (result.order.status === 'COMPLETED') {
+          try {
+            // Build crypto prices from current pairs
+            const cryptoPrices: Record<string, number> = {};
+            pairsRef.current.forEach(pair => {
+              if (pair.symbol.endsWith('-USD')) {
+                const asset = pair.symbol.replace('-USD', '');
+                cryptoPrices[asset] = pair.price;
+              }
+            });
+            await createPortfolioSnapshot(cryptoPrices);
+          } catch (snapshotError) {
+            console.error('Failed to create portfolio snapshot:', snapshotError);
+            // Don't fail the trade if snapshot fails
+          }
+        }
+        
+        if (result.isSimulatedFailure) {
+          // Return with simulated failure flag
+          const failedOrder: InternalOrder = {
+            id: result.order.id,
+            transactionId: result.order.transactionId,
+            productId: result.order.productId,
+            asset: result.order.asset,
+            quote: result.order.quote,
+            side: result.order.side,
+            requestedAmount: result.order.requestedAmount,
+            filledAmount: result.order.filledAmount,
+            price: result.order.price,
+            totalValue: result.order.totalValue,
+            platformFee: result.order.platformFee,
+            exchangeFee: result.order.exchangeFee,
+            status: 'FAILED',
+            coinbaseOrderId: null,
+            createdAt: result.order.createdAt,
+            completedAt: result.order.completedAt,
+          };
+          return { success: false, order: failedOrder, isSimulatedFailure: true };
+        }
+        
+        // Convert learner order to internal order format
+        const learnerOrder: InternalOrder = {
+          id: result.order.id,
+          transactionId: result.order.transactionId,
+          productId: result.order.productId,
+          asset: result.order.asset,
+          quote: result.order.quote,
+          side: result.order.side,
+          requestedAmount: result.order.requestedAmount,
+          filledAmount: result.order.filledAmount,
+          price: result.order.price,
+          totalValue: result.order.totalValue,
+          platformFee: result.order.platformFee,
+          exchangeFee: result.order.exchangeFee,
+          status: result.order.status,
+          coinbaseOrderId: null,
+          createdAt: result.order.createdAt,
+          completedAt: result.order.completedAt,
+        };
+        
+        return { success: true, order: learnerOrder };
+      }
+      
+      // ============ INVESTOR MODE (Real Trading) ============
       
       // Check if this is a synthetic pair (ETH or USDT quote, not directly on Coinbase)
       // All pairs with ETH or USDT as quote are synthetic (converted from USD pairs)
@@ -794,23 +963,25 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } finally {
       setIsTrading(false);
     }
-  }, [selectedPair, currentPairData, refreshBalances, refreshOrders]);
+  }, [selectedPair, currentPairData, refreshBalances, refreshOrders, appMode]);
 
   // Initial load - products are public, balances require auth
   useEffect(() => {
     refreshProducts();
   }, [refreshProducts]);
 
-  // Fetch balances only when logged in, clear on logout
+  // Fetch balances and orders when logged in or when app mode changes
+  // Clear on logout
   useEffect(() => {
     if (isLoggedIn) {
       refreshBalances();
+      refreshOrders();
     } else {
       // Clear user-specific data on logout
       setBalances([]);
       setOrders([]);
     }
-  }, [isLoggedIn, refreshBalances]);
+  }, [isLoggedIn, appMode, refreshBalances, refreshOrders]);
 
   // Fetch candles when pair or granularity changes
   useEffect(() => {
@@ -828,6 +999,7 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [selectedPair, isLoadingPairs, refreshTrades, refreshOrderBook]);
 
   const value: ExchangeContextType = {
+    appMode,
     pairs,
     isLoadingPairs,
     selectedPair,

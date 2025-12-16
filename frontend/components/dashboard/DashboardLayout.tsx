@@ -930,6 +930,46 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
       {/* Main */}
       <main style={mainStyle}>
+        {/* KYC Banner - Show when user is not verified */}
+        {mounted && user && user.kycStatus !== 'APPROVED' && (
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+              color: '#ffffff',
+              padding: `${token.paddingSM}px ${token.paddingLG}px`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: token.marginMD,
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM }}>
+              <span style={{ fontSize: 18 }}>⚠️</span>
+              <span style={{ fontWeight: fontWeights.medium, fontSize: token.fontSize }}>
+                {user.kycStatus === 'SUBMITTED'
+                  ? 'Your identity verification is in progress.'
+                  : 'Complete identity verification to unlock real trading and deposits.'}
+              </span>
+            </div>
+            {user.kycStatus !== 'SUBMITTED' && (
+              <Button
+                type="primary"
+                size="small"
+                onClick={() => router.push('/onboarding')}
+                style={{
+                  background: '#fff',
+                  color: '#DC2626',
+                  border: 'none',
+                  fontWeight: fontWeights.semibold,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                }}
+              >
+                Complete Verification
+              </Button>
+            )}
+          </div>
+        )}
         <div style={contentStyle}>
           {children}
         </div>

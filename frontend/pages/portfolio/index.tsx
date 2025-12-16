@@ -1,29 +1,31 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { theme, Grid, Skeleton, Row, Col, Button, Table, Tag, Empty, Collapse, message, Modal, Typography } from 'antd';
+import { theme, Grid, Skeleton, Row, Col, Button, Table, Tag, Empty, Modal, Typography, Card } from 'antd';
 import {
   WalletOutlined,
   SwapOutlined,
   PlusOutlined,
   ArrowUpOutlined,
   ArrowDownOutlined,
-  CopyOutlined,
   QrcodeOutlined,
   HistoryOutlined,
   CheckCircleOutlined,
   BankOutlined,
+  LineChartOutlined,
 } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'motion/react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import StatCard from '@/components/dashboard/StatCard';
 import AssetCard from '@/components/dashboard/AssetCard';
+import PortfolioGrowthChart from '@/components/dashboard/PortfolioGrowthChart';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
 import { useExchange } from '@/context/ExchangeContext';
 import DepositModal from '@/components/wallet/DepositModal';
 import WithdrawModal from '@/components/wallet/WithdrawModal';
 import { getFiatTransactions, syncPaymentStatus } from '@/services/api/fiat';
+import { createPortfolioSnapshot } from '@/services/api/learner';
 
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
@@ -41,6 +43,7 @@ export default function WalletPage() {
     pairs,
     refreshBalances,
     refreshOrders,
+    appMode,
   } = useExchange();
   const screens = useBreakpoint();
   const [mounted, setMounted] = useState(false);
@@ -68,10 +71,7 @@ export default function WalletPage() {
         router.push('/login?redirect=/portfolio');
         return;
       }
-      if (user.kycStatus !== 'APPROVED' && user.kycStatus !== 'PENDING') {
-        router.push('/onboarding');
-        return;
-      }
+      // Allow access regardless of KYC - banner in DashboardLayout handles notification
       setPageLoading(false);
     }
   }, [user, isLoading, router]);
@@ -83,6 +83,28 @@ export default function WalletPage() {
       refreshOrders();
     }
   }, [pageLoading, user, refreshBalances, refreshOrders]);
+
+  // Create portfolio snapshot when page loads (for growth chart) - learner mode only
+  useEffect(() => {
+    if (!pageLoading && user && appMode === 'learner' && balances.length > 0 && pairs.length > 0) {
+      const createSnapshot = async () => {
+        try {
+          // Build crypto prices from current pairs
+          const cryptoPrices: Record<string, number> = {};
+          pairs.forEach(pair => {
+            if (pair.symbol.endsWith('-USD')) {
+              const asset = pair.symbol.replace('-USD', '');
+              cryptoPrices[asset] = pair.price;
+            }
+          });
+          await createPortfolioSnapshot(cryptoPrices);
+        } catch (error) {
+          console.error('Failed to create portfolio snapshot:', error);
+        }
+      };
+      createSnapshot();
+    }
+  }, [pageLoading, user, appMode, balances.length, pairs.length]);
 
   // Handle deposit success redirect from Stripe
   useEffect(() => {
@@ -537,6 +559,37 @@ export default function WalletPage() {
               </>
             )}
           </Row>
+        </motion.div>
+
+        {/* Portfolio Growth Chart */}
+        <motion.div
+          style={sectionStyle}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+        >
+          <Card
+            style={{
+              borderRadius: token.borderRadiusLG,
+              border: `1px solid ${token.colorBorderSecondary}`,
+            }}
+            styles={{
+              body: {
+                padding: isMobile ? token.paddingSM : token.paddingMD,
+              },
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM, marginBottom: token.marginSM }}>
+              <LineChartOutlined style={{ fontSize: token.fontSizeLG, color: appMode === 'learner' ? '#F59E0B' : '#6366F1' }} />
+              <span style={{ fontWeight: fontWeights.semibold, color: token.colorText }}>
+                Portfolio Growth
+              </span>
+              <Tag color={appMode === 'learner' ? 'orange' : 'blue'} style={{ marginLeft: 'auto' }}>
+                {appMode === 'learner' ? 'Learner Mode' : 'Investor Mode'}
+              </Tag>
+            </div>
+            <PortfolioGrowthChart mode={appMode} height={isMobile ? 280 : 350} />
+          </Card>
         </motion.div>
 
         {/* Action Buttons */}

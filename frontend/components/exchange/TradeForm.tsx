@@ -83,19 +83,24 @@ const TradeForm: React.FC<TradeFormProps> = ({
     if (price <= 0) return; // Don't calculate if price is invalid
     
     const totalDecimals = quoteAsset === 'USD' ? 2 : 8;
+    // Use appropriate precision multiplier based on asset type
+    const precisionMultiplier = quoteAsset === 'USD' ? 100 : 100000000; // 2 decimals for USD, 8 for crypto
     
     if (isBuy) {
       // For BUY: user pays the total amount
-      // Use Math.floor to avoid floating point precision issues when using 100%
+      // Round down to avoid exceeding balance, using appropriate precision for the asset
       const maxTotal = percent === 100 
-        ? Math.floor(quoteBalance * 100) / 100  // Round down to avoid exceeding balance
+        ? Math.floor(quoteBalance * precisionMultiplier) / precisionMultiplier
         : quoteBalance * (percent / 100);
       setTotal(maxTotal.toFixed(totalDecimals));
       if (price > 0) {
         setAmount((maxTotal / price).toFixed(8));
       }
     } else {
-      const maxAmount = baseBalance * (percent / 100);
+      // For SELL: user sells base asset - always use 8 decimal precision for crypto
+      const maxAmount = percent === 100
+        ? Math.floor(baseBalance * 100000000) / 100000000  // 8 decimals for crypto
+        : baseBalance * (percent / 100);
       setAmount(maxAmount.toFixed(8));
       if (price > 0) {
         setTotal((maxAmount * price).toFixed(totalDecimals));

@@ -15,6 +15,7 @@ import { FiatModule } from './modules/fiat/fiat.module';
 import { WatchlistModule } from './modules/watchlist/watchlist.module';
 import { CoinGeckoModule } from './modules/coingecko/coingecko.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { LearnerModule } from './modules/learner/learner.module';
 
 @Module({
   imports: [
@@ -46,6 +47,8 @@ import { SettingsModule } from './modules/settings/settings.module';
     CoinGeckoModule,
     // User settings module
     SettingsModule,
+    // Learner mode (virtual trading) module
+    LearnerModule,
   ],
   controllers: [AppController, TestController],
   providers: [AppService, PrismaService, EmailService],

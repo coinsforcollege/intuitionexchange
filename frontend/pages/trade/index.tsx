@@ -95,10 +95,6 @@ function ExchangePageContent() {
         router.push('/login?redirect=/trade');
         return;
       }
-      if (user.kycStatus !== 'APPROVED' && user.kycStatus !== 'PENDING') {
-        router.push('/onboarding');
-        return;
-      }
       setPageLoading(false);
     }
   }, [user, isLoading, router]);

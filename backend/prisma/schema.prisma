@@ -27,7 +27,7 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  // Relations
+  // Relations - Live Mode
   kyc                     Kyc?
   fiatBalance             FiatBalance?
   cryptoBalances          CryptoBalance[]
@@ -41,6 +41,13 @@ model User {
   withdrawalAddresses     WithdrawalAddress[]
   watchlistItems          WatchlistItem[]
   notificationPreferences NotificationPreferences?
+  portfolioSnapshots      PortfolioSnapshot[]
+
+  // Relations - Learner Mode (Virtual Trading)
+  learnerFiatBalance       LearnerFiatBalance?
+  learnerCryptoBalances    LearnerCryptoBalance[]
+  learnerTrades            LearnerTrade[]
+  learnerPortfolioSnapshots LearnerPortfolioSnapshot[]
 
   @@map("users")
 }
@@ -443,4 +450,118 @@ model NotificationPreferences {
   updatedAt DateTime @updatedAt
 
   @@map("notification_preferences")
+}
+
+// ============================================
+// LEARNER MODE (Virtual Trading)
+// ============================================
+
+model LearnerFiatBalance {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  currency         String  @default("USD")
+  balance          Decimal @default(10000) @db.Decimal(20, 8) // Starts with $10,000
+  availableBalance Decimal @default(10000) @db.Decimal(20, 8)
+  lockedBalance    Decimal @default(0) @db.Decimal(20, 8)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("learner_fiat_balances")
+}
+
+model LearnerCryptoBalance {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  asset            String // BTC, ETH, etc.
+  balance          Decimal @default(0) @db.Decimal(20, 8)
+  availableBalance Decimal @default(0) @db.Decimal(20, 8)
+  lockedBalance    Decimal @default(0) @db.Decimal(20, 8)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, asset])
+  @@map("learner_crypto_balances")
+}
+
+model LearnerTrade {
+  id            String  @id @default(uuid())
+  transactionId String? @unique // Human-readable ID like LRN-00012345
+  userId        String
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  productId String // BTC-USD (same format as live)
+  asset     String // BTC
+  quote     String // USD
+  side      OrderType // BUY, SELL
+
+  // Order amounts
+  requestedAmount Decimal @db.Decimal(20, 8)
+  filledAmount    Decimal @default(0) @db.Decimal(20, 8)
+  price           Decimal @db.Decimal(20, 8)
+  totalValue      Decimal @db.Decimal(20, 8)
+
+  // Fees (simulated)
+  platformFee Decimal @default(0) @db.Decimal(20, 8)
+  exchangeFee Decimal @default(0) @db.Decimal(20, 8)
+
+  status      TradeStatus @default(PENDING)
+  isSimulated Boolean     @default(true) // Always true for learner trades
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+
+  @@index([userId])
+  @@index([productId])
+  @@index([status])
+  @@map("learner_trades")
+}
+
+model LearnerPortfolioSnapshot {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Portfolio values at snapshot time
+  totalValue    Decimal @db.Decimal(20, 8) // Current total value (fiat + crypto at market prices)
+  investedValue Decimal @db.Decimal(20, 8) // Total deposits - withdrawals (always $10,000 for learner since no real deposits)
+  cashBalance   Decimal @db.Decimal(20, 8) // USD balance at snapshot
+  cryptoValue   Decimal @db.Decimal(20, 8) // Total crypto value at market prices
+
+  // Snapshot timestamp - one per day
+  snapshotDate DateTime @db.Date
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, snapshotDate])
+  @@index([userId, snapshotDate])
+  @@map("learner_portfolio_snapshots")
+}
+
+// Live mode portfolio snapshots (for investor mode growth chart)
+model PortfolioSnapshot {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Portfolio values at snapshot time
+  totalValue    Decimal @db.Decimal(20, 8) // Current total value
+  investedValue Decimal @db.Decimal(20, 8) // Total deposits - total withdrawals
+  cashBalance   Decimal @db.Decimal(20, 8) // USD balance
+  cryptoValue   Decimal @db.Decimal(20, 8) // Total crypto value at market prices
+
+  // Snapshot timestamp - one per day
+  snapshotDate DateTime @db.Date
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, snapshotDate])
+  @@index([userId, snapshotDate])
+  @@map("portfolio_snapshots")
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { theme, Grid, Skeleton, Empty, message, Select } from 'antd';
+import { theme, Grid, Skeleton, Empty, message, Select, Tag } from 'antd';
 import {
   SwapOutlined,
   ArrowUpOutlined,
@@ -15,6 +15,7 @@ import {
   RightOutlined,
   DoubleLeftOutlined,
   DoubleRightOutlined,
+  ExperimentOutlined,
 } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'motion/react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
@@ -24,6 +25,7 @@ import { useExchange } from '@/context/ExchangeContext';
 import { useThemeMode } from '@/context/ThemeContext';
 import { getFiatTransactions, FiatTransaction } from '@/services/api/fiat';
 import { getOrders, InternalOrder } from '@/services/api/coinbase';
+import { getLearnerOrders, LearnerOrder } from '@/services/api/learner';
 
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
@@ -774,7 +776,8 @@ export default function TransactionsPage() {
   const router = useRouter();
   const { token } = useToken();
   const { user, isLoading } = useAuth();
-  const { pairs } = useExchange();
+  const { pairs, appMode } = useExchange();
+  const isLearnerMode = appMode === 'learner';
   const { mode } = useThemeMode();
   const screens = useBreakpoint();
   const [mounted, setMounted] = useState(false);
@@ -808,10 +811,7 @@ export default function TransactionsPage() {
         router.push('/login?redirect=/transactions');
         return;
       }
-      if (user.kycStatus !== 'APPROVED' && user.kycStatus !== 'PENDING') {
-        router.push('/onboarding');
-        return;
-      }
+      // Allow access regardless of KYC - banner in DashboardLayout handles notification
       setPageLoading(false);
     }
   }, [user, isLoading, router]);
@@ -824,10 +824,35 @@ export default function TransactionsPage() {
     setLoadingFiat(true);
     
     try {
-      // Fetch all orders (up to a reasonable limit for combined pagination)
-      const ordersResult = await getOrders({ limit: 500 });
-      setOrders(ordersResult.orders);
-      setOrdersTotal(ordersResult.total);
+      // Fetch orders based on mode
+      if (isLearnerMode) {
+        const learnerResult = await getLearnerOrders({ limit: 500 });
+        // Convert LearnerOrder to InternalOrder format
+        const convertedOrders: InternalOrder[] = learnerResult.orders.map((order: LearnerOrder) => ({
+          id: order.id,
+          transactionId: order.transactionId,
+          coinbaseOrderId: null, // Learner orders don't have Coinbase order ID
+          productId: order.productId,
+          asset: order.asset,
+          quote: order.quote,
+          side: order.side,
+          requestedAmount: order.requestedAmount,
+          filledAmount: order.filledAmount,
+          price: order.price,
+          totalValue: order.totalValue,
+          platformFee: order.platformFee,
+          exchangeFee: order.exchangeFee,
+          status: order.status,
+          createdAt: order.createdAt, // Keep as string
+          completedAt: order.completedAt, // Keep as string | null
+        }));
+        setOrders(convertedOrders);
+        setOrdersTotal(learnerResult.total);
+      } else {
+        const ordersResult = await getOrders({ limit: 500 });
+        setOrders(ordersResult.orders);
+        setOrdersTotal(ordersResult.total);
+      }
     } catch (error) {
       console.error('Failed to fetch orders:', error);
       setOrders([]);
@@ -837,10 +862,16 @@ export default function TransactionsPage() {
     }
     
     try {
-      // Fetch all fiat transactions
-      const fiatResult = await getFiatTransactions({ limit: 500 });
-      setFiatTransactions(fiatResult.transactions);
-      setFiatTotal(fiatResult.total);
+      // Fiat transactions only exist in investor mode
+      if (isLearnerMode) {
+        // In learner mode, there are no real fiat transactions
+        setFiatTransactions([]);
+        setFiatTotal(0);
+      } else {
+        const fiatResult = await getFiatTransactions({ limit: 500 });
+        setFiatTransactions(fiatResult.transactions);
+        setFiatTotal(fiatResult.total);
+      }
     } catch (error) {
       console.error('Failed to fetch fiat transactions:', error);
       setFiatTransactions([]);
@@ -848,7 +879,7 @@ export default function TransactionsPage() {
     } finally {
       setLoadingFiat(false);
     }
-  }, [user]);
+  }, [user, isLearnerMode]);
 
   // Fetch data when page loads
   useEffect(() => {
@@ -1046,20 +1077,31 @@ export default function TransactionsPage() {
                 <HistoryOutlined />
               </div>
               <div>
-                <h1 style={{ 
-                  fontSize: isMobile ? token.fontSizeHeading4 : token.fontSizeHeading3, 
-                  fontWeight: fontWeights.bold,
-                  margin: 0,
-                  color: token.colorText,
-                }}>
-                  Transactions
-                </h1>
+                <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM }}>
+                  <h1 style={{ 
+                    fontSize: isMobile ? token.fontSizeHeading4 : token.fontSizeHeading3, 
+                    fontWeight: fontWeights.bold,
+                    margin: 0,
+                    color: token.colorText,
+                  }}>
+                    Transactions
+                  </h1>
+                  {isLearnerMode && (
+                    <Tag
+                      icon={<ExperimentOutlined />}
+                      color="orange"
+                      style={{ margin: 0 }}
+                    >
+                      Learner Mode
+                    </Tag>
+                  )}
+                </div>
                 <p style={{
                   fontSize: token.fontSizeSM,
                   color: token.colorTextSecondary,
                   margin: 0,
                 }}>
-                  {counts.all} total transactions
+                  {counts.all} total {isLearnerMode ? 'simulated ' : ''}transactions
                 </p>
               </div>
             </div>

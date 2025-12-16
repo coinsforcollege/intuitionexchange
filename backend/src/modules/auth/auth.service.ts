@@ -1,17 +1,22 @@
-import { Injectable, UnauthorizedException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, ConflictException, Inject, forwardRef, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma.service';
 import { OtpService } from './otp.service';
+import { LearnerService } from '../learner/learner.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
     private otpService: OtpService,
+    @Inject(forwardRef(() => LearnerService))
+    private learnerService: LearnerService,
   ) {}
 
   /**
@@ -78,6 +83,16 @@ export class AuthService {
         role: 'USER',
       },
     });
+
+    // Initialize learner account with $10,000 virtual balance
+    try {
+      await this.learnerService.initializeLearnerAccount(user.id);
+      this.logger.log(`Initialized learner account for new user ${user.id}`);
+    } catch (error) {
+      this.logger.error(`Failed to initialize learner account for user ${user.id}`, error);
+      // Don't fail registration if learner account initialization fails
+      // It will be created on first learner mode access
+    }
 
     return {
       message: 'Account created successfully. Please login.',

@@ -67,7 +67,7 @@ export default function BankAccountsPage() {
   };
 
   // Don't render anything while checking auth or if not logged in
-  if (isLoading || !user) {
+  if (authLoading || !user) {
     return null;
   }
 

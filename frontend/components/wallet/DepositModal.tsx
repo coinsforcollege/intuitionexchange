@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, InputNumber, Button, message, theme, Typography, Space, Grid } from 'antd';
-import { DollarOutlined, ArrowRightOutlined, LockOutlined, CheckCircleOutlined, CreditCardOutlined, CloseOutlined } from '@ant-design/icons';
+import { Modal, Form, InputNumber, Button, message, theme, Typography, Space, Grid, Tag } from 'antd';
+import { DollarOutlined, ArrowRightOutlined, LockOutlined, CheckCircleOutlined, CreditCardOutlined, CloseOutlined, ExperimentOutlined } from '@ant-design/icons';
 import { createDepositIntent } from '@/services/api/fiat';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { motion, AnimatePresence } from 'motion/react';
 import { fontWeights } from '@/theme/themeConfig';
+import { useExchange } from '@/context/ExchangeContext';
 
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
@@ -194,10 +195,13 @@ export default function DepositModal({ visible, onClose, onSuccess }: DepositMod
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [amount, setAmount] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [simulationSuccess, setSimulationSuccess] = useState(false);
   const [form] = Form.useForm();
   const { token } = useToken();
   const screens = useBreakpoint();
   const [mounted, setMounted] = useState(false);
+  const { appMode } = useExchange();
+  const isLearnerMode = appMode === 'learner';
 
   useEffect(() => {
     setMounted(true);
@@ -258,9 +262,18 @@ export default function DepositModal({ visible, onClose, onSuccess }: DepositMod
   const handleAmountSubmit = async (values: { amount: number }) => {
     setLoading(true);
     try {
-      const { clientSecret: secret } = await createDepositIntent(values.amount);
-      setClientSecret(secret);
-      setAmount(values.amount);
+      if (isLearnerMode) {
+        // In learner mode, skip actual payment processing
+        // Simulate a brief delay for realistic UX
+        await new Promise(resolve => setTimeout(resolve, 800));
+        setAmount(values.amount);
+        setSimulationSuccess(true);
+      } else {
+        // Real mode - create actual payment intent
+        const { clientSecret: secret } = await createDepositIntent(values.amount);
+        setClientSecret(secret);
+        setAmount(values.amount);
+      }
     } catch (error: any) {
       message.error(error.message || 'Failed to create payment intent');
     } finally {
@@ -271,6 +284,7 @@ export default function DepositModal({ visible, onClose, onSuccess }: DepositMod
   const handleClose = () => {
     setClientSecret(null);
     setAmount(null);
+    setSimulationSuccess(false);
     form.resetFields();
     onClose();
   };
@@ -278,7 +292,15 @@ export default function DepositModal({ visible, onClose, onSuccess }: DepositMod
   const handleBack = () => {
     setClientSecret(null);
     setAmount(null);
+    setSimulationSuccess(false);
     form.resetFields();
+  };
+
+  const handleSimulationComplete = () => {
+    setSimulationSuccess(false);
+    setAmount(null);
+    form.resetFields();
+    onSuccess();
   };
 
   const options = clientSecret
@@ -350,7 +372,135 @@ export default function DepositModal({ visible, onClose, onSuccess }: DepositMod
         />
       )}
       <AnimatePresence mode="wait">
-        {!clientSecret ? (
+        {/* Learner Mode Simulation Success */}
+        {simulationSuccess && amount ? (
+          <motion.div
+            key="simulation-success"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.3 }}
+            style={{ textAlign: 'center' }}
+          >
+            {/* Success Icon */}
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ 
+                type: 'spring',
+                stiffness: 200,
+                damping: 15,
+                delay: 0.2,
+              }}
+              style={{
+                width: 80,
+                height: 80,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto',
+                marginBottom: token.marginLG,
+                boxShadow: '0 8px 24px rgba(245, 158, 11, 0.4)',
+              }}
+            >
+              <ExperimentOutlined
+                style={{
+                  fontSize: 40,
+                  color: '#fff',
+                }}
+              />
+            </motion.div>
+
+            {/* Learner Mode Badge */}
+            <Tag color="orange" style={{ marginBottom: token.marginMD, fontSize: token.fontSize }}>
+              <ExperimentOutlined /> Learner Mode Simulation
+            </Tag>
+
+            {/* Success Title */}
+            <Title
+              level={3}
+              style={{
+                marginBottom: token.marginSM,
+                fontWeight: fontWeights.bold,
+                color: token.colorText,
+              }}
+            >
+              Simulated Deposit Complete!
+            </Title>
+
+            {/* Amount */}
+            <Text
+              style={{
+                fontSize: token.fontSizeHeading4,
+                color: '#F59E0B',
+                fontWeight: fontWeights.semibold,
+                display: 'block',
+                marginBottom: token.marginMD,
+              }}
+            >
+              +${amount.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </Text>
+
+            {/* Explanation */}
+            <div
+              style={{
+                padding: token.paddingMD,
+                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                borderRadius: token.borderRadius,
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+                marginBottom: token.marginLG,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: token.fontSize,
+                  color: token.colorTextSecondary,
+                  display: 'block',
+                }}
+              >
+                This is a <strong>simulated deposit</strong> for practice purposes.
+                <br />
+                No real money was transferred. In Learner Mode, you can practice
+                trading without financial risk.
+              </Text>
+            </div>
+
+            {/* Info about switching */}
+            <Text
+              style={{
+                fontSize: token.fontSizeSM,
+                color: token.colorTextTertiary,
+                display: 'block',
+                marginBottom: token.marginLG,
+              }}
+            >
+              Complete KYC verification to enable real deposits in Investor Mode.
+            </Text>
+
+            {/* Close Button */}
+            <Button
+              type="primary"
+              size="large"
+              onClick={handleSimulationComplete}
+              style={{
+                height: token.controlHeightLG,
+                fontSize: token.fontSizeLG,
+                fontWeight: fontWeights.semibold,
+                paddingLeft: token.paddingXL,
+                paddingRight: token.paddingXL,
+                backgroundColor: '#F59E0B',
+                borderColor: '#F59E0B',
+              }}
+            >
+              Got it!
+            </Button>
+          </motion.div>
+        ) : !clientSecret ? (
           <motion.div
             key="amount-step"
             initial={{ opacity: 0, x: -20 }}
@@ -358,13 +508,37 @@ export default function DepositModal({ visible, onClose, onSuccess }: DepositMod
             exit={{ opacity: 0, x: 20 }}
             transition={{ duration: 0.3 }}
           >
+            {/* Learner Mode Banner */}
+            {isLearnerMode && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: token.marginXS,
+                  padding: token.paddingSM,
+                  backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                  borderRadius: token.borderRadius,
+                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                  marginBottom: token.marginMD,
+                }}
+              >
+                <ExperimentOutlined style={{ color: '#F59E0B' }} />
+                <Text style={{ fontSize: token.fontSizeSM, color: '#D97706' }}>
+                  Learner Mode - This deposit will be simulated
+                </Text>
+              </div>
+            )}
+
             {/* Header */}
             <div style={{ textAlign: 'center', marginBottom: token.marginXL }}>
               <div style={{
                 width: 64,
                 height: 64,
                 borderRadius: '50%',
-                background: `linear-gradient(135deg, ${token.colorPrimary} 0%, ${token.colorSuccess} 100%)`,
+                background: isLearnerMode 
+                  ? 'linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)'
+                  : `linear-gradient(135deg, ${token.colorPrimary} 0%, ${token.colorSuccess} 100%)`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -381,13 +555,15 @@ export default function DepositModal({ visible, onClose, onSuccess }: DepositMod
                 marginBottom: token.marginSM,
                 fontWeight: fontWeights.bold,
               }}>
-                Add Funds to Your Wallet
+                {isLearnerMode ? 'Simulate a Deposit' : 'Add Funds to Your Wallet'}
               </Title>
               <Text style={{ 
                 color: token.colorTextSecondary,
                 fontSize: token.fontSize,
               }}>
-                Instantly deposit USD to start trading
+                {isLearnerMode 
+                  ? 'Practice depositing USD (no real money)'
+                  : 'Instantly deposit USD to start trading'}
               </Text>
             </div>
 
@@ -494,14 +670,18 @@ export default function DepositModal({ visible, onClose, onSuccess }: DepositMod
                 loading={loading}
                 block
                 size="large"
-                icon={<ArrowRightOutlined />}
+                icon={isLearnerMode ? <ExperimentOutlined /> : <ArrowRightOutlined />}
                 style={{
                   height: token.controlHeightLG + token.marginXS,
                   fontSize: token.fontSizeLG,
                   fontWeight: fontWeights.semibold,
+                  ...(isLearnerMode && {
+                    backgroundColor: '#F59E0B',
+                    borderColor: '#F59E0B',
+                  }),
                 }}
               >
-                Continue to Payment
+                {isLearnerMode ? 'Simulate Deposit' : 'Continue to Payment'}
               </Button>
             </Form>
           </motion.div>

@@ -46,6 +46,19 @@ export interface CoinbaseAccount {
   hold: { value: string; currency: string };
 }
 
+export interface OrderValidationResult {
+  valid: boolean;
+  productId: string;
+  side: 'BUY' | 'SELL';
+  formattedQuoteSize?: string;
+  formattedBaseSize?: string;
+  minMarketFunds?: number;
+  productPrice?: number;
+  quoteIncrement?: number;
+  baseIncrement?: number;
+  estimatedValue?: number; // USD value of the order
+}
+
 @Injectable()
 export class CoinbaseService implements OnModuleInit {
   private readonly logger = new Logger(CoinbaseService.name);
@@ -284,6 +297,99 @@ export class CoinbaseService implements OnModuleInit {
   }
 
   /**
+   * Validate and format order parameters without executing
+   * Used by learner mode to get the same validation as live trading
+   * 
+   * @param productId - Trading pair (e.g., 'BTC-USD')
+   * @param side - 'BUY' or 'SELL'
+   * @param quoteSize - For BUY: amount in quote currency (e.g., USD amount)
+   * @param baseSize - For SELL: amount in base currency (e.g., BTC amount)
+   * @returns Validation result with formatted sizes and product details
+   */
+  async validateAndFormatOrder(
+    productId: string,
+    side: 'BUY' | 'SELL',
+    quoteSize?: string | number,
+    baseSize?: string | number,
+  ): Promise<OrderValidationResult> {
+    this.ensureInitialized();
+
+    // Fetch product details to get precision requirements and minimum order size
+    let quoteIncrement: number | undefined;
+    let baseIncrement: number | undefined;
+    let minMarketFunds: number | undefined;
+    let productPrice: number | undefined;
+    
+    try {
+      const product = await this.client.getProduct({ product_id: productId });
+      quoteIncrement = product.quote_increment ? parseFloat(product.quote_increment) : undefined;
+      baseIncrement = product.base_increment ? parseFloat(product.base_increment) : undefined;
+      minMarketFunds = product.min_market_funds ? parseFloat(product.min_market_funds) : undefined;
+      productPrice = product.price ? parseFloat(product.price) : undefined;
+      
+      this.logger.log(`[validateAndFormatOrder] Product ${productId}: quote_inc=${quoteIncrement}, base_inc=${baseIncrement}, min=${minMarketFunds}, price=${productPrice}`);
+    } catch (error) {
+      this.logger.warn(`Failed to fetch product details for ${productId}, using defaults`, error);
+      // Fallback defaults for common pairs
+      if (productId.includes('-USD')) {
+        quoteIncrement = 0.01;
+        minMarketFunds = 1; // $1 minimum for USD pairs
+      }
+    }
+
+    const result: OrderValidationResult = {
+      valid: true,
+      productId,
+      side,
+      minMarketFunds,
+      productPrice,
+      quoteIncrement,
+      baseIncrement,
+    };
+
+    if (side === 'BUY' && quoteSize !== undefined) {
+      // Format quote size to match product's quote_increment precision
+      const formattedQuoteSize = this.formatOrderSize(quoteSize, quoteIncrement);
+      const quoteSizeNum = parseFloat(formattedQuoteSize);
+      
+      // Check minimum order size
+      if (minMarketFunds && quoteSizeNum < minMarketFunds) {
+        this.logger.error(`Order size ${formattedQuoteSize} is below minimum ${minMarketFunds} for ${productId}`);
+        throw new Error(`Order size is too small. Minimum order size is ${minMarketFunds} ${productId.split('-')[1]}.`);
+      }
+      
+      result.formattedQuoteSize = formattedQuoteSize;
+      result.estimatedValue = quoteSizeNum; // For BUY, quote size IS the value
+      
+      this.logger.log(`[validateAndFormatOrder] BUY validated: ${quoteSize} -> ${formattedQuoteSize}`);
+    } else if (side === 'SELL' && baseSize !== undefined) {
+      // Format base size to match product's base_increment precision
+      const formattedBaseSize = this.formatOrderSize(baseSize, baseIncrement);
+      const baseSizeNum = parseFloat(formattedBaseSize);
+      
+      // For SELL orders, estimate the quote value to check minimum
+      let estimatedQuoteValue: number | undefined;
+      if (productPrice) {
+        estimatedQuoteValue = baseSizeNum * productPrice;
+        
+        if (minMarketFunds && estimatedQuoteValue < minMarketFunds) {
+          this.logger.error(`Estimated order value ${estimatedQuoteValue} is below minimum ${minMarketFunds} for ${productId}`);
+          throw new Error(`Order size is too small. Minimum order value is ${minMarketFunds} ${productId.split('-')[1]}.`);
+        }
+      }
+      
+      result.formattedBaseSize = formattedBaseSize;
+      result.estimatedValue = estimatedQuoteValue;
+      
+      this.logger.log(`[validateAndFormatOrder] SELL validated: ${baseSize} -> ${formattedBaseSize}, value=${estimatedQuoteValue}`);
+    } else {
+      throw new Error('Invalid order parameters: BUY requires quoteSize, SELL requires baseSize');
+    }
+
+    return result;
+  }
+
+  /**
    * Place a market order
    */
   async placeMarketOrder(
@@ -292,80 +398,32 @@ export class CoinbaseService implements OnModuleInit {
     quoteSize?: string, // For BUY: amount in quote currency (USD)
     baseSize?: string, // For SELL: amount in base currency (BTC)
   ): Promise<{ orderId: string; success: boolean }> {
-    this.ensureInitialized();
+    // Use validateAndFormatOrder for validation and formatting
+    const validation = await this.validateAndFormatOrder(productId, side, quoteSize, baseSize);
+
+    // Generate client_order_id with required "cbnode" prefix
+    const clientOrderId = `cbnode-intuition-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+    const orderConfig: any = {
+      client_order_id: clientOrderId,
+      product_id: productId,
+      side,
+      order_configuration: {
+        market_market_ioc: {},
+      },
+    };
+
+    if (side === 'BUY' && validation.formattedQuoteSize) {
+      orderConfig.order_configuration.market_market_ioc.quote_size = validation.formattedQuoteSize;
+      this.logger.log(`Placing BUY order: quote_size=${validation.formattedQuoteSize}`);
+    } else if (side === 'SELL' && validation.formattedBaseSize) {
+      orderConfig.order_configuration.market_market_ioc.base_size = validation.formattedBaseSize;
+      this.logger.log(`Placing SELL order: base_size=${validation.formattedBaseSize}`);
+    } else {
+      throw new Error('Invalid order parameters after validation');
+    }
 
     try {
-      // Fetch product details to get precision requirements and minimum order size
-      let quoteIncrement: number | undefined;
-      let baseIncrement: number | undefined;
-      let minMarketFunds: number | undefined;
-      let productPrice: number | undefined;
-      
-      try {
-        const product = await this.client.getProduct({ product_id: productId });
-        // Coinbase products have quote_increment, base_increment, and min_market_funds fields
-        quoteIncrement = product.quote_increment ? parseFloat(product.quote_increment) : undefined;
-        baseIncrement = product.base_increment ? parseFloat(product.base_increment) : undefined;
-        minMarketFunds = product.min_market_funds ? parseFloat(product.min_market_funds) : undefined;
-        productPrice = product.price ? parseFloat(product.price) : undefined;
-        
-        this.logger.log(`Product ${productId} increments: quote=${quoteIncrement}, base=${baseIncrement}, min_market_funds=${minMarketFunds}, price=${productPrice}`);
-      } catch (error) {
-        this.logger.warn(`Failed to fetch product details for ${productId}, using default precision`, error);
-        // Fallback: use common defaults
-        // USD typically has 0.01 increment (2 decimals)
-        if (productId.includes('-USD')) {
-          quoteIncrement = 0.01;
-        }
-      }
-
-      // Generate client_order_id with required "cbnode" prefix
-      // Coinbase requires client_order_id to be prefixed with "cbnode"
-      const clientOrderId = `cbnode-intuition-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-
-      const orderConfig: any = {
-        client_order_id: clientOrderId,
-        product_id: productId,
-        side,
-        order_configuration: {
-          market_market_ioc: {},
-        },
-      };
-
-      if (side === 'BUY' && quoteSize) {
-        // Format quote size to match product's quote_increment precision
-        const formattedQuoteSize = this.formatOrderSize(quoteSize, quoteIncrement);
-        
-        // Check minimum order size
-        const quoteSizeNum = parseFloat(formattedQuoteSize);
-        if (minMarketFunds && quoteSizeNum < minMarketFunds) {
-          this.logger.error(`Order size ${formattedQuoteSize} is below minimum ${minMarketFunds} for ${productId}`);
-          throw new Error(`Order size is too small. Minimum order size is ${minMarketFunds} ${productId.split('-')[1]}.`);
-        }
-        
-        orderConfig.order_configuration.market_market_ioc.quote_size = formattedQuoteSize;
-        this.logger.log(`Formatted quote_size: ${quoteSize} -> ${formattedQuoteSize} (increment: ${quoteIncrement}, min: ${minMarketFunds})`);
-      } else if (side === 'SELL' && baseSize) {
-        // Format base size to match product's base_increment precision
-        const formattedBaseSize = this.formatOrderSize(baseSize, baseIncrement);
-        
-        // For SELL orders, we need to estimate the quote value to check minimum
-        if (minMarketFunds && productPrice) {
-          const baseSizeNum = parseFloat(formattedBaseSize);
-          const estimatedQuoteValue = baseSizeNum * productPrice;
-          
-          if (estimatedQuoteValue < minMarketFunds) {
-            this.logger.error(`Estimated order value ${estimatedQuoteValue} is below minimum ${minMarketFunds} for ${productId}`);
-            throw new Error(`Order size is too small. Minimum order value is ${minMarketFunds} ${productId.split('-')[1]}.`);
-          }
-        }
-        
-        orderConfig.order_configuration.market_market_ioc.base_size = formattedBaseSize;
-        this.logger.log(`Formatted base_size: ${baseSize} -> ${formattedBaseSize} (increment: ${baseIncrement}, min: ${minMarketFunds})`);
-      } else {
-        throw new Error('Invalid order parameters');
-      }
-
       const response = await this.client.submitOrder(orderConfig);
       
       this.logger.log(`Order submitted: ${JSON.stringify(response)}`);

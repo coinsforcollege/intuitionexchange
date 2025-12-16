@@ -1,0 +1,609 @@
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { PrismaService } from '../../prisma.service';
+import { Prisma, TradeStatus, OrderType } from '@prisma/client';
+import { CoinbaseService, OrderValidationResult } from '../coinbase/coinbase.service';
+
+export interface LearnerBalanceResponse {
+  asset: string;
+  balance: number;
+  availableBalance: number;
+  lockedBalance: number;
+}
+
+export interface LearnerOrderResponse {
+  id: string;
+  transactionId: string;
+  productId: string;
+  asset: string;
+  quote: string;
+  side: OrderType;
+  requestedAmount: number;
+  filledAmount: number;
+  price: number;
+  totalValue: number;
+  platformFee: number;
+  exchangeFee: number;
+  status: TradeStatus;
+  isSimulated: boolean;
+  createdAt: Date;
+  completedAt: Date | null;
+}
+
+export interface PortfolioSnapshotResponse {
+  totalValue: number;
+  investedValue: number;
+  cashBalance: number;
+  cryptoValue: number;
+  snapshotDate: Date;
+}
+
+/**
+ * Generate a human-readable transaction ID for learner mode
+ * Format: LRN-YYYYMMDD-XXXXXX (e.g., LRN-20241216-A1B2C3)
+ */
+function generateLearnerTransactionId(): string {
+  const now = new Date();
+  const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
+  const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `LRN-${datePart}-${randomPart}`;
+}
+
+@Injectable()
+export class LearnerService {
+  private readonly logger = new Logger(LearnerService.name);
+  private readonly PLATFORM_FEE_PERCENT = 0.5; // 0.5% platform fee (same as live)
+  private readonly INITIAL_BALANCE = 10000; // $10,000 starting balance
+
+  constructor(
+    private prisma: PrismaService,
+    private coinbaseService: CoinbaseService,
+  ) {}
+
+  // ============================================
+  // BALANCE MANAGEMENT
+  // ============================================
+
+  /**
+   * Initialize learner account for a new user
+   * Creates $10,000 USD balance
+   */
+  async initializeLearnerAccount(userId: string): Promise<void> {
+    // Check if already initialized
+    const existing = await this.prisma.client.learnerFiatBalance.findUnique({
+      where: { userId },
+    });
+
+    if (existing) {
+      this.logger.log(`Learner account already exists for user ${userId}`);
+      return;
+    }
+
+    // Create initial fiat balance with $10,000
+    await this.prisma.client.learnerFiatBalance.create({
+      data: {
+        userId,
+        currency: 'USD',
+        balance: this.INITIAL_BALANCE,
+        availableBalance: this.INITIAL_BALANCE,
+        lockedBalance: 0,
+      },
+    });
+
+    // Create initial portfolio snapshot
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    await this.prisma.client.learnerPortfolioSnapshot.create({
+      data: {
+        userId,
+        totalValue: this.INITIAL_BALANCE,
+        investedValue: this.INITIAL_BALANCE, // Starting capital counts as "invested"
+        cashBalance: this.INITIAL_BALANCE,
+        cryptoValue: 0,
+        snapshotDate: today,
+      },
+    });
+
+    this.logger.log(`Initialized learner account for user ${userId} with $${this.INITIAL_BALANCE}`);
+  }
+
+  /**
+   * Reset learner account back to initial state
+   * Deletes all trades and balances, reinitializes with $10,000
+   */
+  async resetLearnerAccount(userId: string): Promise<{ message: string }> {
+    // Delete all learner trades
+    await this.prisma.client.learnerTrade.deleteMany({
+      where: { userId },
+    });
+
+    // Delete all crypto balances
+    await this.prisma.client.learnerCryptoBalance.deleteMany({
+      where: { userId },
+    });
+
+    // Delete all portfolio snapshots
+    await this.prisma.client.learnerPortfolioSnapshot.deleteMany({
+      where: { userId },
+    });
+
+    // Delete fiat balance
+    await this.prisma.client.learnerFiatBalance.deleteMany({
+      where: { userId },
+    });
+
+    // Reinitialize
+    await this.initializeLearnerAccount(userId);
+
+    this.logger.log(`Reset learner account for user ${userId}`);
+    return { message: 'Learner account reset successfully. You now have $10,000 to practice with.' };
+  }
+
+  /**
+   * Get all learner balances (fiat + crypto)
+   */
+  async getLearnerBalances(userId: string): Promise<LearnerBalanceResponse[]> {
+    // Ensure account is initialized
+    await this.initializeLearnerAccount(userId);
+
+    const [fiatBalance, cryptoBalances] = await Promise.all([
+      this.prisma.client.learnerFiatBalance.findUnique({
+        where: { userId },
+      }),
+      this.prisma.client.learnerCryptoBalance.findMany({
+        where: { userId },
+      }),
+    ]);
+
+    const balances: LearnerBalanceResponse[] = [];
+
+    // Add USD balance
+    if (fiatBalance) {
+      balances.push({
+        asset: 'USD',
+        balance: parseFloat(fiatBalance.balance.toString()),
+        availableBalance: parseFloat(fiatBalance.availableBalance.toString()),
+        lockedBalance: parseFloat(fiatBalance.lockedBalance.toString()),
+      });
+    }
+
+    // Add crypto balances
+    for (const crypto of cryptoBalances) {
+      balances.push({
+        asset: crypto.asset,
+        balance: parseFloat(crypto.balance.toString()),
+        availableBalance: parseFloat(crypto.availableBalance.toString()),
+        lockedBalance: parseFloat(crypto.lockedBalance.toString()),
+      });
+    }
+
+    return balances;
+  }
+
+  /**
+   * Get or create learner crypto balance
+   */
+  private async getOrCreateCryptoBalance(
+    userId: string,
+    asset: string,
+  ): Promise<LearnerBalanceResponse> {
+    const balance = await this.prisma.client.learnerCryptoBalance.findUnique({
+      where: {
+        userId_asset: {
+          userId,
+          asset,
+        },
+      },
+    });
+
+    if (balance) {
+      return {
+        asset: balance.asset,
+        balance: parseFloat(balance.balance.toString()),
+        availableBalance: parseFloat(balance.availableBalance.toString()),
+        lockedBalance: parseFloat(balance.lockedBalance.toString()),
+      };
+    }
+
+    return {
+      asset,
+      balance: 0,
+      availableBalance: 0,
+      lockedBalance: 0,
+    };
+  }
+
+  /**
+   * Check if user has sufficient learner balance
+   */
+  private async hasSufficientBalance(
+    userId: string,
+    asset: string,
+    amount: number,
+  ): Promise<boolean> {
+    if (asset === 'USD') {
+      const fiatBalance = await this.prisma.client.learnerFiatBalance.findUnique({
+        where: { userId },
+      });
+      return fiatBalance ? parseFloat(fiatBalance.availableBalance.toString()) >= amount : false;
+    }
+
+    const cryptoBalance = await this.getOrCreateCryptoBalance(userId, asset);
+    return cryptoBalance.availableBalance >= amount;
+  }
+
+  /**
+   * Update learner balance after trade
+   */
+  private async updateBalance(
+    userId: string,
+    asset: string,
+    amount: number, // Positive to add, negative to subtract
+  ): Promise<void> {
+    if (asset === 'USD') {
+      await this.prisma.client.learnerFiatBalance.update({
+        where: { userId },
+        data: {
+          balance: {
+            increment: amount,
+          },
+          availableBalance: {
+            increment: amount,
+          },
+        },
+      });
+    } else {
+      await this.prisma.client.learnerCryptoBalance.upsert({
+        where: {
+          userId_asset: {
+            userId,
+            asset,
+          },
+        },
+        create: {
+          userId,
+          asset,
+          balance: amount,
+          availableBalance: amount,
+          lockedBalance: 0,
+        },
+        update: {
+          balance: {
+            increment: amount,
+          },
+          availableBalance: {
+            increment: amount,
+          },
+        },
+      });
+    }
+  }
+
+  // ============================================
+  // TRADE SIMULATION
+  // ============================================
+
+  /**
+   * Simulate a trade in learner mode
+   * Uses the SAME validation as live trading (via coinbaseService)
+   * Randomly fails ~10% of the time to simulate real trading conditions
+   */
+  async placeLearnerTrade(
+    userId: string,
+    productId: string,
+    side: 'BUY' | 'SELL',
+    amount: number,
+    currentPrice: number, // Real price from frontend (used as fallback)
+  ): Promise<{ success: boolean; order: LearnerOrderResponse; isSimulatedFailure?: boolean }> {
+    // Ensure account is initialized
+    await this.initializeLearnerAccount(userId);
+
+    const [asset, quote] = productId.split('-');
+
+    // ========================================
+    // STEP 1: Validate order using SAME logic as live trading
+    // This ensures learner mode has identical validation to live mode
+    // ========================================
+    const validation = await this.coinbaseService.validateAndFormatOrder(
+      productId,
+      side,
+      side === 'BUY' ? amount : undefined, // quoteSize for BUY
+      side === 'SELL' ? amount : undefined, // baseSize for SELL
+    );
+
+    this.logger.log(`[placeLearnerTrade] Validation passed for ${productId} ${side}: ${JSON.stringify(validation)}`);
+
+    // Use validated/formatted amounts
+    const formattedAmount = side === 'BUY'
+      ? parseFloat(validation.formattedQuoteSize!)
+      : parseFloat(validation.formattedBaseSize!);
+
+    // Use price from Coinbase product data if available, otherwise use frontend price
+    const executionPrice = validation.productPrice || currentPrice;
+
+    // ========================================
+    // STEP 2: Check learner balance
+    // ========================================
+    const requiredAsset = side === 'BUY' ? quote : asset;
+    const requiredAmount = formattedAmount;
+
+    const hasBalance = await this.hasSufficientBalance(userId, requiredAsset, requiredAmount);
+    if (!hasBalance) {
+      const balance = requiredAsset === 'USD'
+        ? await this.prisma.client.learnerFiatBalance.findUnique({ where: { userId } })
+        : await this.getOrCreateCryptoBalance(userId, requiredAsset);
+      
+      const available = balance
+        ? (requiredAsset === 'USD' 
+            ? parseFloat((balance as any).availableBalance.toString())
+            : (balance as LearnerBalanceResponse).availableBalance)
+        : 0;
+      
+      throw new BadRequestException(
+        `Insufficient ${requiredAsset} balance. Available: ${available.toFixed(requiredAsset === 'USD' ? 2 : 8)}, Required: ${requiredAmount.toFixed(requiredAsset === 'USD' ? 2 : 8)}`
+      );
+    }
+
+    // ========================================
+    // STEP 3: Calculate trade details
+    // ========================================
+    let filledAmount: number;
+    let totalValue: number;
+    let platformFee: number;
+
+    if (side === 'BUY') {
+      // BUY: User spends quote currency to get base asset
+      platformFee = formattedAmount * (this.PLATFORM_FEE_PERCENT / 100);
+      const amountAfterFee = formattedAmount - platformFee;
+      filledAmount = amountAfterFee / executionPrice;
+      totalValue = formattedAmount;
+    } else {
+      // SELL: User sells base asset to get quote currency
+      const grossValue = formattedAmount * executionPrice;
+      platformFee = grossValue * (this.PLATFORM_FEE_PERCENT / 100);
+      filledAmount = formattedAmount;
+      totalValue = grossValue - platformFee;
+    }
+
+    // ========================================
+    // STEP 4: Create and execute trade
+    // ========================================
+    const trade = await this.prisma.client.learnerTrade.create({
+      data: {
+        transactionId: generateLearnerTransactionId(),
+        userId,
+        productId,
+        asset,
+        quote,
+        side: side as OrderType,
+        requestedAmount: formattedAmount,
+        filledAmount: 0, // Will update after "execution"
+        price: executionPrice,
+        totalValue: 0,
+        platformFee,
+        exchangeFee: 0, // No exchange fee in simulation
+        status: 'PENDING',
+        isSimulated: true,
+      },
+    });
+
+    // Simulate random failure (~10% chance)
+    const shouldFail = Math.random() < 0.1;
+
+    if (shouldFail) {
+      const failedTrade = await this.prisma.client.learnerTrade.update({
+        where: { id: trade.id },
+        data: { status: 'FAILED' },
+      });
+
+      return {
+        success: false,
+        order: this.mapLearnerTradeToResponse(failedTrade),
+        isSimulatedFailure: true,
+      };
+    }
+
+    // Execute the trade - update learner balances
+    if (side === 'BUY') {
+      await this.updateBalance(userId, quote, -formattedAmount);
+      await this.updateBalance(userId, asset, filledAmount);
+    } else {
+      await this.updateBalance(userId, asset, -formattedAmount);
+      await this.updateBalance(userId, quote, totalValue);
+    }
+
+    // Update trade as completed
+    const completedTrade = await this.prisma.client.learnerTrade.update({
+      where: { id: trade.id },
+      data: {
+        filledAmount,
+        totalValue: side === 'BUY' ? totalValue : totalValue + platformFee,
+        status: 'COMPLETED',
+        completedAt: new Date(),
+      },
+    });
+
+    return {
+      success: true,
+      order: this.mapLearnerTradeToResponse(completedTrade),
+    };
+  }
+
+  /**
+   * Get learner orders for a user
+   */
+  async getLearnerOrders(
+    userId: string,
+    options?: {
+      productId?: string;
+      status?: TradeStatus;
+      limit?: number;
+      offset?: number;
+    },
+  ): Promise<{ orders: LearnerOrderResponse[]; total: number }> {
+    const where: Prisma.LearnerTradeWhereInput = {
+      userId,
+      ...(options?.productId && { productId: options.productId }),
+      ...(options?.status && { status: options.status }),
+    };
+
+    const [orders, total] = await Promise.all([
+      this.prisma.client.learnerTrade.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: options?.limit || 50,
+        skip: options?.offset || 0,
+      }),
+      this.prisma.client.learnerTrade.count({ where }),
+    ]);
+
+    return {
+      orders: orders.map(this.mapLearnerTradeToResponse),
+      total,
+    };
+  }
+
+  /**
+   * Get a single learner order
+   */
+  async getLearnerOrder(userId: string, orderId: string): Promise<LearnerOrderResponse | null> {
+    const order = await this.prisma.client.learnerTrade.findFirst({
+      where: { id: orderId, userId },
+    });
+
+    return order ? this.mapLearnerTradeToResponse(order) : null;
+  }
+
+  // ============================================
+  // PORTFOLIO SNAPSHOTS
+  // ============================================
+
+  /**
+   * Create a portfolio snapshot for the current day
+   * Should be called periodically (e.g., daily cron job) or on demand
+   */
+  async createPortfolioSnapshot(
+    userId: string,
+    cryptoPrices: Record<string, number>, // Map of asset -> USD price
+  ): Promise<void> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Get current balances
+    const balances = await this.getLearnerBalances(userId);
+    
+    const cashBalance = balances.find(b => b.asset === 'USD')?.balance || 0;
+    
+    let cryptoValue = 0;
+    for (const balance of balances) {
+      if (balance.asset !== 'USD' && cryptoPrices[balance.asset]) {
+        cryptoValue += balance.balance * cryptoPrices[balance.asset];
+      }
+    }
+
+    const totalValue = cashBalance + cryptoValue;
+
+    // Upsert snapshot (update if exists for today, create otherwise)
+    await this.prisma.client.learnerPortfolioSnapshot.upsert({
+      where: {
+        userId_snapshotDate: {
+          userId,
+          snapshotDate: today,
+        },
+      },
+      create: {
+        userId,
+        totalValue,
+        investedValue: this.INITIAL_BALANCE, // Always $10,000 for learner mode
+        cashBalance,
+        cryptoValue,
+        snapshotDate: today,
+      },
+      update: {
+        totalValue,
+        investedValue: this.INITIAL_BALANCE,
+        cashBalance,
+        cryptoValue,
+      },
+    });
+  }
+
+  /**
+   * Get portfolio history for growth chart
+   * Returns snapshots for the specified time range
+   */
+  async getPortfolioHistory(
+    userId: string,
+    range: '1D' | '1W' | '1M' | '6M' | '1Y',
+  ): Promise<PortfolioSnapshotResponse[]> {
+    const now = new Date();
+    let startDate: Date;
+
+    switch (range) {
+      case '1D':
+        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case '1W':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '1M':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '6M':
+        startDate = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+        break;
+      case '1Y':
+        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    }
+
+    const snapshots = await this.prisma.client.learnerPortfolioSnapshot.findMany({
+      where: {
+        userId,
+        snapshotDate: {
+          gte: startDate,
+        },
+      },
+      orderBy: {
+        snapshotDate: 'asc',
+      },
+    });
+
+    return snapshots.map(s => ({
+      totalValue: parseFloat(s.totalValue.toString()),
+      investedValue: parseFloat(s.investedValue.toString()),
+      cashBalance: parseFloat(s.cashBalance.toString()),
+      cryptoValue: parseFloat(s.cryptoValue.toString()),
+      snapshotDate: s.snapshotDate,
+    }));
+  }
+
+  // ============================================
+  // HELPER METHODS
+  // ============================================
+
+  private mapLearnerTradeToResponse(trade: any): LearnerOrderResponse {
+    return {
+      id: trade.id,
+      transactionId: trade.transactionId || `LRN-${trade.id.slice(0, 8).toUpperCase()}`,
+      productId: trade.productId,
+      asset: trade.asset,
+      quote: trade.quote,
+      side: trade.side,
+      requestedAmount: parseFloat(trade.requestedAmount.toString()),
+      filledAmount: parseFloat(trade.filledAmount.toString()),
+      price: parseFloat(trade.price.toString()),
+      totalValue: parseFloat(trade.totalValue.toString()),
+      platformFee: parseFloat(trade.platformFee.toString()),
+      exchangeFee: parseFloat(trade.exchangeFee.toString()),
+      status: trade.status,
+      isSimulated: trade.isSimulated,
+      createdAt: trade.createdAt,
+      completedAt: trade.completedAt,
+    };
+  }
+}
+
+
