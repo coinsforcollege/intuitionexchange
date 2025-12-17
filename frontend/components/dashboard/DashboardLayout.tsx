@@ -177,9 +177,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   ];
 
   // Brand accent color - changes based on mode
-  // Learner: Orange/Amber theme, Investor: Indigo theme
-  const accentColor = isLearnerMode ? '#F59E0B' : '#6366F1';
-  const accentColorSecondary = isLearnerMode ? '#EF4444' : '#8B5CF6';
+  // Learner: Warm coral palette (fun, friendly), Investor: Indigo theme
+  const accentColor = isLearnerMode ? '#FF6B6B' : '#6366F1';
+  const accentColorSecondary = isLearnerMode ? '#FF8E8E' : '#8B5CF6';
 
   const handleNavClick = (href: string) => {
     router.push(href);
@@ -224,8 +224,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const getSidebarBackground = () => {
     if (isLearnerMode) {
       return isDark 
-        ? 'linear-gradient(180deg, #1a1207 0%, #1f1a0a 100%)' // Dark amber tint
-        : 'linear-gradient(180deg, #FFFBEB 0%, #FEF3C7 100%)'; // Light amber tint
+        ? 'linear-gradient(180deg, #4A1C1C 0%, #2D1A2A 50%, #1A1625 100%)' // Dark coral to plum
+        : 'linear-gradient(180deg, #E85555 0%, #FF6B6B 50%, #FF8E8E 100%)'; // Deeper coral gradient
     }
     return isDark ? '#0f0f14' : '#ffffff';
   };
@@ -239,7 +239,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     background: getSidebarBackground(),
     borderRight: `1px solid ${
       isLearnerMode 
-        ? (isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.2)')
+        ? (isDark ? 'rgba(255, 107, 107, 0.3)' : 'rgba(255,255,255,0.3)')
         : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)')
     }`,
     display: 'flex',
@@ -264,7 +264,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   const dividerStyle: React.CSSProperties = {
     height: 1,
-    backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+    backgroundColor: isLearnerMode ? 'rgba(255,255,255,0.2)' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'),
     marginLeft: sidebarCollapsed && !isMobile ? token.paddingXS : token.paddingMD,
     marginRight: sidebarCollapsed && !isMobile ? token.paddingXS : token.paddingMD,
     marginTop: token.marginXS,
@@ -282,7 +282,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const logoTextStyle: React.CSSProperties = {
     fontSize: token.fontSizeXL,
     fontWeight: fontWeights.bold,
-    color: isDark ? '#ffffff' : '#111827',
+    color: isLearnerMode ? '#ffffff' : (isDark ? '#ffffff' : '#111827'),
     letterSpacing: '-0.02em',
     WebkitFontSmoothing: 'antialiased',
     MozOsxFontSmoothing: 'grayscale',
@@ -308,7 +308,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   const getNavItemStyle = (item: NavItem, isActive: boolean): React.CSSProperties => {
     const activeBackground = isLearnerMode
-      ? (isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.12)')
+      ? (isDark ? 'rgba(255, 107, 107, 0.2)' : 'rgba(255, 255, 255, 0.25)')
       : (isDark ? 'rgba(99, 102, 241, 0.12)' : 'rgba(99, 102, 241, 0.08)');
     
     return {
@@ -321,8 +321,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       borderRadius: token.borderRadiusSM,
       background: isActive ? activeBackground : 'transparent',
       color: isActive 
-        ? accentColor
-        : (isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)'),
+        ? (isLearnerMode ? '#ffffff' : accentColor)
+        : (isLearnerMode ? 'rgba(255,255,255,0.85)' : (isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)')),
       fontSize: token.fontSize,
       fontWeight: isActive ? fontWeights.semibold : fontWeights.medium,
       cursor: 'pointer',
@@ -385,7 +385,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     gap: token.marginSM,
     padding: token.paddingSM,
     borderRadius: token.borderRadiusSM,
-    background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+    background: isLearnerMode ? 'rgba(255,255,255,0.15)' : (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'),
     cursor: 'pointer',
     justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
   };
@@ -394,11 +394,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     width: token.controlHeightLG,
     height: token.controlHeightLG,
     borderRadius: '50%',
-    background: accentColor,
+    background: isLearnerMode ? '#ffffff' : accentColor,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#ffffff',
+    color: isLearnerMode ? '#FF6B6B' : '#ffffff',
     fontSize: token.fontSizeLG,
     fontWeight: fontWeights.bold,
     flexShrink: 0,
@@ -412,16 +412,23 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     right: 0,
     height: HEADER_HEIGHT,
     background: isLearnerMode 
-      ? (isDark ? '#1a1207' : '#FFFBEB')
+      ? (isDark 
+          ? 'linear-gradient(135deg, rgba(74, 28, 28, 0.85) 0%, rgba(45, 26, 42, 0.85) 100%)'
+          : 'linear-gradient(135deg, rgba(255, 107, 107, 0.15) 0%, rgba(78, 205, 196, 0.1) 100%)')
       : (isDark ? token.colorBgContainer : token.colorBgContainer),
+    backdropFilter: isLearnerMode ? 'blur(20px)' : 'none',
+    WebkitBackdropFilter: isLearnerMode ? 'blur(20px)' : 'none',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: `0 ${token.paddingLG}px`,
     zIndex: token.zIndexPopupBase,
     borderBottom: isLearnerMode 
-      ? `2px solid ${isDark ? 'rgba(245, 158, 11, 0.3)' : 'rgba(245, 158, 11, 0.4)'}`
+      ? `2px solid ${isDark ? 'rgba(255, 107, 107, 0.5)' : '#FF6B6B'}`
       : `1px solid ${token.colorBorderSecondary}`,
+    boxShadow: isLearnerMode 
+      ? (isDark ? '0 4px 30px rgba(255, 107, 107, 0.15)' : '0 4px 20px rgba(255, 107, 107, 0.1)')
+      : 'none',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   };
 
@@ -507,8 +514,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     if (fullWidth) {
       if (isLearnerMode) {
         return isDark 
-          ? 'linear-gradient(180deg, #1a1508 0%, #1f1a0a 100%)' // Dark amber gradient
-          : 'linear-gradient(180deg, #FFFBEB 0%, #FEF3C7 100%)'; // Light amber gradient
+          ? 'linear-gradient(180deg, #2A1A1A 0%, #1A1625 50%, #0f0f14 100%)' // Dark coral to plum
+          : 'linear-gradient(180deg, #FFF5F5 0%, #FFF0F0 50%, #FFEBEB 100%)'; // Soft blush gradient
       }
       return isDark 
         ? 'linear-gradient(180deg, #0f0f23 0%, #1a1a2e 100%)' // Deep navy gradient
@@ -516,7 +523,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     }
     // Non-fullWidth pages
     if (isLearnerMode) {
-      return isDark ? '#141008' : '#FFFDF5';
+      return isDark ? '#1F1418' : '#FFF5F5';
     }
     return token.colorBgLayout;
   };
@@ -565,7 +572,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   // Nav item with tooltip wrapper
   const NavItemWithTooltip: React.FC<{ item: NavItem; isActive: boolean }> = ({ item, isActive }) => {
-    const hoverBg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
+    const hoverBg = isLearnerMode ? 'rgba(255,255,255,0.2)' : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)');
+    const hoverColor = isLearnerMode ? '#ffffff' : (isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)');
+    const defaultColor = isLearnerMode ? 'rgba(255,255,255,0.85)' : (isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)');
     const content = (
       <div
         style={getNavItemStyle(item, isActive)}
@@ -573,13 +582,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         onMouseEnter={(e) => {
           if (!isActive) {
             e.currentTarget.style.background = hoverBg;
-            e.currentTarget.style.color = isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)';
+            e.currentTarget.style.color = hoverColor;
           }
         }}
         onMouseLeave={(e) => {
           if (!isActive) {
             e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.color = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
+            e.currentTarget.style.color = defaultColor;
           }
         }}
       >
@@ -660,7 +669,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           {/* Settings */}
           {(() => {
             const isSettingsActive = activeKey === 'settings';
-            const settingsHoverBg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
+            const settingsHoverBg = isLearnerMode ? 'rgba(255,255,255,0.2)' : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)');
+            const settingsHoverColor = isLearnerMode ? '#ffffff' : (isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)');
+            const settingsDefaultColor = isLearnerMode ? 'rgba(255,255,255,0.85)' : (isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)');
             
             const settingsContent = (
               <div
@@ -669,13 +680,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 onMouseEnter={(e) => {
                   if (!isSettingsActive) {
                     e.currentTarget.style.background = settingsHoverBg;
-                    e.currentTarget.style.color = isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)';
+                    e.currentTarget.style.color = settingsHoverColor;
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isSettingsActive) {
                     e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.color = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
+                    e.currentTarget.style.color = settingsDefaultColor;
                   }
                 }}
               >
@@ -718,15 +729,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   {avatarInitial}
                 </div>
                 <div style={{ flex: 1, overflow: 'hidden' }}>
-                  <div style={{ fontSize: token.fontSize, fontWeight: fontWeights.semibold, color: isDark ? '#ffffff' : '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: token.fontSize, fontWeight: fontWeights.semibold, color: isLearnerMode ? '#ffffff' : (isDark ? '#ffffff' : '#111827'), overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {fullName}
                   </div>
-                  <div style={{ fontSize: token.fontSizeSM, color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }}>
+                  <div style={{ fontSize: token.fontSizeSM, color: isLearnerMode ? 'rgba(255,255,255,0.7)' : (isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)') }}>
                     {user?.kycStatus === 'APPROVED' ? '✓ Verified' : 'Pending'}
                   </div>
                 </div>
                 <PoweroffOutlined
-                  style={{ fontSize: token.fontSizeLG, color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)', cursor: 'pointer' }}
+                  style={{ fontSize: token.fontSizeLG, color: isLearnerMode ? 'rgba(255,255,255,0.7)' : (isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)'), cursor: 'pointer' }}
                   onClick={(e) => { e.stopPropagation(); handleLogout(); }}
                 />
               </div>
@@ -825,18 +836,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 </div>
               }
               placement="bottom"
-              color="#D97706"
+              color="#FF6B6B"
             >
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: token.marginXS,
-                  background: 'linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)',
+                  background: 'linear-gradient(135deg, #D94848 0%, #FF6B6B 50%, #FF8E8E 100%)',
                   borderRadius: 50,
                   padding: `${token.paddingXS}px ${token.paddingMD}px`,
                   marginLeft: isMobile ? 0 : token.marginMD,
-                  boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)',
+                  boxShadow: '0 4px 16px rgba(255, 107, 107, 0.4)',
                   animation: 'pulse-learner 2s ease-in-out infinite',
                   cursor: 'help',
                 }}
@@ -866,7 +877,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               alignItems: 'center',
               gap: token.marginSM,
               backgroundColor: isLearnerMode 
-                ? (isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)')
+                ? (isDark ? 'rgba(255, 107, 107, 0.15)' : 'rgba(255, 107, 107, 0.1)')
                 : (isDark ? 'rgba(102, 126, 234, 0.15)' : 'rgba(102, 126, 234, 0.08)'),
               borderRadius: 50,
               padding: `${token.paddingSM}px ${token.paddingLG}px`,

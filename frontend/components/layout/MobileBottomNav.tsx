@@ -135,18 +135,24 @@ const MobileBottomNav: React.FC = () => {
   const NAV_MARGIN = 16;
   const BUBBLE_SIZE = 50;
 
-  // Colors change based on app mode - Learner mode uses orange/amber, Investor uses indigo
-  const primaryColor = isLearnerMode ? '#F59E0B' : '#6366F1';
-  const secondaryColor = isLearnerMode ? '#EF4444' : '#8B5CF6';
-  // Solid colored background
-  const bgColor = isLearnerMode ? '#D97706' : '#4F46E5';
+  // Colors change based on app mode - Learner mode uses coral palette, Investor uses indigo
+  const primaryColor = isLearnerMode ? '#FF6B6B' : '#6366F1';
+  const secondaryColor = isLearnerMode ? '#FF8E8E' : '#8B5CF6';
+  // Gradient background for both modes
+  const bgColor = isLearnerMode 
+    ? (isDark 
+        ? 'linear-gradient(135deg, rgba(74, 28, 28, 0.9) 0%, rgba(60, 20, 20, 0.9) 100%)'
+        : 'linear-gradient(135deg, #D94848 0%, #FF6B6B 50%, #FF8E8E 100%)')
+    : (isDark
+        ? 'linear-gradient(135deg, rgba(49, 46, 129, 0.9) 0%, rgba(79, 70, 229, 0.85) 100%)'
+        : '#4F46E5');
   const inactiveColor = 'rgba(255, 255, 255, 0.6)';
   const activeIconColor = '#FFFFFF';
   // Page base color for bubble stroke - matches theme
   // Dark: custom colorBgBase, Light: Ant Design default colorBgLayout
   const pageBaseColor = isDark 
-    ? (isLearnerMode ? '#1a1207' : '#0f0f1a') 
-    : (isLearnerMode ? '#FFFBEB' : '#f5f5f5');
+    ? (isLearnerMode ? '#1F1418' : '#0f0f1a') 
+    : (isLearnerMode ? '#FFF5F5' : '#f5f5f5');
 
   return (
     <>
@@ -172,14 +178,22 @@ const MobileBottomNav: React.FC = () => {
               height: NAV_HEIGHT,
               borderRadius: 36,
               background: bgColor,
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              boxShadow: isDark
-                ? '0 8px 40px rgba(0, 0, 0, 0.5)'
-                : '0 8px 40px rgba(0, 0, 0, 0.12)',
-              border: isDark
-                ? '1px solid rgba(255, 255, 255, 0.08)'
-                : '1px solid rgba(0, 0, 0, 0.04)',
+              backdropFilter: 'blur(25px)',
+              WebkitBackdropFilter: 'blur(25px)',
+              boxShadow: isLearnerMode
+                ? (isDark 
+                    ? '0 8px 40px rgba(255, 107, 107, 0.3)' 
+                    : '0 8px 40px rgba(255, 107, 107, 0.25)')
+                : (isDark
+                    ? '0 8px 40px rgba(99, 102, 241, 0.35)'
+                    : '0 8px 40px rgba(0, 0, 0, 0.12)'),
+              border: isLearnerMode
+                ? (isDark 
+                    ? '1px solid rgba(255, 107, 107, 0.3)' 
+                    : '1px solid rgba(255, 255, 255, 0.4)')
+                : (isDark
+                    ? '1px solid rgba(99, 102, 241, 0.4)'
+                    : '1px solid rgba(0, 0, 0, 0.04)'),
               overflow: 'visible',
             }}
           >
