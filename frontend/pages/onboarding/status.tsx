@@ -68,19 +68,21 @@ export default function StatusPage() {
     checkStatus();
   }, [user, router]);
 
-  // Poll for updates if pending
+  // Poll for updates if pending - call checkVeriffDecision to fetch from Veriff API and update DB
   useEffect(() => {
     if (status !== 'pending') return;
 
     const pollInterval = setInterval(async () => {
       try {
-        const kycStatus = await getKycStatus();
+        // First, fetch decision from Veriff API (this updates the database if decision is available)
+        const decision = await checkVeriffDecision();
         
-        if (kycStatus.status === 'APPROVED') {
+        if (decision.status === 'APPROVED') {
           setStatus('approved');
           clearInterval(pollInterval);
-        } else if (kycStatus.status === 'REJECTED') {
+        } else if (decision.status === 'REJECTED') {
           setStatus('rejected');
+          setRejectReason(decision.reason);
           clearInterval(pollInterval);
         }
       } catch {

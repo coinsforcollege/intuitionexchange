@@ -60,6 +60,7 @@ import {
 } from '@/services/api/settings';
 import { getBankAccounts, deleteBankAccount, type BankAccount } from '@/services/api/fiat';
 import { resetLearnerAccount } from '@/services/api/learner';
+import { checkVeriffDecision } from '@/services/api/onboarding';
 import OTPInput from '@/components/auth/OTPInput';
 import dayjs from 'dayjs';
 import { Country, State } from 'country-state-city';
@@ -264,6 +265,20 @@ export default function SettingsPage() {
         getUserSettings(),
         getBankAccounts(),
       ]);
+      
+      // If KYC is pending/submitted, fetch decision from Veriff to update DB
+      if (settingsData.kycStatus === 'PENDING' || settingsData.kycStatus === 'SUBMITTED') {
+        try {
+          const decision = await checkVeriffDecision();
+          // Update local settings with fresh status
+          if (decision.status !== settingsData.kycStatus) {
+            settingsData.kycStatus = decision.status;
+          }
+        } catch {
+          // Ignore errors - may not have a Veriff session yet
+        }
+      }
+      
       setSettings(settingsData);
       setBankAccounts(accountsData);
     } catch (error: any) {
@@ -568,8 +583,8 @@ export default function SettingsPage() {
                 </Text>
               </div>
               
-              {/* KYC Required Notice */}
-              {settings?.kycStatus !== 'APPROVED' && (
+              {/* KYC Status Notice */}
+              {settings?.kycStatus === 'PENDING' && (
                 <div 
                   style={{ 
                     padding: `${token.paddingSM}px ${token.paddingMD}px`,
@@ -598,6 +613,73 @@ export default function SettingsPage() {
                     onClick={() => router.push('/onboarding')}
                   >
                     Verify Now
+                  </Button>
+                </div>
+              )}
+              
+              {settings?.kycStatus === 'SUBMITTED' && (
+                <div 
+                  style={{ 
+                    padding: `${token.paddingSM}px ${token.paddingMD}px`,
+                    background: 'rgba(59, 130, 246, 0.1)',
+                    borderRadius: token.borderRadius,
+                    border: '1px solid rgba(59, 130, 246, 0.3)',
+                    marginTop: token.marginSM,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text 
+                    style={{ 
+                      fontSize: token.fontSizeSM, 
+                      color: '#2563EB',
+                      fontWeight: fontWeights.medium,
+                    }}
+                  >
+                    <ClockCircleOutlined style={{ marginRight: 8 }} />
+                    Your identity verification is in progress. This usually takes a few minutes.
+                  </Text>
+                  <Button 
+                    type="default" 
+                    size="small"
+                    onClick={() => router.push('/onboarding/status')}
+                  >
+                    Check Status
+                  </Button>
+                </div>
+              )}
+              
+              {settings?.kycStatus === 'REJECTED' && (
+                <div 
+                  style={{ 
+                    padding: `${token.paddingSM}px ${token.paddingMD}px`,
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    borderRadius: token.borderRadius,
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    marginTop: token.marginSM,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text 
+                    style={{ 
+                      fontSize: token.fontSizeSM, 
+                      color: '#DC2626',
+                      fontWeight: fontWeights.medium,
+                    }}
+                  >
+                    <CloseCircleOutlined style={{ marginRight: 8 }} />
+                    Verification unsuccessful. Please try again.
+                  </Text>
+                  <Button 
+                    type="primary" 
+                    size="small" 
+                    danger
+                    onClick={() => router.push('/onboarding/verify')}
+                  >
+                    Try Again
                   </Button>
                 </div>
               )}
