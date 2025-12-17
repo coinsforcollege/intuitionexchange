@@ -399,6 +399,52 @@ export default function TuitionCenterPage() {
           ))}
         </div>
 
+        {/* Mr. Purple Mascot - Fixed bottom right (transparent WebM) */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          style={{
+            position: 'fixed',
+            bottom: isMobile ? 100 : 24, // Above mobile nav bar
+            right: isMobile ? 8 : 24,
+            zIndex: 100,
+            pointerEvents: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}
+        >
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={{
+              height: 150,
+              width: 'auto',
+              objectFit: 'contain',
+              display: 'block',
+            }}
+          >
+            {/* WebM with alpha channel for true transparency */}
+            <source src="/images/mr-purple-main.webm" type="video/webm" />
+            {/* MP4 fallback for browsers that don't support WebM */}
+            <source src="/images/mr-purple-main.mp4" type="video/mp4" />
+          </video>
+          {/* Shadow for the character to stand on */}
+          <div
+            style={{
+              width: 120,
+              height: 20,
+              marginTop: -13,
+              background: isDark 
+                ? 'radial-gradient(ellipse at center, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 70%)'
+                : 'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0) 70%)',
+              borderRadius: '50%',
+            }}
+          />
+        </motion.div>
       </DashboardLayout>
     </>
   );
