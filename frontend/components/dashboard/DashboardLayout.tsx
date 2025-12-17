@@ -26,7 +26,9 @@ import {
   RightOutlined,
   SearchOutlined,
   ShoppingCartOutlined,
+  BookOutlined,
 } from '@ant-design/icons';
+import { motion } from 'motion/react';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeMode } from '@/context/ThemeContext';
@@ -41,6 +43,7 @@ interface NavItem {
   icon: React.ReactNode;
   href: string;
   gradient: string;
+  highlighted?: boolean;
 }
 
 interface DashboardLayoutProps {
@@ -153,6 +156,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     { key: 'markets', label: 'Markets', icon: <LineChartOutlined />, href: '/markets', gradient: '' },
     { key: 'portfolio', label: 'Portfolio', icon: <WalletOutlined />, href: '/portfolio', gradient: '' },
     { key: 'transactions', label: 'Transactions', icon: <HistoryOutlined />, href: '/transactions', gradient: '' },
+    { key: 'tuition-center', label: 'Tuition Center', icon: <BookOutlined />, href: '/tuition-center', gradient: '', highlighted: true },
   ];
 
   // Brand accent color - changes based on mode
@@ -554,6 +558,137 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     const hoverBg = isLearnerMode ? 'rgba(255,255,255,0.2)' : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)');
     const hoverColor = isLearnerMode ? '#ffffff' : (isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)');
     const defaultColor = isLearnerMode ? 'rgba(255,255,255,0.85)' : (isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)');
+    
+    // Highlighted item (Tuition Center) has special styling - FULL WIDTH (edge to edge)
+    // Applies both when active and inactive
+    if (item.highlighted) {
+      // Learner mode sidebar is coral (#FF6B6B), so use contrasting teal/cyan
+      // Investor mode sidebar is white (light) or dark gray (dark), so use purple
+      const highlightTextColor = isLearnerMode 
+        ? '#FFFFFF'  // White text
+        : (isDark ? '#C4B5FD' : '#7C3AED'); // Purple for investor mode
+      const highlightBg = isLearnerMode
+        ? 'linear-gradient(135deg, rgba(78, 205, 196, 0.3) 0%, rgba(69, 183, 209, 0.25) 100%)' // Teal - contrasts with coral
+        : (isDark 
+            ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(168, 85, 247, 0.1) 100%)'
+            : 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(168, 85, 247, 0.06) 100%)');
+      // Stronger background when active
+      const activeBgColors = isLearnerMode
+        ? ['rgba(78, 205, 196, 0.35)', 'rgba(78, 205, 196, 0.5)', 'rgba(78, 205, 196, 0.35)']
+        : ['rgba(139, 92, 246, 0.15)', 'rgba(139, 92, 246, 0.25)', 'rgba(139, 92, 246, 0.15)'];
+      const inactiveBgColors = isLearnerMode
+        ? ['rgba(78, 205, 196, 0.2)', 'rgba(78, 205, 196, 0.35)', 'rgba(78, 205, 196, 0.2)']
+        : ['rgba(139, 92, 246, 0.08)', 'rgba(139, 92, 246, 0.15)', 'rgba(139, 92, 246, 0.08)'];
+      
+      // Calculate negative margin to counteract parent padding for full width
+      const parentPaddingH = sidebarCollapsed && !isMobile ? token.paddingXS : token.paddingMD;
+      
+      const highlightedContent = (
+        <motion.div
+          animate={{
+            backgroundColor: isActive ? activeBgColors : inactiveBgColors,
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: token.marginSM,
+            // Negative margin to break out of parent padding, padding inside to keep content aligned
+            marginLeft: -parentPaddingH,
+            marginRight: -parentPaddingH,
+            padding: sidebarCollapsed && !isMobile 
+              ? `${token.paddingSM}px ${token.paddingXS + token.paddingSM}px`
+              : `${token.paddingSM}px ${token.paddingMD * 2}px`,
+            borderRadius: 0, // No rounded corners - full width edge to edge
+            background: highlightBg,
+            fontSize: token.fontSize,
+            fontWeight: fontWeights.semibold,
+            cursor: 'pointer',
+            justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+          onClick={() => handleNavClick(item.href)}
+        >
+          {/* Shimmer effect */}
+          <motion.div
+            animate={{
+              x: ['-100%', '200%'],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: 'linear',
+              repeatDelay: 2,
+            }}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '50%',
+              height: '100%',
+              background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.15) 50%, transparent 100%)',
+              pointerEvents: 'none',
+            }}
+          />
+          <div 
+            style={{ 
+              width: 20,
+              height: 20,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: token.fontSizeLG,
+              color: highlightTextColor,
+              flexShrink: 0,
+              position: 'relative', 
+              zIndex: 1,
+            }}
+          >
+            <motion.span
+              animate={{ rotate: [0, -10, 10, -10, 0] }}
+              transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 3 }}
+            >
+              {item.icon}
+            </motion.span>
+          </div>
+          {!(sidebarCollapsed && !isMobile) && (
+            <span 
+              style={{ 
+                color: highlightTextColor,
+                whiteSpace: 'nowrap',
+                position: 'relative', 
+                zIndex: 1,
+              }}
+            >
+              {item.label}
+              <motion.span
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                style={{ marginLeft: 6, display: 'inline-block' }}
+              >
+                ✨
+              </motion.span>
+            </span>
+          )}
+        </motion.div>
+      );
+
+      if (sidebarCollapsed && !isMobile) {
+        return (
+          <Tooltip title={`${item.label} ✨`} placement="right">
+            {highlightedContent}
+          </Tooltip>
+        );
+      }
+
+      return highlightedContent;
+    }
+    
     const content = (
       <div
         style={getNavItemStyle(item, isActive)}
