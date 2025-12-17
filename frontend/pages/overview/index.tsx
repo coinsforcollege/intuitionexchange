@@ -295,8 +295,10 @@ export default function DashboardPage() {
   const [loadingWatchlist, setLoadingWatchlist] = useState(true);
 
   const isDark = mode === 'dark';
-  const isMobile = mounted ? !screens.md : false;
-  const isTablet = mounted ? screens.md && !screens.lg : false;
+  const isMobile = mounted ? !screens.md : false;  // < 768px
+  const isMdOnly = mounted ? (screens.md && !screens.lg) : false;  // 768px - 991px
+  const isLgOnly = mounted ? (screens.lg && !screens.xl) : false;  // 992px - 1199px
+  const isTablet = isMdOnly || isLgOnly;  // 768px - 1199px (all middle sizes)
   
   // Track if initial data has been fetched
   const hasFetchedRef = useRef(false);
@@ -460,12 +462,12 @@ export default function DashboardPage() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr' : '1fr 360px',
+            gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr' : '7fr 3fr',
             gap: token.marginLG,
           }}
         >
           {/* Main Column */}
-          <div>
+          <div style={{ minWidth: 0 }}>
             {/* Portfolio Summary Card */}
             <Section isMobile={isMobile}>
               <motion.div
@@ -473,7 +475,7 @@ export default function DashboardPage() {
                 style={{
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
                   borderRadius: token.borderRadiusLG,
-                  padding: isMobile ? token.paddingLG : token.paddingXL,
+                  padding: isMobile ? token.paddingLG : isTablet ? token.paddingLG : token.paddingXL,
                   color: '#fff',
                   position: 'relative',
                   overflow: 'hidden',
@@ -526,7 +528,7 @@ export default function DashboardPage() {
                   </div>
                   <div
                     style={{
-                      fontSize: isMobile ? token.fontSizeHeading2 : token.fontSizeHeading1,
+                      fontSize: isMobile ? token.fontSizeHeading2 : isTablet ? token.fontSizeHeading3 : token.fontSizeHeading1,
                       fontWeight: fontWeights.bold,
                       letterSpacing: '-0.02em',
                       marginBottom: token.marginMD,
@@ -562,7 +564,12 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Legend */}
-                  <div style={{ display: 'flex', gap: token.marginLG, fontSize: token.fontSizeSM }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    flexWrap: 'wrap',
+                    gap: isTablet ? token.marginSM : token.marginLG, 
+                    fontSize: isTablet ? token.fontSizeXS : token.fontSizeSM 
+                  }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: token.marginXS }}>
                       <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(255, 255, 255, 0.9)' }} />
                       <span>Crypto ${portfolioData.cryptoValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -581,7 +588,8 @@ export default function DashboardPage() {
               <div
                 style={{
                   display: 'flex',
-                  gap: isMobile ? token.marginXS : token.marginMD,
+                  flexWrap: 'wrap',
+                  gap: '2%',
                 }}
               >
                 {quickActions.map((action) => (
@@ -589,13 +597,14 @@ export default function DashboardPage() {
                     key={action.key}
                     onClick={() => router.push(action.href)}
                     style={{
-                      flex: 1,
+                      flex: '1 1 20%',
+                      minWidth: 0,
                       display: 'flex',
-                      flexDirection: isMobile ? 'column' : 'row',
+                      flexDirection: 'column',
                       alignItems: 'center',
-                      justifyContent: isMobile ? 'center' : 'flex-start',
-                      gap: isMobile ? token.marginXS : token.marginMD,
-                      padding: isMobile ? token.paddingSM : `${token.paddingLG}px ${token.paddingXL}px`,
+                      justifyContent: 'center',
+                      gap: '0.5em',
+                      padding: '1em',
                       background: isMobile ? 'transparent' : token.colorBgContainer,
                       border: isMobile ? 'none' : `1px solid ${token.colorBorderSecondary}`,
                       borderRadius: token.borderRadiusLG,
@@ -619,15 +628,15 @@ export default function DashboardPage() {
                   >
                     <div
                       style={{
-                        width: isMobile ? 40 : 48,
-                        height: isMobile ? 40 : 48,
+                        width: '2.5em',
+                        height: '2.5em',
                         borderRadius: '50%',
                         background: `${action.color}15`,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: action.color,
-                        fontSize: isMobile ? token.fontSizeLG : token.fontSizeXL,
+                        fontSize: '1.2em',
                         flexShrink: 0,
                       }}
                     >
@@ -635,9 +644,10 @@ export default function DashboardPage() {
                     </div>
                     <span
                       style={{
-                        fontSize: isMobile ? token.fontSizeSM : token.fontSizeLG,
+                        fontSize: '0.9em',
                         fontWeight: fontWeights.semibold,
                         color: token.colorText,
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {action.label}

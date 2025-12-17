@@ -22,6 +22,8 @@ export interface KycDetails {
   veriffReason: string | null;
 }
 
+export type AppMode = 'LEARNER' | 'INVESTOR';
+
 export interface UserSettings {
   id: string;
   email: string;
@@ -29,6 +31,7 @@ export interface UserSettings {
   phoneCountry: string;
   country: string;
   kycStatus: 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'REJECTED';
+  appMode: AppMode;
   emailVerified: boolean;
   phoneVerified: boolean;
   createdAt: string;
@@ -161,6 +164,18 @@ export async function updateNotificationPreferences(
   return apiCall<NotificationPreferences>('/settings/notifications', {
     method: 'PUT',
     body: JSON.stringify(preferences),
+  });
+}
+
+/**
+ * Update app mode (LEARNER or INVESTOR)
+ */
+export async function updateAppMode(
+  mode: AppMode,
+): Promise<{ appMode: AppMode; message: string }> {
+  return apiCall<{ appMode: AppMode; message: string }>('/settings/app-mode', {
+    method: 'PUT',
+    body: JSON.stringify({ mode }),
   });
 }
 

@@ -2,6 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { OtpService } from '../auth/otp.service';
 import { UpdateNotificationPreferencesDto } from './dto/notification-preferences.dto';
+import { AppMode } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -24,6 +25,7 @@ export class SettingsService {
         phoneCountry: true,
         country: true,
         kycStatus: true,
+        appMode: true,
         emailVerified: true,
         phoneVerified: true,
         createdAt: true,
@@ -53,6 +55,40 @@ export class SettingsService {
     }
 
     return user;
+  }
+
+  /**
+   * Update user's app mode (LEARNER or INVESTOR)
+   */
+  async updateAppMode(userId: string, mode: AppMode) {
+    // If switching to INVESTOR mode, verify KYC is approved
+    if (mode === 'INVESTOR') {
+      const user = await this.prisma.client.user.findUnique({
+        where: { id: userId },
+        select: { kycStatus: true },
+      });
+
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+
+      if (user.kycStatus !== 'APPROVED') {
+        throw new BadRequestException('Complete identity verification to enable Investor mode');
+      }
+    }
+
+    const updatedUser = await this.prisma.client.user.update({
+      where: { id: userId },
+      data: { appMode: mode },
+      select: { appMode: true },
+    });
+
+    return {
+      appMode: updatedUser.appMode,
+      message: mode === 'INVESTOR' 
+        ? 'Switched to Investor mode - Real trading enabled'
+        : 'Switched to Learner mode - Demo trading with virtual funds',
+    };
   }
 
   /**

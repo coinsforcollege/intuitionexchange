@@ -136,7 +136,7 @@ const TradingChart: React.FC<TradingChartProps> = ({
       </div>
       
       {/* Chart container */}
-      <div style={{ position: 'relative', flex: 1, minHeight: 200 }}>
+      <div style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'hidden' }}>
         {isLoading && (
           <div style={{
             position: 'absolute',

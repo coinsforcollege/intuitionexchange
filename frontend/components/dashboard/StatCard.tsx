@@ -46,31 +46,40 @@ const StatCard: React.FC<StatCardProps> = ({
 
   // Responsive font size calculations
   const isMobile = mounted ? !screens.md : false;
-  const isTablet = mounted ? (screens.md && !screens.xl) : false;
+  const isMdOnly = mounted ? (screens.md && !screens.lg) : false;  // 768px - 991px
+  const isLgOnly = mounted ? (screens.lg && !screens.xl) : false;  // 992px - 1199px
   
-  // Font size adjustments (subtle)
+  // Font size adjustments - more aggressive reduction for md sizes (768-991px)
   const titleFontSize = isMobile 
-    ? token.fontSizeSM * 0.9  // 10.8px (from 12px)
-    : isTablet 
+    ? token.fontSizeSM * 0.9   // 10.8px (from 12px)
+    : isMdOnly 
+    ? token.fontSizeSM * 0.9   // 10.8px - same as mobile
+    : isLgOnly
     ? token.fontSizeSM * 0.95  // 11.4px
     : token.fontSizeSM;        // 12px
 
   const valueFontSize = isMobile
     ? token.fontSizeHeading1 * 0.75  // 36px (from 48px)
-    : isTablet
-    ? token.fontSizeHeading1 * 0.85  // 40.8px
-    : token.fontSizeHeading1;       // 48px
+    : isMdOnly
+    ? token.fontSizeHeading1 * 0.6   // 28.8px - significantly smaller for md
+    : isLgOnly
+    ? token.fontSizeHeading1 * 0.75  // 36px
+    : token.fontSizeHeading1;        // 48px
 
   const subtitleFontSize = isMobile
-    ? token.fontSize * 0.9  // 12.6px (from 14px)
-    : isTablet
+    ? token.fontSize * 0.9   // 12.6px (from 14px)
+    : isMdOnly
+    ? token.fontSize * 0.85  // 11.9px - smaller for md
+    : isLgOnly
     ? token.fontSize * 0.95  // 13.3px
     : token.fontSize;        // 14px
 
   const iconFontSize = isMobile
     ? token.fontSizeHeading3 * 0.85  // 20.4px (from 24px)
-    : isTablet
-    ? token.fontSizeHeading3 * 0.9  // 21.6px
+    : isMdOnly
+    ? token.fontSizeHeading3 * 0.8   // 19.2px - smaller for md
+    : isLgOnly
+    ? token.fontSizeHeading3 * 0.9   // 21.6px
     : token.fontSizeHeading3;        // 24px
   
   // Default gradient for total balance card
@@ -124,8 +133,8 @@ const StatCard: React.FC<StatCardProps> = ({
     position: 'absolute',
     top: token.paddingLG,
     right: token.paddingLG,
-    width: isMobile ? 56 : isTablet ? 60 : 64,
-    height: isMobile ? 56 : isTablet ? 60 : 64,
+    width: isMobile ? 56 : isMdOnly ? 48 : isLgOnly ? 56 : 64,
+    height: isMobile ? 56 : isMdOnly ? 48 : isLgOnly ? 56 : 64,
     borderRadius: token.borderRadiusLG,
     background: 'rgba(255, 255, 255, 0.2)',
     backdropFilter: 'blur(10px)',

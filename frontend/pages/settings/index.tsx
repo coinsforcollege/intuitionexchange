@@ -55,8 +55,10 @@ import {
   requestPasswordChange,
   changePassword,
   updateNotificationPreferences,
+  updateAppMode,
   type UserSettings,
   type NotificationPreferences,
+  type AppMode,
 } from '@/services/api/settings';
 import { getBankAccounts, deleteBankAccount, type BankAccount } from '@/services/api/fiat';
 import { resetLearnerAccount } from '@/services/api/learner';
@@ -207,7 +209,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const { token } = useToken();
   const screens = useBreakpoint();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, refreshUser } = useAuth();
   const [mounted, setMounted] = useState(false);
 
   const [settings, setSettings] = useState<UserSettings | null>(null);
@@ -225,18 +227,14 @@ export default function SettingsPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
-  // App mode: 'learner' (demo) or 'investor' (production)
-  const [appMode, setAppMode] = useState<'learner' | 'investor'>('investor');
+  // App mode: 'learner' (demo) or 'investor' (production) - now synced with database
+  const [appMode, setAppMode] = useState<'learner' | 'investor'>('learner');
+  const [appModeLoading, setAppModeLoading] = useState(false);
 
   const isMobile = mounted ? !screens.md : false;
 
   useEffect(() => {
     setMounted(true);
-    // Load app mode from localStorage
-    const savedMode = localStorage.getItem('appMode') as 'learner' | 'investor' | null;
-    if (savedMode) {
-      setAppMode(savedMode);
-    }
   }, []);
 
   useEffect(() => {
@@ -281,6 +279,14 @@ export default function SettingsPage() {
       
       setSettings(settingsData);
       setBankAccounts(accountsData);
+      
+      // Set app mode from database (synced across devices)
+      if (settingsData.appMode) {
+        const mode = settingsData.appMode.toLowerCase() as 'learner' | 'investor';
+        setAppMode(mode);
+        // Also sync to localStorage for ExchangeContext to pick up
+        localStorage.setItem('appMode', mode);
+      }
     } catch (error: any) {
       message.error('Failed to load settings');
     } finally {
@@ -359,21 +365,31 @@ export default function SettingsPage() {
     }
   };
 
-  const handleAppModeChange = (isInvestor: boolean) => {
-    // Block investor mode if KYC not approved
+  const handleAppModeChange = async (isInvestor: boolean) => {
+    // Block investor mode if KYC not approved (also checked on backend)
     if (isInvestor && settings?.kycStatus !== 'APPROVED') {
       message.warning('Complete identity verification to enable Investor mode');
       return;
     }
     
-    const newMode = isInvestor ? 'investor' : 'learner';
-    setAppMode(newMode);
-    localStorage.setItem('appMode', newMode);
-    message.success(
-      isInvestor 
-        ? 'Switched to Investor mode - Real trading enabled'
-        : 'Switched to Learner mode - Demo trading with virtual funds'
-    );
+    const newMode: AppMode = isInvestor ? 'INVESTOR' : 'LEARNER';
+    setAppModeLoading(true);
+    
+    try {
+      const result = await updateAppMode(newMode);
+      const localMode = result.appMode.toLowerCase() as 'learner' | 'investor';
+      setAppMode(localMode);
+      // Sync to localStorage for ExchangeContext to pick up immediately
+      localStorage.setItem('appMode', localMode);
+      message.success(result.message);
+      
+      // Refresh user data in AuthContext so it's in sync
+      refreshUser();
+    } catch (error: any) {
+      message.error(error.message || 'Failed to switch mode');
+    } finally {
+      setAppModeLoading(false);
+    }
   };
   
   // Reset learner account
@@ -536,7 +552,7 @@ export default function SettingsPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM }}>
                   <Text 
                     style={{ 
-                      fontWeight: appMode === 'learner' ? fontWeights.bold : fontWeights.regular,
+                      fontWeight: appMode === 'learner' ? fontWeights.bold : fontWeights.normal,
                       color: appMode === 'learner' ? '#F59E0B' : token.colorTextSecondary,
                       fontSize: token.fontSizeSM,
                     }}
@@ -550,7 +566,7 @@ export default function SettingsPage() {
                   />
                   <Text 
                     style={{ 
-                      fontWeight: appMode === 'investor' ? fontWeights.bold : fontWeights.regular,
+                      fontWeight: appMode === 'investor' ? fontWeights.bold : fontWeights.normal,
                       color: appMode === 'investor' ? '#11998e' : token.colorTextSecondary,
                       fontSize: token.fontSizeSM,
                     }}

@@ -25,19 +25,24 @@ export interface LoginData {
   remember?: boolean;
 }
 
+export type AppMode = 'LEARNER' | 'INVESTOR';
+
+export interface User {
+  id: string;
+  email: string;
+  phone: string;
+  phoneCountry: string;
+  country: string;
+  kycStatus: string;
+  appMode: AppMode;
+  firstName: string | null;
+  lastName: string | null;
+}
+
 export interface LoginResponse {
   message: string;
   token: string;
-  user: {
-    id: string;
-    email: string;
-    phone: string;
-    phoneCountry: string;
-    country: string;
-    kycStatus: string;
-    firstName: string | null;
-    lastName: string | null;
-  };
+  user: User;
 }
 
 export interface ResetRequestData {
@@ -180,8 +185,8 @@ export async function logoutUser(): Promise<ApiResponse> {
 /**
  * Get current user info
  */
-export async function getCurrentUser(): Promise<LoginResponse['user']> {
-  return apiCall<LoginResponse['user']>('/account/me', {
+export async function getCurrentUser(): Promise<User> {
+  return apiCall<User>('/account/me', {
     method: 'GET',
   });
 }

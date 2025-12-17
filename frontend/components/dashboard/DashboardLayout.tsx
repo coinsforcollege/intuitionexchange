@@ -47,6 +47,7 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
   activeKey?: string;
   fullWidth?: boolean;
+  hideMobileNav?: boolean; // Hide mobile bottom nav (e.g., for trade page)
   exchangeData?: {
     pair: string;
     price: number;
@@ -61,6 +62,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   children, 
   activeKey = 'dashboard',
   fullWidth = false,
+  hideMobileNav = false,
   exchangeData,
 }) => {
   const router = useRouter();
@@ -116,39 +118,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     };
   }, [appMode]);
 
-  // Prevent back button from exiting dashboard
+  // Prevent back button from exiting dashboard to login/register pages
   React.useEffect(() => {
-    // Dashboard routes that should be contained
-    const dashboardRoutes = [
-      '/overview',
-      '/dashboard',
-      '/trade',
-      '/buy-sell',
-      '/markets',
-      '/portfolio',
-      '/transactions',
-      '/settings',
-      '/p2p',
-    ];
+    const authRoutes = ['/login', '/register', '/reset', '/onboarding'];
 
-    const isInsideDashboard = (path: string) => {
-      return dashboardRoutes.some(route => 
-        path === route || path.startsWith(`${route}/`)
-      );
-    };
-
-    // Push a state to mark we're in dashboard
-    const currentPath = window.location.pathname;
-    if (isInsideDashboard(currentPath)) {
-      window.history.pushState({ dashboard: true, path: currentPath }, '', currentPath);
-    }
-
-    const handlePopState = (event: PopStateEvent) => {
+    const handlePopState = () => {
       const targetPath = window.location.pathname;
       
-      // If navigating outside dashboard, push back to current dashboard page
-      if (!isInsideDashboard(targetPath)) {
-        window.history.pushState({ dashboard: true, path: currentPath }, '', currentPath);
+      // If navigating to auth pages, redirect to overview instead
+      if (authRoutes.some(route => targetPath === route || targetPath.startsWith(`${route}/`))) {
+        router.replace('/overview');
       }
     };
 
@@ -157,7 +136,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [router.pathname]);
+  }, [router]);
 
   // Dimensions
   const SIDEBAR_WIDTH_EXPANDED = token.sizeXXL * 6; // 288px
@@ -494,15 +473,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   };
 
   const headerAvatarStyle: React.CSSProperties = {
-    width: token.controlHeightLG,
-    height: token.controlHeightLG,
+    width: token.controlHeight,
+    height: token.controlHeight,
     borderRadius: '50%',
     background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColorSecondary} 100%)`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     color: token.colorWhite,
-    fontSize: token.fontSize,
+    fontSize: token.fontSizeSM,
     fontWeight: fontWeights.bold,
     cursor: 'pointer',
     border: `2px solid ${token.colorBgContainer}`,
@@ -551,7 +530,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       overflow: 'hidden',
     } : { 
       padding: isMobile ? token.paddingMD : token.paddingXL,
-      paddingBottom: isMobile ? token.paddingMD + MOBILE_NAV_HEIGHT : token.paddingXL,
+      paddingBottom: isMobile ? (hideMobileNav ? token.paddingMD : token.paddingMD + MOBILE_NAV_HEIGHT) : token.paddingXL,
       maxWidth: 1400,
       margin: '0 auto' 
     }),
@@ -842,27 +821,30 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: token.marginXS,
+                  justifyContent: 'center',
+                  gap: isMobile ? 4 : token.marginXS,
+                  height: token.controlHeight,
                   background: 'linear-gradient(135deg, #D94848 0%, #FF6B6B 50%, #FF8E8E 100%)',
                   borderRadius: 50,
-                  padding: `${token.paddingXS}px ${token.paddingMD}px`,
+                  padding: isMobile ? '0 10px' : `0 ${token.paddingMD}px`,
                   marginLeft: isMobile ? 0 : token.marginMD,
                   boxShadow: '0 4px 16px rgba(255, 107, 107, 0.4)',
                   animation: 'pulse-learner 2s ease-in-out infinite',
                   cursor: 'help',
                 }}
               >
-                <span style={{ fontSize: 14 }}>🎓</span>
+                <span style={{ fontSize: isMobile ? 12 : 14, lineHeight: 1 }}>🎓</span>
                 <span
                   style={{
-                    fontSize: token.fontSizeSM,
+                    fontSize: isMobile ? 10 : token.fontSizeSM,
                     fontWeight: fontWeights.bold,
                     color: '#fff',
                     textTransform: 'uppercase',
                     letterSpacing: '0.03em',
+                    lineHeight: 1,
                   }}
                 >
-                  Learner Mode
+                  Learner
                 </span>
               </div>
             </Tooltip>
@@ -986,8 +968,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         </div>
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      <MobileBottomNav />
+      {/* Mobile Bottom Navigation - hidden on certain pages like trade */}
+      {!hideMobileNav && <MobileBottomNav />}
     </div>
   );
 };

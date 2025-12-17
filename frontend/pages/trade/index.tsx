@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { theme, Grid, Skeleton, Tabs, message } from 'antd';
-import { LineChartOutlined, DollarOutlined, HistoryOutlined } from '@ant-design/icons';
-import { motion } from 'motion/react';
+import { theme, Grid, Skeleton, message } from 'antd';
+import { LineChartOutlined, HistoryOutlined } from '@ant-design/icons';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
-import { TradingChart, PairSelector, TradeForm } from '@/components/exchange';
+import { TradingChart, PairSelector, TradeForm, MobileTradePage } from '@/components/exchange';
 import OrderStatusModal from '@/components/exchange/OrderStatusModal';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
@@ -306,93 +305,38 @@ function ExchangePageContent() {
     );
   }
 
-  // Mobile layout
+  // Mobile layout - New redesigned layout
   if (isMobile) {
     return (
       <>
         <Head>
           <title>Trade {selectedPair} - InTuition Exchange</title>
         </Head>
-        <DashboardLayout activeKey="trade" fullWidth>
-          <motion.div
-            style={sectionStyle}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ fontSize: token.fontSizeHeading3, fontWeight: fontWeights.bold, color: token.colorText }}>
-                  ${currentPrice.toLocaleString('en-US', { maximumFractionDigits: 2 })}
-                </div>
-                <div style={{ fontSize: token.fontSizeSM, color: priceChange >= 0 ? token.colorSuccess : token.colorError }}>
-                  {priceChange >= 0 ? '↑' : '↓'} {Math.abs(priceChange).toFixed(2)}%
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            style={sectionStyle}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-          >
-            <PairSelector
-              pairs={pairs}
-              selectedPair={selectedPair}
-              onSelectPair={setSelectedPair}
-              isMobile={true}
-            />
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-          >
-            <Tabs
-              defaultActiveKey="trade"
-              centered
-              items={[
-                {
-                  key: 'chart',
-                  label: <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}><LineChartOutlined /> Chart</span>,
-                  children: (
-                    <TradingChart
-                      candles={candles}
-                      isLoading={isLoadingCandles}
-                      granularity={candleGranularity}
-                      onGranularityChange={setCandleGranularity}
-                    />
-                  ),
-                },
-                {
-                  key: 'trade',
-                  label: <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}><DollarOutlined /> Trade</span>,
-                  children: (
-                    <TradeForm
-                      symbol={selectedPair}
-                      price={currentPrice}
-                      baseAsset={baseAsset}
-                      quoteAsset={quoteAsset}
-                      baseBalance={baseBalance}
-                      quoteBalance={quoteBalance}
-                      onTrade={handleTrade}
-                      isLoading={isTrading}
-                    />
-                  ),
-                },
-                {
-                  key: 'history',
-                  label: <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}><HistoryOutlined /> Orders</span>,
-                  children: (
-                    <OrderHistory orders={orders} isLoading={isLoadingOrders} />
-                  ),
-                },
-              ]}
-            />
-          </motion.div>
+        <DashboardLayout activeKey="trade" fullWidth hideMobileNav>
+          <MobileTradePage
+            pairs={pairs}
+            selectedPair={selectedPair}
+            onSelectPair={setSelectedPair}
+            currentPrice={currentPrice}
+            priceChange={priceChange}
+            iconUrl={currentPairData?.iconUrl || `https://assets.coincap.io/assets/icons/${baseAsset.toLowerCase()}@2x.png`}
+            candles={candles}
+            isLoadingCandles={isLoadingCandles}
+            candleGranularity={candleGranularity}
+            onGranularityChange={setCandleGranularity}
+            orders={orders}
+            isLoadingOrders={isLoadingOrders}
+            publicTrades={publicTrades}
+            isLoadingTrades={isLoadingTrades}
+            orderBook={orderBook}
+            isLoadingOrderBook={isLoadingOrderBook}
+            baseAsset={baseAsset}
+            quoteAsset={quoteAsset}
+            baseBalance={baseBalance}
+            quoteBalance={quoteBalance}
+            onTrade={handleTrade}
+            isTrading={isTrading}
+          />
         </DashboardLayout>
         
         {/* Order Status Modal */}

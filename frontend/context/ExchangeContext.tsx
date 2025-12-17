@@ -133,25 +133,33 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Auth state
   const { isLoggedIn, user } = useAuth();
   
-  // App mode state - tracks localStorage value
-  const [appMode, setAppMode] = useState<'learner' | 'investor'>('investor');
+  // App mode state - synced with database via user profile
+  const [appMode, setAppMode] = useState<'learner' | 'investor'>('learner');
   
-  // Load app mode from localStorage and listen for changes
+  // Sync app mode from user profile (database) and listen for localStorage changes
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
-    const savedMode = localStorage.getItem('appMode') as 'learner' | 'investor' | null;
-    if (savedMode) {
-      setAppMode(savedMode);
+    // Primary source: user profile from database (set by AuthContext)
+    if (user && user.appMode) {
+      const dbMode = user.appMode.toLowerCase() as 'learner' | 'investor';
+      setAppMode(dbMode);
+      // Sync to localStorage for immediate updates within same tab
+      localStorage.setItem('appMode', dbMode);
     } else {
-      // Default to learner mode for new users without KYC
-      if (user && user.kycStatus !== 'APPROVED') {
-        setAppMode('learner');
-        localStorage.setItem('appMode', 'learner');
+      // Fallback to localStorage for non-logged in users or during loading
+      const savedMode = localStorage.getItem('appMode') as 'learner' | 'investor' | null;
+      if (savedMode) {
+        setAppMode(savedMode);
       }
     }
+  }, [user]);
+  
+  // Listen for localStorage changes (for immediate updates when settings page changes mode)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
     
-    // Listen for storage changes
+    // Listen for storage changes from other tabs
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'appMode' && e.newValue) {
         setAppMode(e.newValue as 'learner' | 'investor');
@@ -159,7 +167,7 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
     window.addEventListener('storage', handleStorageChange);
     
-    // Poll for changes within same tab
+    // Poll for changes within same tab (for immediate sync after settings change)
     const interval = setInterval(() => {
       const currentMode = localStorage.getItem('appMode') as 'learner' | 'investor' | null;
       if (currentMode && currentMode !== appMode) {
@@ -171,7 +179,7 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       window.removeEventListener('storage', handleStorageChange);
       clearInterval(interval);
     };
-  }, [user, appMode]);
+  }, [appMode]);
   
   // State
   const [pairs, setPairs] = useState<TradingPair[]>([]);

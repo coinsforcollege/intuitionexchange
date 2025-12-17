@@ -24,6 +24,7 @@ model User {
   country       String    @default("US")
   kycStatus     KycStatus @default(PENDING)
   role          UserRole  @default(USER)
+  appMode       AppMode   @default(LEARNER) // Current trading mode preference
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -62,6 +63,11 @@ enum KycStatus {
 enum UserRole {
   USER
   ADMIN
+}
+
+enum AppMode {
+  LEARNER   // Practice trading with virtual funds
+  INVESTOR  // Real trading with actual funds
 }
 
 // ============================================

@@ -4,9 +4,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { getCurrentUser, logoutUser, isAuthenticated, LoginResponse } from '@/services/api/auth';
-
-type User = LoginResponse['user'];
+import { getCurrentUser, logoutUser, isAuthenticated, User } from '@/services/api/auth';
 
 interface AuthContextType {
   user: User | null;
