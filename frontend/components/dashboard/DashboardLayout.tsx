@@ -121,6 +121,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     };
   }, [appMode]);
 
+  // Scroll to top when route changes
+  React.useEffect(() => {
+    // Scroll to top on initial load and route change
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [router.asPath]);
+
   // Prevent back button from exiting dashboard to login/register pages
   React.useEffect(() => {
     const authRoutes = ['/login', '/register', '/reset', '/onboarding'];

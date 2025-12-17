@@ -55,12 +55,20 @@ const MarketsIcon = () => (
   </svg>
 );
 
+const LearningIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+  </svg>
+);
+
 const ICONS: Record<string, React.ReactNode> = {
   'overview': <OverviewIcon />,
   'buy-sell': <BuySellIcon />,
   'trade': <TradeIcon />,
   'portfolio': <PortfolioIcon />,
   'markets': <MarketsIcon />,
+  'learning': <LearningIcon />,
 };
 
 const MobileBottomNav: React.FC = () => {
@@ -79,6 +87,7 @@ const MobileBottomNav: React.FC = () => {
     if (path.startsWith('/trade')) return 'trade';
     if (path.startsWith('/portfolio')) return 'portfolio';
     if (path.startsWith('/markets')) return 'markets';
+    if (path.startsWith('/tuition-center')) return 'learning';
     return 'overview';
   });
 
@@ -91,8 +100,11 @@ const MobileBottomNav: React.FC = () => {
     { key: 'buy-sell', label: 'Buy & Sell', href: '/buy-sell' },
     { key: 'trade', label: 'Trade', href: '/trade' },
     { key: 'portfolio', label: 'Portfolio', href: '/portfolio' },
-    { key: 'markets', label: 'Markets', href: '/markets' },
-  ], []);
+    // In learner mode, show Learning link instead of Markets
+    isLearnerMode
+      ? { key: 'learning', label: 'Learning', href: '/tuition-center' }
+      : { key: 'markets', label: 'Markets', href: '/markets' },
+  ], [isLearnerMode]);
 
   useEffect(() => {
     setMounted(true);
@@ -138,14 +150,6 @@ const MobileBottomNav: React.FC = () => {
   // Colors change based on app mode - Learner mode uses coral palette, Investor uses indigo
   const primaryColor = isLearnerMode ? '#FF6B6B' : '#6366F1';
   const secondaryColor = isLearnerMode ? '#FF8E8E' : '#8B5CF6';
-  // Gradient background for both modes
-  const bgColor = isLearnerMode 
-    ? (isDark 
-        ? 'linear-gradient(135deg, rgba(74, 28, 28, 0.9) 0%, rgba(60, 20, 20, 0.9) 100%)'
-        : 'linear-gradient(135deg, #D94848 0%, #FF6B6B 50%, #FF8E8E 100%)')
-    : (isDark
-        ? 'linear-gradient(135deg, rgba(49, 46, 129, 0.9) 0%, rgba(79, 70, 229, 0.85) 100%)'
-        : '#4F46E5');
   const inactiveColor = 'rgba(255, 255, 255, 0.6)';
   const activeIconColor = '#FFFFFF';
   // Page base color for bubble stroke - matches theme
@@ -177,23 +181,52 @@ const MobileBottomNav: React.FC = () => {
               position: 'relative',
               height: NAV_HEIGHT,
               borderRadius: 36,
-              background: bgColor,
+              // 3D Claymorphism gradient background
+              background: isLearnerMode
+                ? (isDark
+                    ? 'linear-gradient(145deg, rgba(100, 45, 45, 0.95) 0%, rgba(74, 28, 28, 0.95) 50%, rgba(60, 20, 20, 0.95) 100%)'
+                    : 'linear-gradient(135deg, #FF8E8E 0%, #FF6B6B 35%, #D94848 100%)')
+                : (isDark
+                    ? 'linear-gradient(145deg, rgba(79, 70, 229, 0.95) 0%, rgba(55, 48, 163, 0.95) 50%, rgba(49, 46, 129, 0.95) 100%)'
+                    : 'linear-gradient(135deg, #818CF8 0%, #6366F1 35%, #4F46E5 100%)'),
               backdropFilter: 'blur(25px)',
               WebkitBackdropFilter: 'blur(25px)',
+              // Claymorphism box shadows - outer shadow + inner highlight
               boxShadow: isLearnerMode
                 ? (isDark 
-                    ? '0 8px 40px rgba(255, 107, 107, 0.3)' 
-                    : '0 8px 40px rgba(255, 107, 107, 0.25)')
+                    ? `
+                      8px 8px 24px rgba(0, 0, 0, 0.5),
+                      -4px -4px 16px rgba(255, 107, 107, 0.15),
+                      inset 3px 3px 8px rgba(255, 142, 142, 0.25),
+                      inset -3px -3px 8px rgba(0, 0, 0, 0.3)
+                    ` 
+                    : `
+                      10px 10px 30px rgba(217, 72, 72, 0.5),
+                      -6px -6px 20px rgba(255, 255, 255, 0.4),
+                      inset 4px 4px 12px rgba(255, 255, 255, 0.35),
+                      inset -4px -4px 12px rgba(217, 72, 72, 0.4)
+                    `)
                 : (isDark
-                    ? '0 8px 40px rgba(99, 102, 241, 0.35)'
-                    : '0 8px 40px rgba(0, 0, 0, 0.12)'),
+                    ? `
+                      8px 8px 24px rgba(0, 0, 0, 0.5),
+                      -4px -4px 16px rgba(99, 102, 241, 0.2),
+                      inset 3px 3px 8px rgba(129, 140, 248, 0.3),
+                      inset -3px -3px 8px rgba(0, 0, 0, 0.3)
+                    `
+                    : `
+                      10px 10px 30px rgba(79, 70, 229, 0.45),
+                      -6px -6px 20px rgba(255, 255, 255, 0.5),
+                      inset 4px 4px 12px rgba(255, 255, 255, 0.4),
+                      inset -4px -4px 12px rgba(79, 70, 229, 0.35)
+                    `),
+              // Beveled edge border
               border: isLearnerMode
                 ? (isDark 
-                    ? '1px solid rgba(255, 107, 107, 0.3)' 
-                    : '1px solid rgba(255, 255, 255, 0.4)')
+                    ? '1px solid rgba(255, 142, 142, 0.4)' 
+                    : '2px solid rgba(255, 255, 255, 0.5)')
                 : (isDark
-                    ? '1px solid rgba(99, 102, 241, 0.4)'
-                    : '1px solid rgba(0, 0, 0, 0.04)'),
+                    ? '1px solid rgba(129, 140, 248, 0.5)'
+                    : '2px solid rgba(255, 255, 255, 0.6)'),
               overflow: 'visible',
             }}
           >
@@ -226,7 +259,7 @@ const MobileBottomNav: React.FC = () => {
                         WebkitTapHighlightColor: 'transparent',
                       }}
                     >
-                      {/* Floating bubble background - moves via layoutId */}
+                      {/* Floating bubble background - moves via layoutId - 3D Claymorphism */}
                       {isActive && (
                         <motion.div
                           layoutId="activeBubble"
@@ -236,9 +269,27 @@ const MobileBottomNav: React.FC = () => {
                             width: BUBBLE_SIZE,
                             height: BUBBLE_SIZE,
                             borderRadius: BUBBLE_SIZE / 2,
-                            background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
-                            boxShadow: `0 6px 20px ${primaryColor}50`,
-                            border: `5px solid ${pageBaseColor}`,
+                            // 3D gradient
+                            background: isDark
+                              ? `linear-gradient(145deg, ${secondaryColor} 0%, ${primaryColor} 50%, ${primaryColor}dd 100%)`
+                              : `linear-gradient(135deg, #ffffff 0%, ${secondaryColor} 30%, ${primaryColor} 100%)`,
+                            // Claymorphism shadows
+                            boxShadow: isDark
+                              ? `
+                                4px 4px 12px rgba(0, 0, 0, 0.5),
+                                -2px -2px 8px ${primaryColor}30,
+                                inset 2px 2px 6px ${secondaryColor}50,
+                                inset -2px -2px 6px rgba(0, 0, 0, 0.4)
+                              `
+                              : `
+                                6px 6px 16px ${primaryColor}80,
+                                -3px -3px 10px rgba(255, 255, 255, 0.7),
+                                inset 3px 3px 8px rgba(255, 255, 255, 0.6),
+                                inset -3px -3px 8px ${primaryColor}60
+                              `,
+                            border: isDark
+                              ? `4px solid ${pageBaseColor}`
+                              : `4px solid ${pageBaseColor}`,
                             willChange: 'transform',
                             transform: 'translateZ(0)',
                           }}
@@ -315,7 +366,13 @@ const MobileBottomNav: React.FC = () => {
           left: 0,
           right: 0,
           height: 'env(safe-area-inset-bottom, 0)',
-          background: bgColor,
+          background: isLearnerMode
+            ? (isDark
+                ? 'linear-gradient(180deg, rgba(60, 20, 20, 0.95) 0%, rgba(40, 15, 15, 0.98) 100%)'
+                : 'linear-gradient(180deg, #D94848 0%, #C43B3B 100%)')
+            : (isDark
+                ? 'linear-gradient(180deg, rgba(49, 46, 129, 0.95) 0%, rgba(35, 32, 100, 0.98) 100%)'
+                : 'linear-gradient(180deg, #4F46E5 0%, #4338CA 100%)'),
           zIndex: token.zIndexPopupBase + 9,
           pointerEvents: 'none',
         }}

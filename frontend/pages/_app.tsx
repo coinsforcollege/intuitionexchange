@@ -4,6 +4,7 @@ import { ConfigProvider, theme as antdTheme } from "antd";
 import type { AppProps } from "next/app";
 import { Inter } from "next/font/google";
 import { useEffect } from "react";
+import { useRouter } from "next/router";
 import themeConfig from "@/theme/themeConfig";
 import { ThemeProvider, useThemeMode } from "@/context/ThemeContext";
 import { AuthProvider } from "@/context/AuthContext";
@@ -17,6 +18,7 @@ const inter = Inter({
 
 function ThemedApp({ Component, pageProps }: AppProps) {
   const { mode } = useThemeMode();
+  const router = useRouter();
 
   const darkModeTokens = mode === "dark" ? {
     // Slightly colored dark background (dark navy/indigo tint)
@@ -34,6 +36,23 @@ function ThemedApp({ Component, pageProps }: AppProps) {
       ...darkModeTokens,
     },
   };
+
+  // Scroll to top on route change
+  useEffect(() => {
+    const handleRouteChange = () => {
+      // Use instant behavior to bypass smooth scrolling
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      // Also scroll document element for cross-browser support
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+
+    router.events.on('routeChangeComplete', handleRouteChange);
+
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange);
+    };
+  }, [router.events]);
 
   // Handle unhandled promise rejections
   // Prevent overlay for user-friendly errors (so we can test user messages)
