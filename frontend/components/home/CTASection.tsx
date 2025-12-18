@@ -1,5 +1,6 @@
 import { Button, Space, Typography, theme } from "antd";
 import { RocketOutlined, ArrowRightOutlined } from "@ant-design/icons";
+import Link from "next/link";
 import { MAX_CONTENT_WIDTH } from "../layout/Header";
 import { fontWeights } from "@/theme/themeConfig";
 
@@ -90,14 +91,16 @@ export default function CTASection() {
 
         {/* CTA Buttons */}
         <Space size="middle" wrap style={{ justifyContent: "center" }}>
-          <Button
-            type="primary"
-            size="large"
-            icon={<RocketOutlined />}
-            style={buttonStyle}
-          >
-            Create Free Account
-          </Button>
+          <Link href="/register">
+            <Button
+              type="primary"
+              size="large"
+              icon={<RocketOutlined />}
+              style={buttonStyle}
+            >
+              Create Free Account
+            </Button>
+          </Link>
           <Button
             size="large"
             icon={<ArrowRightOutlined />}

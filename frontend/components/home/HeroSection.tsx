@@ -6,6 +6,7 @@ import {
   ThunderboltOutlined,
   GlobalOutlined,
 } from "@ant-design/icons";
+import Link from "next/link";
 import { MAX_CONTENT_WIDTH } from "../layout/Header";
 import { fontWeights } from "@/theme/themeConfig";
 
@@ -170,14 +171,16 @@ export default function HeroSection() {
 
         {/* CTA Buttons */}
         <Space size="middle" wrap>
-          <Button
-            type="primary"
-            size="large"
-            icon={<RocketOutlined />}
-            style={buttonStyle}
-          >
-            Start Trading
-          </Button>
+          <Link href="/register">
+            <Button
+              type="primary"
+              size="large"
+              icon={<RocketOutlined />}
+              style={buttonStyle}
+            >
+              Start Trading
+            </Button>
+          </Link>
           <Button
             size="large"
             icon={<ArrowRightOutlined />}
