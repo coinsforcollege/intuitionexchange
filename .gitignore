@@ -47,5 +47,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# prisma
-backend/prisma/migrations/
+# prisma - keep migrations in git for production deployments
+# backend/prisma/migrations/
