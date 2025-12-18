@@ -3,6 +3,7 @@ import "antd/dist/reset.css";
 import { ConfigProvider, theme as antdTheme } from "antd";
 import type { AppProps } from "next/app";
 import { Inter } from "next/font/google";
+import Head from "next/head";
 import { useEffect } from "react";
 import { useRouter } from "next/router";
 import themeConfig from "@/theme/themeConfig";
@@ -93,6 +94,10 @@ function ThemedApp({ Component, pageProps }: AppProps) {
 
   return (
     <ConfigProvider theme={themeWithAlgorithm}>
+      <Head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
+        <title>InTuition Exchange - Sandbox</title>
+      </Head>
       <Component {...pageProps} />
     </ConfigProvider>
   );
