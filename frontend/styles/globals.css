@@ -155,3 +155,31 @@ html {
     box-shadow: 0 6px 24px rgba(255, 142, 142, 0.6);
   }
 }
+
+/* Browser Autofill Styles - Override ugly default backgrounds */
+/* Use transition delay trick to prevent autofill background from appearing */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+select:-webkit-autofill,
+.ant-input:-webkit-autofill,
+.ant-input-affix-wrapper input:-webkit-autofill {
+  transition: background-color 600000s 0s, color 600000s 0s !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+/* Dark mode text color for autofill */
+[data-theme="dark"] input:-webkit-autofill,
+[data-theme="dark"] .ant-input-affix-wrapper input:-webkit-autofill {
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.88) !important;
+  caret-color: rgba(255, 255, 255, 0.88) !important;
+}
+
+/* Light mode text color for autofill */
+[data-theme="light"] input:-webkit-autofill,
+[data-theme="light"] .ant-input-affix-wrapper input:-webkit-autofill {
+  -webkit-text-fill-color: rgba(0, 0, 0, 0.88) !important;
+  caret-color: rgba(0, 0, 0, 0.88) !important;
+}

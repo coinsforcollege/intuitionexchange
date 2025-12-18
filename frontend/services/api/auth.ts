@@ -49,15 +49,20 @@ export interface ResetRequestData {
   email: string;
 }
 
+export interface ResetRequestResponse {
+  message: string;
+  nextStep: string;
+  token: string;
+}
+
 export interface ResetVerifyData {
-  email: string;
   otp: string;
+  token: string;
 }
 
 export interface ResetNewPasswordData {
-  email: string;
-  otp: string;
-  newPassword: string;
+  password: string;
+  token: string;
 }
 
 export interface ResendOtpData {
@@ -194,8 +199,8 @@ export async function getCurrentUser(): Promise<User> {
 /**
  * Request password reset - sends OTP to email
  */
-export async function requestPasswordReset(data: ResetRequestData): Promise<ApiResponse> {
-  return apiCall<ApiResponse>('/account/reset', {
+export async function requestPasswordReset(data: ResetRequestData): Promise<ResetRequestResponse> {
+  return apiCall<ResetRequestResponse>('/account/reset', {
     method: 'POST',
     body: JSON.stringify(data),
   });

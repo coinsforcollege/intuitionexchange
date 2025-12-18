@@ -23,6 +23,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     // If no saved preference, dark mode remains as default
   }, []);
 
+  // Set data-theme attribute on document for CSS selectors
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", mode);
+  }, [mode]);
+
   const toggleMode = () => {
     const newMode = mode === "light" ? "dark" : "light";
     setMode(newMode);

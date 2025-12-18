@@ -1,7 +1,7 @@
 /**
  * Register Page
  * Multi-step registration with OTP verification
- * Two-column layout: marketing content (left) + form (right)
+ * Beautiful design matching the dashboard aesthetic
  */
 
 import React, { useState, useEffect } from 'react';
@@ -9,37 +9,39 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Head from 'next/head';
 import Image from 'next/image';
-import { Form, Input, Select, Typography, message, theme, Divider, Row, Col, Space } from 'antd';
+import { Form, Input, Select, Typography, message, theme, Grid, Space, Row, Col } from 'antd';
 import {
   MailOutlined,
   LockOutlined,
   EyeInvisibleOutlined,
   EyeOutlined,
   ArrowLeftOutlined,
+  CheckCircleFilled,
+  RocketOutlined,
+  GiftOutlined,
+  BookOutlined,
   SafetyCertificateOutlined,
-  ThunderboltOutlined,
-  GlobalOutlined,
-  CustomerServiceOutlined,
 } from '@ant-design/icons';
+import { motion, AnimatePresence } from 'motion/react';
 import LoadingButton from '@/components/auth/LoadingButton';
 import OTPInput from '@/components/auth/OTPInput';
-import AuthHeader from '@/components/auth/AuthHeader';
 import {
   registerUser,
   verifyRegistration,
   resendEmailOtp,
   resendPhoneOtp,
+  loginUser,
   RegisterData,
   ApiError,
 } from '@/services/api/auth';
+import { useAuth } from '@/context/AuthContext';
+import { useThemeMode } from '@/context/ThemeContext';
 import { fontWeights } from '@/theme/themeConfig';
 import { getCountryOptions, getPhoneCodeOptions } from '@/data/countries';
 
 const { Text, Title } = Typography;
 const { useToken } = theme;
-
-// Layout constants
-const MOBILE_BREAKPOINT = 768;
+const { useBreakpoint } = Grid;
 
 // Get options from countries data
 const countryOptions = getCountryOptions();
@@ -50,7 +52,6 @@ const filterFromStart = (input: string, option?: { searchValue?: string }) => {
   if (!option?.searchValue) return false;
   const searchLower = input.toLowerCase();
   const words = option.searchValue.toLowerCase().split(' ');
-  // Match if any word starts with the search input
   return words.some(word => word.startsWith(searchLower));
 };
 
@@ -59,6 +60,9 @@ type Step = 'form' | 'otp';
 export default function RegisterPage() {
   const router = useRouter();
   const { token } = useToken();
+  const { login, isLoggedIn, isLoading: authLoading } = useAuth();
+  const { mode, toggleMode } = useThemeMode();
+  const screens = useBreakpoint();
   const [form] = Form.useForm();
   const [step, setStep] = useState<Step>('form');
   const [loading, setLoading] = useState(false);
@@ -67,6 +71,21 @@ export default function RegisterPage() {
   const [otpEmail, setOtpEmail] = useState('');
   const [otpPhone, setOtpPhone] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  const isDark = mode === 'dark';
+  const isMobile = mounted ? !screens.md : false;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && isLoggedIn) {
+      router.replace('/overview');
+    }
+  }, [authLoading, isLoggedIn, router]);
 
   // Resend cooldown timer
   useEffect(() => {
@@ -109,6 +128,7 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
+      // Verify and create account
       await verifyRegistration({
         ...formData,
         otpEmail,
@@ -116,7 +136,23 @@ export default function RegisterPage() {
       });
 
       message.success('Account created successfully!');
-      router.push('/login?registered=true');
+
+      // Auto-login the user after successful registration
+      try {
+        const loginResponse = await loginUser({
+          email: formData.email,
+          password: formData.password,
+          remember: true,
+        });
+
+        login(loginResponse.user);
+        
+        // Redirect to onboarding for KYC
+        router.replace('/onboarding');
+      } catch {
+        // If auto-login fails, redirect to login page
+        router.push('/login?registered=true');
+      }
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.message || 'Verification failed. Please try again.');
@@ -147,62 +183,6 @@ export default function RegisterPage() {
     }
   };
 
-  const inputStyle: React.CSSProperties = {
-    height: token.controlHeightLG,
-    fontSize: token.fontSize,
-    borderRadius: token.borderRadius,
-  };
-
-  const labelStyle: React.CSSProperties = {
-    fontWeight: fontWeights.medium,
-    fontSize: token.fontSize,
-  };
-
-  const linkStyle: React.CSSProperties = {
-    color: token.colorPrimary,
-    fontWeight: fontWeights.medium,
-    textDecoration: 'none',
-  };
-
-  const bottomTextStyle: React.CSSProperties = {
-    color: token.colorTextSecondary,
-    fontSize: token.fontSize,
-    textAlign: 'center',
-    display: 'block',
-    marginTop: token.marginLG,
-  };
-
-  const otpSectionStyle: React.CSSProperties = {
-    marginBottom: token.marginLG,
-  };
-
-  const otpLabelStyle: React.CSSProperties = {
-    fontSize: token.fontSize,
-    fontWeight: fontWeights.medium,
-    color: token.colorText,
-    marginBottom: token.marginSM,
-    display: 'block',
-  };
-
-  const resendStyle: React.CSSProperties = {
-    fontSize: token.fontSize,
-    color: resendCooldown > 0 ? token.colorTextDisabled : token.colorPrimary,
-    cursor: resendCooldown > 0 ? 'default' : 'pointer',
-    marginTop: token.marginXS,
-    textAlign: 'center',
-    display: 'block',
-  };
-
-  const backButtonStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: token.marginXS,
-    color: token.colorTextSecondary,
-    fontSize: token.fontSize,
-    cursor: 'pointer',
-    marginBottom: token.marginLG,
-  };
-
   // Password validation rules
   const passwordRules = [
     { required: true, message: 'Please enter a password' },
@@ -213,360 +193,17 @@ export default function RegisterPage() {
     },
   ];
 
-  // Feature items for left panel
-  const features = [
-    { icon: <SafetyCertificateOutlined />, title: 'Bank-Grade Security', desc: 'Your assets are protected with institutional-level security' },
-    { icon: <ThunderboltOutlined />, title: 'Instant Trading', desc: 'Execute trades in milliseconds with zero downtime' },
-    { icon: <GlobalOutlined />, title: 'Global Access', desc: 'Trade College Coins from anywhere in the world' },
-    { icon: <CustomerServiceOutlined />, title: '24/7 Support', desc: 'Get help anytime from our dedicated support team' },
+  // Benefits for left panel
+  const benefits = [
+    { icon: <RocketOutlined />, title: 'Start Trading in Minutes', desc: 'Quick verification process' },
+    { icon: <GiftOutlined />, title: '$10,000 Practice Balance', desc: 'Learn risk-free in Learner Mode' },
+    { icon: <BookOutlined />, title: 'Educational Resources', desc: 'Master crypto trading basics' },
+    { icon: <SafetyCertificateOutlined />, title: 'Bank-Grade Security', desc: 'Your assets are protected' },
   ];
 
-  // Styles for left panel
-  const pageContainerStyle: React.CSSProperties = {
-    minHeight: '100vh',
-    backgroundColor: token.colorBgLayout,
-  };
-
-  const leftPanelStyle: React.CSSProperties = {
-    background: `linear-gradient(135deg, ${token.colorPrimary} 0%, ${token.colorPrimaryActive} 100%)`,
-    minHeight: '100vh',
-    padding: token.paddingXL,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    position: 'relative',
-    overflow: 'hidden',
-  };
-
-  const leftPanelOverlayStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundImage: `radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
-                      radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 40%)`,
-    pointerEvents: 'none',
-  };
-
-  const leftContentStyle: React.CSSProperties = {
-    position: 'relative',
-    zIndex: 1,
-    maxWidth: 480,
-  };
-
-  const leftLogoStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: token.marginSM,
-    marginBottom: token.marginXL,
-    textDecoration: 'none',
-  };
-
-  const leftTitleStyle: React.CSSProperties = {
-    color: '#ffffff',
-    fontSize: token.fontSizeHeading1,
-    fontWeight: fontWeights.bold,
-    marginBottom: token.marginMD,
-    lineHeight: 1.2,
-  };
-
-  const leftSubtitleStyle: React.CSSProperties = {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: token.fontSizeLG,
-    marginBottom: token.marginXL,
-    lineHeight: 1.6,
-  };
-
-  const featureItemStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: token.marginMD,
-    marginBottom: token.marginLG,
-  };
-
-  const featureIconStyle: React.CSSProperties = {
-    width: token.controlHeightLG,
-    height: token.controlHeightLG,
-    borderRadius: token.borderRadius,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: token.fontSizeHeading4,
-    color: '#ffffff',
-    flexShrink: 0,
-  };
-
-  const featureTitleStyle: React.CSSProperties = {
-    color: '#ffffff',
-    fontSize: token.fontSize,
-    fontWeight: fontWeights.semibold,
-    marginBottom: token.marginXXS,
-  };
-
-  const featureDescStyle: React.CSSProperties = {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: token.fontSize,
-    lineHeight: 1.5,
-  };
-
-  // Styles for right panel (form)
-  const rightPanelStyle: React.CSSProperties = {
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-    backgroundColor: token.colorBgContainer,
-  };
-
-  const formContainerStyle: React.CSSProperties = {
-    width: '100%',
-    maxWidth: 520,
-    margin: '0 auto',
-    padding: token.paddingLG,
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-  };
-
-  const formHeaderStyle: React.CSSProperties = {
-    marginBottom: token.marginLG,
-  };
-
-  const formTitleStyle: React.CSSProperties = {
-    fontSize: token.fontSizeHeading2,
-    fontWeight: fontWeights.bold,
-    color: token.colorText,
-    marginBottom: token.marginXS,
-  };
-
-  const formSubtitleStyle: React.CSSProperties = {
-    fontSize: token.fontSize,
-    color: token.colorTextSecondary,
-  };
-
-  // OTP step content
-  const renderOtpStep = () => (
-    <div style={formContainerStyle}>
-      <div style={backButtonStyle} onClick={() => setStep('form')}>
-        <ArrowLeftOutlined />
-        Back to form
-      </div>
-
-      <div style={formHeaderStyle}>
-        <Title level={2} style={formTitleStyle}>Verify Your Account</Title>
-        <Text style={formSubtitleStyle}>
-          We&apos;ve sent verification codes to {formData?.email} and your phone
-        </Text>
-      </div>
-
-      {/* Email OTP */}
-      <div style={otpSectionStyle}>
-        <Text style={otpLabelStyle}>Email Verification Code</Text>
-        <OTPInput
-          value={otpEmail}
-          onChange={setOtpEmail}
-          disabled={loading}
-        />
-        <Text style={resendStyle} onClick={handleResendEmail}>
-          {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code'}
-        </Text>
-      </div>
-
-      {/* Phone OTP */}
-      <div style={otpSectionStyle}>
-        <Text style={otpLabelStyle}>Phone Verification Code</Text>
-        <OTPInput
-          value={otpPhone}
-          onChange={setOtpPhone}
-          disabled={loading}
-        />
-        <Text style={resendStyle} onClick={handleResendPhone}>
-          {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code'}
-        </Text>
-      </div>
-
-      <LoadingButton
-        loading={loading}
-        onClick={handleOtpSubmit}
-        disabled={otpEmail.length !== 6 || otpPhone.length !== 6}
-      >
-        Verify & Create Account
-      </LoadingButton>
-    </div>
-  );
-
-  // Form step content
-  const renderFormStep = () => (
-    <div style={formContainerStyle}>
-      <div style={formHeaderStyle}>
-        <Title level={2} style={formTitleStyle}>Create Account</Title>
-        <Text style={formSubtitleStyle}>Start your College Coins journey today</Text>
-      </div>
-
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleFormSubmit}
-        requiredMark={false}
-        size="large"
-        initialValues={{ phoneCountry: '1', country: 'US' }}
-        className="register-form"
-      >
-        {/* Email & Country - 2 columns on desktop */}
-        <Row gutter={token.marginMD}>
-          <Col xs={24} md={12}>
-            <Form.Item
-              name="email"
-              label={<span style={labelStyle}>Email Address</span>}
-              rules={[
-                { required: true, message: 'Please enter your email' },
-                { type: 'email', message: 'Please enter a valid email' },
-              ]}
-            >
-              <Input
-                prefix={<MailOutlined style={{ color: token.colorTextSecondary }} />}
-                placeholder="you@example.com"
-                style={inputStyle}
-                autoComplete="email"
-                disabled={loading}
-              />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={12}>
-            <Form.Item
-              name="country"
-              label={<span style={labelStyle}>Country of Residence</span>}
-              rules={[{ required: true, message: 'Please select your country' }]}
-            >
-              <Select
-                showSearch
-                placeholder="Select country"
-                options={countryOptions}
-                disabled={loading}
-                filterOption={filterFromStart}
-                style={{ height: token.controlHeightLG }}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        {/* Phone - compact grouped field 40/60 split */}
-        <Form.Item
-          label={<span style={labelStyle}>Phone Number</span>}
-          required
-        >
-          <Space.Compact style={{ width: '100%' }}>
-            <Form.Item
-              name="phoneCountry"
-              noStyle
-              rules={[{ required: true }]}
-            >
-              <Select
-                showSearch
-                style={{ width: '40%' }}
-                options={phoneCodeOptions}
-                disabled={loading}
-                filterOption={filterFromStart}
-                popupMatchSelectWidth={240}
-              />
-            </Form.Item>
-            <Form.Item
-              name="phone"
-              noStyle
-              rules={[
-                { required: true, message: 'Please enter your phone number' },
-                { pattern: /^\d{7,15}$/, message: 'Enter valid phone number' },
-              ]}
-            >
-              <Input
-                style={{ width: '60%', height: token.controlHeightLG }}
-                placeholder="Phone number"
-                autoComplete="tel"
-                disabled={loading}
-              />
-            </Form.Item>
-          </Space.Compact>
-        </Form.Item>
-
-        {/* Password & Confirm - 2 columns on desktop */}
-        <Row gutter={token.marginMD}>
-          <Col xs={24} md={12}>
-            <Form.Item
-              name="password"
-              label={<span style={labelStyle}>Password</span>}
-              rules={passwordRules}
-            >
-              <Input
-                prefix={<LockOutlined style={{ color: token.colorTextSecondary }} />}
-                suffix={
-                  <span
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{ cursor: 'pointer', color: token.colorTextSecondary }}
-                  >
-                    {showPassword ? <EyeOutlined /> : <EyeInvisibleOutlined />}
-                  </span>
-                }
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Create password"
-                style={inputStyle}
-                autoComplete="new-password"
-                disabled={loading}
-              />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={12}>
-            <Form.Item
-              name="confirmPassword"
-              label={<span style={labelStyle}>Confirm Password</span>}
-              dependencies={['password']}
-              rules={[
-                { required: true, message: 'Please confirm your password' },
-                ({ getFieldValue }) => ({
-                  validator(_, value) {
-                    if (!value || getFieldValue('password') === value) {
-                      return Promise.resolve();
-                    }
-                    return Promise.reject(new Error('Passwords do not match'));
-                  },
-                }),
-              ]}
-            >
-              <Input
-                prefix={<LockOutlined style={{ color: token.colorTextSecondary }} />}
-                type="password"
-                placeholder="Confirm password"
-                style={inputStyle}
-                autoComplete="new-password"
-                disabled={loading}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        {/* Submit Button */}
-        <Form.Item style={{ marginBottom: token.marginMD }}>
-          <LoadingButton loading={loading} htmlType="submit">
-            Create Account
-          </LoadingButton>
-        </Form.Item>
-
-          {/* Login Link - hidden on mobile (shown in header) */}
-          <div className="desktop-login-link">
-            <Divider>
-              <span style={{ color: token.colorTextSecondary, fontSize: token.fontSize }}>or</span>
-            </Divider>
-            <Text style={bottomTextStyle}>
-              Already have an account?{' '}
-              <Link href="/login" style={linkStyle}>
-                Sign In
-              </Link>
-            </Text>
-          </div>
-      </Form>
-    </div>
-  );
+  // Don't render while checking auth
+  if (authLoading) return null;
+  if (isLoggedIn) return null;
 
   return (
     <>
@@ -575,107 +212,709 @@ export default function RegisterPage() {
         <meta name="description" content="Create your InTuition Exchange account" />
       </Head>
 
-      <div style={pageContainerStyle}>
-        <Row style={{ minHeight: '100vh' }}>
-          {/* Left Panel - Marketing Content (hidden on mobile) */}
-          <Col xs={0} md={10} lg={10} xl={12}>
-            <div style={leftPanelStyle}>
-              <div style={leftPanelOverlayStyle} />
-              <div style={leftContentStyle}>
-                {/* Logo */}
-                <Link href="/" style={leftLogoStyle}>
-                  <div style={{
-                    width: token.controlHeightLG,
-                    height: token.controlHeightLG,
-                    backgroundColor: 'rgba(255,255,255,0.2)',
-                    borderRadius: token.borderRadiusSM,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    position: 'relative',
-                  }}>
-                    <Image
-                      src="/images/intuition-logo-no-text.svg"
-                      alt="InTuition"
-                      width={28}
-                      height={28}
-                    />
-                  </div>
-                  <span style={{ color: '#ffffff', fontSize: token.fontSizeHeading4, fontWeight: fontWeights.bold }}>
-                    InTuition
-                  </span>
-                </Link>
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          backgroundColor: isDark ? '#0f0f14' : '#f8f9fc',
+        }}
+      >
+        {/* Left Panel - Immersive Branding */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          style={{
+            flex: isMobile ? 'none' : '1 1 45%',
+            minHeight: isMobile ? 'auto' : '100vh',
+            background: 'linear-gradient(135deg, #0d7377 0%, #14919b 50%, #0f766e 100%)',
+            position: 'relative',
+            overflow: 'hidden',
+            display: isMobile ? 'none' : 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: token.paddingXL * 2,
+          }}
+        >
+          {/* Decorative Elements */}
+          <div
+            style={{
+              position: 'absolute',
+              top: -80,
+              right: -80,
+              width: 350,
+              height: 350,
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.1)',
+              filter: 'blur(50px)',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              bottom: -30,
+              left: '40%',
+              width: 250,
+              height: 250,
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.08)',
+              filter: 'blur(40px)',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: -30,
+              width: 150,
+              height: 150,
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.06)',
+              filter: 'blur(25px)',
+            }}
+          />
 
-                {/* Headline */}
-                <h1 style={leftTitleStyle}>
-                  Trade College Coins with Confidence
-                </h1>
-                <p style={leftSubtitleStyle}>
-                  Join thousands of students and institutions trading TUIT tokens on the most trusted College Coins exchange.
-                </p>
+          {/* Logo */}
+          <Link 
+            href="/" 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: token.marginSM,
+              textDecoration: 'none',
+              position: 'relative',
+              zIndex: 1,
+            }}
+          >
+            <Image
+              src="/images/intuition-logo-no-text.svg"
+              alt="InTuition"
+              width={40}
+              height={40}
+            />
+            <span style={{ 
+              color: '#ffffff', 
+              fontSize: token.fontSizeHeading4, 
+              fontWeight: fontWeights.bold,
+              letterSpacing: '-0.02em',
+            }}>
+              InTuition
+            </span>
+          </Link>
 
-                {/* Features */}
-                {features.map((feature, index) => (
-                  <div key={index} style={featureItemStyle}>
-                    <div style={featureIconStyle}>{feature.icon}</div>
-                    <div>
-                      <div style={featureTitleStyle}>{feature.title}</div>
-                      <div style={featureDescStyle}>{feature.desc}</div>
-                    </div>
+          {/* Main Content */}
+          <div style={{ position: 'relative', zIndex: 1, maxWidth: 480, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              {/* Hero Image */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                style={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  marginBottom: token.marginXL,
+                }}
+              >
+                <Image
+                  src="/images/signup.png"
+                  alt="Start Trading"
+                  width={280}
+                  height={280}
+                  style={{ objectFit: 'contain' }}
+                />
+              </motion.div>
+
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                style={{
+                  color: '#ffffff',
+                  fontSize: token.fontSizeHeading2,
+                  fontWeight: fontWeights.bold,
+                  marginBottom: token.marginSM,
+                  lineHeight: 1.2,
+                  letterSpacing: '-0.02em',
+                  textAlign: 'center',
+                }}
+              >
+                Start Your Trading Journey
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+                style={{
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  fontSize: token.fontSizeLG,
+                  lineHeight: 1.5,
+                  textAlign: 'center',
+                  marginBottom: token.marginLG,
+                }}
+              >
+                Trade College Coins, build your portfolio, and learn crypto trading the smart way.
+              </motion.p>
+
+              {/* Benefits Pills */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+                style={{ 
+                  display: 'flex', 
+                  flexWrap: 'wrap', 
+                  gap: token.marginSM, 
+                  justifyContent: 'center',
+                }}
+              >
+                {benefits.map((benefit, index) => (
+                  <div 
+                    key={index} 
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: token.marginXS,
+                      padding: `${token.paddingXS}px ${token.paddingSM}px`,
+                      backgroundColor: 'rgba(255,255,255,0.15)',
+                      borderRadius: 20,
+                      fontSize: token.fontSizeSM,
+                      color: '#ffffff',
+                    }}
+                  >
+                    {benefit.icon}
+                    <span>{benefit.title}</span>
                   </div>
                 ))}
-              </div>
+              </motion.div>
             </div>
-          </Col>
 
-          {/* Right Panel - Form */}
-          <Col xs={24} md={14} lg={14} xl={12}>
-            <div style={rightPanelStyle}>
-              {/* Mobile header with state-aware auth link */}
-              <div className="mobile-auth-header">
-                <AuthHeader />
+          {/* Bottom Indicator */}
+          <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: token.marginSM,
+                position: 'relative',
+                zIndex: 1,
+              }}
+            >
+              <CheckCircleFilled style={{ color: '#ffffff', fontSize: 18 }} />
+              <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: token.fontSize }}>
+                Trusted by 100,000+ students across 50+ colleges
+              </span>
+            </motion.div>
+        </motion.div>
+
+        {/* Right Panel - Form */}
+        <motion.div
+          initial={{ opacity: 0, x: isMobile ? 0 : 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          style={{
+            flex: isMobile ? 1 : '1 1 55%',
+            display: 'flex',
+            flexDirection: 'column',
+            backgroundColor: isDark ? '#0f0f14' : '#ffffff',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Subtle gradient overlay for color */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: isDark 
+                ? 'radial-gradient(ellipse at 100% 0%, rgba(13, 115, 119, 0.15) 0%, transparent 50%), radial-gradient(ellipse at 0% 100%, rgba(20, 145, 155, 0.1) 0%, transparent 50%)'
+                : 'radial-gradient(ellipse at 100% 0%, rgba(13, 115, 119, 0.15) 0%, transparent 60%), radial-gradient(ellipse at 0% 100%, rgba(20, 145, 155, 0.12) 0%, transparent 60%)',
+              pointerEvents: 'none',
+            }}
+          />
+          {/* Top Bar */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: isMobile 
+                ? `${token.paddingSM}px ${token.paddingMD}px`
+                : `${token.paddingMD}px ${token.paddingLG}px`,
+              borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
+              flexShrink: 0,
+              position: 'relative',
+              zIndex: 1,
+            }}
+          >
+            <Link 
+              href="/"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: token.marginXS,
+                color: token.colorTextSecondary,
+                fontSize: token.fontSize,
+              }}
+            >
+              <ArrowLeftOutlined />
+              Back to Home
+            </Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: token.marginMD }}>
+              {/* Theme Toggle */}
+              <div
+                onClick={toggleMode}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                  fontSize: token.fontSizeLG,
+                }}
+              >
+                {isDark ? '🌙' : '☀️'}
               </div>
-
-              {step === 'otp' ? renderOtpStep() : renderFormStep()}
-
-              {/* Back to home link */}
-              <div style={{ 
-                textAlign: 'center', 
-                padding: token.paddingLG,
-              }}>
-                <Link href="/" style={{ color: token.colorTextSecondary, fontSize: token.fontSize }}>
-                  ← Back to Home
-                </Link>
-              </div>
+              <Link href="/login">
+                <span
+                  style={{
+                    padding: `${token.paddingXS}px ${token.paddingMD}px`,
+                    borderRadius: token.borderRadius,
+                    background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+                    color: '#ffffff',
+                    fontSize: token.fontSize,
+                    fontWeight: fontWeights.semibold,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Sign In
+                </span>
+              </Link>
             </div>
-          </Col>
-        </Row>
+          </div>
+
+          {/* Form Container */}
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              padding: isMobile 
+                ? `${token.paddingMD}px ${token.paddingMD}px`
+                : `${token.paddingLG}px ${token.paddingXL * 2}px`,
+              maxWidth: 560,
+              width: '100%',
+              margin: '0 auto',
+              overflowY: 'auto',
+              position: 'relative',
+              zIndex: 1,
+            }}
+          >
+            <AnimatePresence mode="wait">
+              {step === 'form' ? (
+                <motion.div
+                  key="form"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {/* Form Header */}
+                  <div style={{ marginBottom: isMobile ? token.marginSM : token.marginLG }}>
+                    <Title
+                      level={2}
+                      style={{
+                        fontSize: isMobile ? token.fontSizeHeading4 : token.fontSizeHeading2,
+                        fontWeight: fontWeights.bold,
+                        color: token.colorText,
+                        marginBottom: 4,
+                      }}
+                    >
+                      Create your account
+                    </Title>
+                    <Text style={{ fontSize: token.fontSizeSM, color: token.colorTextSecondary }}>
+                      Start your College Coins journey in just a few steps
+                    </Text>
+                  </div>
+
+                  <Form
+                    form={form}
+                    layout="vertical"
+                    onFinish={handleFormSubmit}
+                    requiredMark={false}
+                    size="large"
+                    initialValues={{ phoneCountry: '1', country: 'US' }}
+                  >
+                    {/* Country */}
+                    <Form.Item
+                      name="country"
+                      label={<span style={{ fontWeight: fontWeights.medium, fontSize: isMobile ? token.fontSizeSM : token.fontSize }}>Country</span>}
+                      rules={[{ required: true, message: 'Please select your country' }]}
+                      style={{ marginBottom: isMobile ? token.marginSM : token.marginMD }}
+                    >
+                      <Select
+                        showSearch
+                        placeholder="Select your country"
+                        options={countryOptions}
+                        disabled={loading}
+                        filterOption={filterFromStart}
+                        style={{ height: isMobile ? 44 : 48 }}
+                      />
+                    </Form.Item>
+
+                    {/* Email */}
+                    <Form.Item
+                      name="email"
+                      label={<span style={{ fontWeight: fontWeights.medium, fontSize: isMobile ? token.fontSizeSM : token.fontSize }}>Email Address</span>}
+                      rules={[
+                        { required: true, message: 'Please enter your email' },
+                        { type: 'email', message: 'Please enter a valid email' },
+                      ]}
+                      style={{ marginBottom: isMobile ? token.marginSM : token.marginMD }}
+                    >
+                      <Input
+                        prefix={<MailOutlined style={{ color: token.colorTextSecondary }} />}
+                        placeholder="you@example.com"
+                        style={{
+                          height: isMobile ? 44 : 48,
+                          borderRadius: token.borderRadius,
+                          backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : token.colorBgContainer,
+                        }}
+                        autoComplete="email"
+                        disabled={loading}
+                      />
+                    </Form.Item>
+
+                    {/* Phone */}
+                    <Form.Item
+                      label={<span style={{ fontWeight: fontWeights.medium, fontSize: isMobile ? token.fontSizeSM : token.fontSize }}>Phone Number</span>}
+                      required
+                      style={{ marginBottom: isMobile ? token.marginSM : token.marginMD }}
+                    >
+                      <Space.Compact style={{ width: '100%' }}>
+                        <Form.Item name="phoneCountry" noStyle rules={[{ required: true }]}>
+                          <Select
+                            showSearch
+                            style={{ width: '35%' }}
+                            options={phoneCodeOptions}
+                            disabled={loading}
+                            filterOption={filterFromStart}
+                            popupMatchSelectWidth={240}
+                          />
+                        </Form.Item>
+                        <Form.Item
+                          name="phone"
+                          noStyle
+                          rules={[
+                            { required: true, message: 'Please enter your phone number' },
+                            { pattern: /^\d{7,15}$/, message: 'Enter valid phone number' },
+                          ]}
+                        >
+                          <Input
+                            style={{ width: '65%', height: isMobile ? 44 : 48 }}
+                            placeholder="Phone number"
+                            autoComplete="new-phone-number"
+                            inputMode="tel"
+                            name="phone_number_field"
+                            disabled={loading}
+                          />
+                        </Form.Item>
+                      </Space.Compact>
+                    </Form.Item>
+
+                    {/* Password & Confirm Password - Same Row */}
+                    <Row gutter={token.marginSM}>
+                      <Col xs={12} md={12}>
+                        <Form.Item
+                          name="password"
+                          label={<span style={{ fontWeight: fontWeights.medium, fontSize: isMobile ? token.fontSizeSM : token.fontSize }}>Password</span>}
+                          rules={passwordRules}
+                          style={{ marginBottom: isMobile ? token.marginSM : token.marginLG }}
+                        >
+                          <Input
+                            prefix={<LockOutlined style={{ color: token.colorTextSecondary }} />}
+                            suffix={
+                              <span
+                                onClick={() => setShowPassword(!showPassword)}
+                                style={{ cursor: 'pointer', color: token.colorTextSecondary }}
+                              >
+                                {showPassword ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+                              </span>
+                            }
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder={isMobile ? "Password" : "Create password"}
+                            style={{
+                              height: isMobile ? 44 : 48,
+                              borderRadius: token.borderRadius,
+                              backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : token.colorBgContainer,
+                            }}
+                            autoComplete="new-password"
+                            disabled={loading}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={12} md={12}>
+                        <Form.Item
+                          name="confirmPassword"
+                          label={<span style={{ fontWeight: fontWeights.medium, fontSize: isMobile ? token.fontSizeSM : token.fontSize }}>Confirm</span>}
+                          dependencies={['password']}
+                          rules={[
+                            { required: true, message: 'Please confirm' },
+                            ({ getFieldValue }) => ({
+                              validator(_, value) {
+                                if (!value || getFieldValue('password') === value) {
+                                  return Promise.resolve();
+                                }
+                                return Promise.reject(new Error('Passwords do not match'));
+                              },
+                            }),
+                          ]}
+                          style={{ marginBottom: isMobile ? token.marginSM : token.marginLG }}
+                        >
+                          <Input
+                            prefix={<LockOutlined style={{ color: token.colorTextSecondary }} />}
+                            type="password"
+                            placeholder={isMobile ? "Confirm" : "Confirm password"}
+                            style={{
+                              height: isMobile ? 44 : 48,
+                              borderRadius: token.borderRadius,
+                              backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : token.colorBgContainer,
+                            }}
+                            autoComplete="new-password"
+                            disabled={loading}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+
+                    {/* Submit Button */}
+                    <Form.Item style={{ marginTop: token.marginMD, marginBottom: isMobile ? token.marginSM : token.marginMD }}>
+                      <LoadingButton
+                        loading={loading}
+                        htmlType="submit"
+                        style={{
+                          height: isMobile ? 48 : 52,
+                          background: 'linear-gradient(135deg, #0d7377 0%, #14919b 100%)',
+                          border: 'none',
+                        }}
+                      >
+                        Create Account
+                      </LoadingButton>
+                    </Form.Item>
+
+                    {/* Terms */}
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        color: token.colorTextSecondary,
+                        textAlign: 'center',
+                        display: 'block',
+                        marginBottom: isMobile ? token.marginXS : token.marginMD,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      By creating an account, you agree to our{' '}
+                      <Link href="/terms" style={{ color: token.colorPrimary }}>
+                        Terms of Service
+                      </Link>{' '}
+                      and{' '}
+                      <Link href="/privacy" style={{ color: token.colorPrimary }}>
+                        Privacy Policy
+                      </Link>
+                    </Text>
+
+                    {/* Sign In Link */}
+                    <div style={{ textAlign: 'center' }}>
+                      <Text style={{ color: token.colorTextSecondary, fontSize: token.fontSize }}>
+                        Already have an account?{' '}
+                        <Link
+                          href="/login"
+                          style={{
+                            color: token.colorPrimary,
+                            fontWeight: fontWeights.semibold,
+                          }}
+                        >
+                          Sign In
+                        </Link>
+                      </Text>
+                    </div>
+                  </Form>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="otp"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {/* Back Button */}
+                  <div
+                    onClick={() => setStep('form')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: token.marginXS,
+                      color: token.colorTextSecondary,
+                      fontSize: token.fontSize,
+                      cursor: 'pointer',
+                      marginBottom: token.marginLG,
+                    }}
+                  >
+                    <ArrowLeftOutlined />
+                    Back to form
+                  </div>
+
+                  {/* OTP Header */}
+                  <div style={{ marginBottom: token.marginXL }}>
+                    <Title
+                      level={2}
+                      style={{
+                        fontSize: isMobile ? token.fontSizeHeading3 : token.fontSizeHeading2,
+                        fontWeight: fontWeights.bold,
+                        color: token.colorText,
+                        marginBottom: token.marginXS,
+                      }}
+                    >
+                      Verify Your Account
+                    </Title>
+                    <Text style={{ fontSize: token.fontSize, color: token.colorTextSecondary }}>
+                      We&apos;ve sent verification codes to <strong>{formData?.email}</strong> and your phone
+                    </Text>
+                  </div>
+
+                  {/* Email OTP */}
+                  <div style={{ marginBottom: token.marginXL }}>
+                    <Text
+                      style={{
+                        fontSize: token.fontSize,
+                        fontWeight: fontWeights.medium,
+                        color: token.colorText,
+                        marginBottom: token.marginSM,
+                        display: 'block',
+                      }}
+                    >
+                      Email Verification Code
+                    </Text>
+                    <OTPInput value={otpEmail} onChange={setOtpEmail} disabled={loading} autoFocus={true} />
+                    <Text
+                      onClick={handleResendEmail}
+                      style={{
+                        fontSize: token.fontSize,
+                        color: resendCooldown > 0 ? token.colorTextDisabled : token.colorPrimary,
+                        cursor: resendCooldown > 0 ? 'default' : 'pointer',
+                        marginTop: token.marginSM,
+                        display: 'block',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code'}
+                    </Text>
+                  </div>
+
+                  {/* Phone OTP */}
+                  <div style={{ marginBottom: token.marginXL }}>
+                    <Text
+                      style={{
+                        fontSize: token.fontSize,
+                        fontWeight: fontWeights.medium,
+                        color: token.colorText,
+                        marginBottom: token.marginSM,
+                        display: 'block',
+                      }}
+                    >
+                      Phone Verification Code
+                    </Text>
+                    <OTPInput value={otpPhone} onChange={setOtpPhone} disabled={loading} autoFocus={false} />
+                    <Text
+                      onClick={handleResendPhone}
+                      style={{
+                        fontSize: token.fontSize,
+                        color: resendCooldown > 0 ? token.colorTextDisabled : token.colorPrimary,
+                        cursor: resendCooldown > 0 ? 'default' : 'pointer',
+                        marginTop: token.marginSM,
+                        display: 'block',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code'}
+                    </Text>
+                  </div>
+
+                  {/* Verify Button */}
+                  <LoadingButton
+                    loading={loading}
+                    onClick={handleOtpSubmit}
+                    disabled={otpEmail.length !== 6 || otpPhone.length !== 6}
+                    style={{
+                      height: 52,
+                      background: 'linear-gradient(135deg, #0d7377 0%, #14919b 100%)',
+                      border: 'none',
+                      color: '#ffffff',
+                    }}
+                  >
+                    Verify & Continue
+                  </LoadingButton>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Bottom secure indicator - hidden on mobile */}
+          {!isMobile && (
+            <div
+              style={{
+                textAlign: 'center',
+                padding: token.paddingMD,
+                borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
+                position: 'relative',
+                zIndex: 1,
+              }}
+            >
+              <Text style={{ color: token.colorTextSecondary, fontSize: token.fontSizeSM }}>
+                🔒 Your data is secured with 256-bit encryption
+              </Text>
+            </div>
+          )}
+        </motion.div>
       </div>
 
       <style jsx global>{`
-        @media (min-width: ${MOBILE_BREAKPOINT}px) {
-          .mobile-auth-header {
-            display: none !important;
+        @media (max-width: 767px) {
+          .ant-select-selector {
+            height: 44px !important;
+            display: flex !important;
+            align-items: center !important;
+          }
+          .ant-select-selection-search-input {
+            height: 42px !important;
+          }
+          .ant-form-item-label {
+            padding-bottom: 2px !important;
           }
         }
-        @media (max-width: ${MOBILE_BREAKPOINT - 1}px) {
-          .desktop-login-link {
-            display: none !important;
+        @media (min-width: 768px) {
+          .ant-select-selector {
+            height: 48px !important;
+            display: flex !important;
+            align-items: center !important;
           }
-        }
-        /* Tighter form spacing */
-        .register-form .ant-form-item {
-          margin-bottom: ${token.marginSM}px;
-        }
-        .register-form .ant-form-item-label {
-          padding-bottom: ${token.paddingXXS}px;
-        }
-        /* No margin on checkbox items */
-        .register-form .ant-form-item-checkbox {
-          margin-bottom: ${token.marginXXS}px;
+          .ant-select-selection-search-input {
+            height: 46px !important;
+          }
         }
       `}</style>
     </>
   );
 }
-
