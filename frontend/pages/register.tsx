@@ -37,7 +37,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { useThemeMode } from '@/context/ThemeContext';
 import { fontWeights } from '@/theme/themeConfig';
-import { getCountryOptions, getPhoneCodeOptions } from '@/data/countries';
+import { getCountryOptions, getPhoneCodeOptions, getCountryByCode } from '@/data/countries';
 
 const { Text, Title } = Typography;
 const { useToken } = theme;
@@ -95,13 +95,17 @@ export default function RegisterPage() {
     }
   }, [resendCooldown]);
 
-  const handleFormSubmit = async (values: RegisterData & { confirmPassword: string }) => {
+  const handleFormSubmit = async (values: RegisterData & { confirmPassword: string; phoneCountryCode: string }) => {
     setLoading(true);
     try {
+      // Convert country code (US) to phone code (1) for the API
+      const countryData = getCountryByCode(values.phoneCountryCode);
+      const phoneCountry = countryData?.phoneCode || '1';
+      
       const data: RegisterData = {
         email: values.email,
         phone: values.phone,
-        phoneCountry: values.phoneCountry,
+        phoneCountry: phoneCountry,
         password: values.password,
         country: values.country,
       };
@@ -554,7 +558,7 @@ export default function RegisterPage() {
                     onFinish={handleFormSubmit}
                     requiredMark={false}
                     size="large"
-                    initialValues={{ phoneCountry: '1', country: 'US' }}
+                    initialValues={{ phoneCountryCode: 'US', country: 'US' }}
                   >
                     {/* Country */}
                     <Form.Item
@@ -603,14 +607,14 @@ export default function RegisterPage() {
                       style={{ marginBottom: isMobile ? token.marginSM : token.marginMD }}
                     >
                       <Space.Compact style={{ width: '100%' }}>
-                        <Form.Item name="phoneCountry" noStyle rules={[{ required: true }]}>
+                        <Form.Item name="phoneCountryCode" noStyle rules={[{ required: true }]}>
                           <Select
                             showSearch
                             style={{ width: '35%' }}
                             options={phoneCodeOptions}
                             disabled={loading}
                             filterOption={filterFromStart}
-                            popupMatchSelectWidth={240}
+                            popupMatchSelectWidth={280}
                           />
                         </Form.Item>
                         <Form.Item

@@ -33,27 +33,31 @@ export const getCountryOptions = () =>
 
 // Get phone code options for Select component
 export const getPhoneCodeOptions = () => {
-  // Filter out countries without phone codes and deduplicate by phone code
-  const seen = new Set<string>();
+  // Show all countries with their phone codes (no deduplication)
+  // Priority countries appear first (US, CA, UK, etc.)
+  const priorityCodes = ['US', 'CA', 'GB', 'AU', 'IN'];
   
   return countries
     .filter((c) => c.phoneCode && c.phoneCode.length > 0)
-    .filter((c) => {
-      // Keep only first occurrence of each phone code
-      if (seen.has(c.phoneCode)) return false;
-      seen.add(c.phoneCode);
-      return true;
-    })
     .sort((a, b) => {
-      // Sort numerically by phone code
-      const numA = parseInt(a.phoneCode, 10);
-      const numB = parseInt(b.phoneCode, 10);
-      return numA - numB;
+      // Priority countries first
+      const aPriority = priorityCodes.indexOf(a.code);
+      const bPriority = priorityCodes.indexOf(b.code);
+      
+      if (aPriority !== -1 && bPriority !== -1) {
+        return aPriority - bPriority;
+      }
+      if (aPriority !== -1) return -1;
+      if (bPriority !== -1) return 1;
+      
+      // Then sort alphabetically by country name
+      return a.name.localeCompare(b.name);
     })
     .map((c) => ({
-      value: c.phoneCode,
+      value: c.code, // Use country code as value to uniquely identify
       label: `${c.flag} +${c.phoneCode} (${c.code})`,
       searchValue: `${c.name} ${c.code} ${c.phoneCode}`,
+      phoneCode: c.phoneCode, // Include phone code for later use
     }));
 };
 
