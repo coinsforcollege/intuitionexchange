@@ -173,7 +173,7 @@ export default function Header() {
                   paddingInline: token.paddingMD,
                 }}
               >
-                Overview
+                Dashboard
               </Button>
             </Link>
           ) : (
@@ -248,8 +248,23 @@ export default function Header() {
               ? [
                   {
                     key: "dashboard",
-                    icon: <AppstoreOutlined />,
-                    label: <Link href="/overview">Overview</Link>,
+                    icon: <AppstoreOutlined style={{ color: '#fff' }} />,
+                    label: (
+                      <Link 
+                        href="/overview"
+                        style={{
+                          fontWeight: fontWeights.semibold,
+                          color: '#fff',
+                        }}
+                      >
+                        Dashboard
+                      </Link>
+                    ),
+                    style: {
+                      backgroundColor: token.colorPrimary,
+                      borderRadius: 0,
+                      marginInline: 0,
+                    },
                   },
                 ]
               : [

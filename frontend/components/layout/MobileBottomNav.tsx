@@ -96,7 +96,7 @@ const MobileBottomNav: React.FC = () => {
   const isLearnerMode = appMode === 'learner';
 
   const navItems: NavItem[] = useMemo(() => [
-    { key: 'overview', label: 'Overview', href: '/overview' },
+    { key: 'overview', label: 'Dashboard', href: '/overview' },
     { key: 'buy-sell', label: 'Buy & Sell', href: '/buy-sell' },
     { key: 'trade', label: 'Trade', href: '/trade' },
     { key: 'portfolio', label: 'Portfolio', href: '/portfolio' },
