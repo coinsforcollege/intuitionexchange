@@ -64,6 +64,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch {
       // Even if API fails, clear local state
     } finally {
+      // Clear KYC banner dismissal so it shows again on next login
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('kycBannerDismissed');
+      }
       setUser(null);
     }
   }, []);

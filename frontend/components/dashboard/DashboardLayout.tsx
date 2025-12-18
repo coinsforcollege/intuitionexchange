@@ -79,7 +79,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const { sidebarCollapsed, setSidebarCollapsed } = useSidebar();
   const [greeting, setGreeting] = useState('Welcome');
   const [appMode, setAppMode] = useState<'learner' | 'investor'>('investor');
-  const [kycBannerDismissed, setKycBannerDismissed] = useState(false);
+  const [kycBannerDismissed, setKycBannerDismissed] = useState(() => {
+    // Initialize from sessionStorage (persists across navigation but clears on sign out)
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('kycBannerDismissed') === 'true';
+    }
+    return false;
+  });
 
   // Wait for client-side mount to avoid hydration mismatch with useBreakpoint
   const isMobile = mounted ? !screens.md : false;
@@ -180,6 +186,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   };
 
   const handleLogout = async () => {
+    // Clear KYC banner dismissal so it shows again on next login
+    sessionStorage.removeItem('kycBannerDismissed');
     await logout();
     router.push('/login');
   };
@@ -1108,7 +1116,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   cursor: 'pointer',
                   padding: 4,
                 }}
-                onClick={() => setKycBannerDismissed(true)}
+                onClick={() => {
+                  setKycBannerDismissed(true);
+                  sessionStorage.setItem('kycBannerDismissed', 'true');
+                }}
               />
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM, flex: 1, paddingRight: isMobile ? 24 : 0 }}>
@@ -1160,7 +1171,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                     padding: 4,
                     marginLeft: token.marginXS,
                   }}
-                  onClick={() => setKycBannerDismissed(true)}
+                  onClick={() => {
+                  setKycBannerDismissed(true);
+                  sessionStorage.setItem('kycBannerDismissed', 'true');
+                }}
                 />
               )}
             </div>
