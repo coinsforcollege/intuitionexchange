@@ -4,3 +4,4 @@ export { default as TradeForm } from './TradeForm';
 export { default as MobileTradeHeader } from './MobileTradeHeader';
 export { default as TradeFormModal } from './TradeFormModal';
 export { default as MobileTradePage } from './MobileTradePage';
+export { default as MiniPriceChart } from './MiniPriceChart';

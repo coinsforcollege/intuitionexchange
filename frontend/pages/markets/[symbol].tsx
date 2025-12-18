@@ -22,6 +22,7 @@ import { motion } from 'motion/react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import Header, { HEADER_HEIGHT } from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import { MiniPriceChart } from '@/components/exchange';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
 import { useExchange } from '@/context/ExchangeContext';
@@ -29,6 +30,7 @@ import { useThemeMode } from '@/context/ThemeContext';
 import { getWatchlist, toggleWatchlist } from '@/services/api/watchlist';
 import {
   getTokenDetails,
+  getMarketsList,
   TokenMarketData,
   formatLargeNumber,
   formatSupply,
@@ -168,6 +170,8 @@ export default function TokenDetailsPage() {
   const [loadingToken, setLoadingToken] = useState(true);
   const [isWatchlisted, setIsWatchlisted] = useState(false);
   const [isTogglingWatchlist, setIsTogglingWatchlist] = useState(false);
+  const [sparklineData, setSparklineData] = useState<number[]>([]);
+  const [loadingSparkline, setLoadingSparkline] = useState(true);
 
   const isDark = mode === 'dark';
   const isMobile = mounted ? !screens.md : true;
@@ -202,6 +206,24 @@ export default function TokenDetailsPage() {
       getTokenDetails(symbol.toUpperCase())
         .then((data) => { setTokenData(data); setLoadingToken(false); })
         .catch(() => setLoadingToken(false));
+    }
+  }, [pageLoading, symbol]);
+
+  // Fetch sparkline data for chart (public)
+  useEffect(() => {
+    if (!pageLoading && symbol && typeof symbol === 'string') {
+      setLoadingSparkline(true);
+      getMarketsList(1, 100, true)
+        .then((markets) => {
+          const market = markets.find(
+            (m) => m.symbol.toUpperCase() === symbol.toUpperCase()
+          );
+          if (market?.sparkline_in_7d?.price) {
+            setSparklineData(market.sparkline_in_7d.price);
+          }
+          setLoadingSparkline(false);
+        })
+        .catch(() => setLoadingSparkline(false));
     }
   }, [pageLoading, symbol]);
 
@@ -449,69 +471,123 @@ export default function TokenDetailsPage() {
                   </div>
                 </motion.div>
 
-                {/* Price card */}
+                {/* Price section - Two columns on desktop */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.05 }}
                   style={{
-                    padding: isMobile ? themeToken.paddingLG : themeToken.paddingXL,
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-                    borderRadius: themeToken.borderRadiusLG,
-                    color: '#fff',
+                    display: 'flex',
+                    flexDirection: isDesktop ? 'row' : 'column',
+                    gap: themeToken.marginMD,
                     marginBottom: themeToken.marginLG,
-                    position: 'relative',
-                    overflow: 'hidden',
                   }}
                 >
-                  <div style={{
-                    position: 'absolute',
-                    top: -30,
-                    right: -30,
-                    width: 100,
-                    height: 100,
-                    borderRadius: '50%',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    filter: 'blur(20px)',
-                  }} />
-
-                  <div style={{ position: 'relative', zIndex: 1 }}>
-                    <div style={{ fontSize: themeToken.fontSizeSM, opacity: 0.8, marginBottom: 4 }}>
-                      Current Price
-                    </div>
+                  {/* Left - Price Card */}
+                  <div
+                    style={{
+                      flex: isDesktop ? '1 1 50%' : '1 1 auto',
+                      padding: isMobile ? themeToken.paddingLG : themeToken.paddingXL,
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+                      borderRadius: themeToken.borderRadiusLG,
+                      color: '#fff',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      minHeight: isDesktop ? 180 : 'auto',
+                    }}
+                  >
                     <div style={{
-                      fontSize: isMobile ? themeToken.fontSizeHeading1 : 56,
-                      fontWeight: fontWeights.bold,
-                      fontVariantNumeric: 'tabular-nums',
-                      lineHeight: 1.1,
-                      marginBottom: themeToken.marginSM,
-                    }}>
-                      ${livePrice.toLocaleString('en-US', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: livePrice < 1 ? 6 : 2,
-                      })}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: themeToken.marginMD, flexWrap: 'wrap' }}>
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        padding: '6px 14px',
-                        borderRadius: 50,
-                        background: liveChange >= 0 ? 'rgba(22, 196, 127, 0.3)' : 'rgba(252, 111, 3, 0.3)',
-                        fontWeight: fontWeights.semibold,
+                      position: 'absolute',
+                      top: -30,
+                      right: -30,
+                      width: 100,
+                      height: 100,
+                      borderRadius: '50%',
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      filter: 'blur(20px)',
+                    }} />
+
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                      <div style={{ fontSize: themeToken.fontSizeSM, opacity: 0.8, marginBottom: 4 }}>
+                        Current Price
+                      </div>
+                      <div style={{
+                        fontSize: isMobile ? 28 : 32,
+                        fontWeight: fontWeights.bold,
+                        fontVariantNumeric: 'tabular-nums',
+                        lineHeight: 1.2,
+                        marginBottom: themeToken.marginSM,
+                        whiteSpace: 'nowrap',
                       }}>
-                        {liveChange >= 0 ? <RiseOutlined /> : <FallOutlined />}
-                        {liveChange >= 0 ? '+' : ''}{liveChange.toFixed(2)}% (24h)
-                      </span>
-                      <span style={{ opacity: 0.8, fontSize: themeToken.fontSizeSM }}>
-                        High: ${tokenData.market_data.high_24h.usd?.toLocaleString() || 'N/A'}
-                      </span>
-                      <span style={{ opacity: 0.8, fontSize: themeToken.fontSizeSM }}>
-                        Low: ${tokenData.market_data.low_24h.usd?.toLocaleString() || 'N/A'}
-                      </span>
+                        ${livePrice.toLocaleString('en-US', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: livePrice < 1 ? 6 : 2,
+                        })}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: themeToken.marginXS, flexWrap: 'wrap' }}>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          padding: '4px 10px',
+                          borderRadius: 50,
+                          background: liveChange >= 0 ? 'rgba(22, 196, 127, 0.3)' : 'rgba(252, 111, 3, 0.3)',
+                          fontWeight: fontWeights.semibold,
+                          fontSize: themeToken.fontSizeSM,
+                        }}>
+                          {liveChange >= 0 ? <RiseOutlined /> : <FallOutlined />}
+                          {liveChange >= 0 ? '+' : ''}{liveChange.toFixed(2)}%
+                        </span>
+                      </div>
+                      <div style={{ marginTop: themeToken.marginXS, opacity: 0.8, fontSize: themeToken.fontSizeSM }}>
+                        H: ${tokenData.market_data.high_24h.usd?.toLocaleString() || 'N/A'} · L: ${tokenData.market_data.low_24h.usd?.toLocaleString() || 'N/A'}
+                      </div>
                     </div>
                   </div>
+
+                  {/* Right - Mini Chart (Desktop only) */}
+                  {isDesktop && (
+                    <div
+                      style={{
+                        flex: '1 1 50%',
+                        padding: themeToken.paddingMD,
+                        background: isDark ? 'rgba(255,255,255,0.03)' : '#fff',
+                        borderRadius: themeToken.borderRadiusLG,
+                        border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(102, 126, 234, 0.1)'}`,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minHeight: 180,
+                      }}
+                    >
+                      <div style={{
+                        fontSize: themeToken.fontSizeSM,
+                        color: themeToken.colorTextSecondary,
+                        marginBottom: themeToken.marginXS,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexShrink: 0,
+                      }}>
+                        <span>7 Day Price</span>
+                        <span style={{
+                          color: (tokenData.market_data.price_change_percentage_7d || 0) >= 0 ? '#16C47F' : '#fc6f03',
+                          fontWeight: fontWeights.semibold,
+                        }}>
+                          {(tokenData.market_data.price_change_percentage_7d || 0) >= 0 ? '+' : ''}{tokenData.market_data.price_change_percentage_7d?.toFixed(2) || '0.00'}%
+                        </span>
+                      </div>
+                      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+                        <MiniPriceChart
+                          prices={sparklineData}
+                          isLoading={loadingSparkline}
+                          isPositive={(tokenData.market_data.price_change_percentage_7d || 0) >= 0}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
 
                 {/* Key Stats - no background cards, colored text with separators */}
