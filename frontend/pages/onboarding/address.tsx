@@ -1,29 +1,42 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { Form, Input, Select, message, theme, Skeleton, Row, Col } from 'antd';
+import { Form, Input, Select, message, theme, Skeleton, Row, Col, Button } from 'antd';
 import { HomeOutlined, ArrowRightOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { Country, State, ICountry, IState } from 'country-state-city';
+import { motion } from 'motion/react';
 import OnboardingLayout from '@/components/onboarding/OnboardingLayout';
-import LoadingButton from '@/components/auth/LoadingButton';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
+import { useThemeMode } from '@/context/ThemeContext';
 import { getKycDetails, saveAddress, AddressData, ApiError } from '@/services/api/onboarding';
 
 const { useToken } = theme;
+const { useBreakpoint } = Grid;
+import { Grid } from 'antd';
+
+// Theme colors
+const themeColors = {
+  primary: '#6366F1',
+  light: '#A5B4FC',
+  dark: '#4338CA',
+};
 
 export default function AddressPage() {
   const router = useRouter();
   const { token } = useToken();
   const { user } = useAuth();
+  const { mode } = useThemeMode();
+  const screens = useBreakpoint();
   const [form] = Form.useForm();
+  const isDark = mode === 'dark';
+  const isMobile = !screens.md;
+  
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
-  const [isAnimated, setIsAnimated] = useState(false);
-  // Default to user's country from registration, fallback to US
   const [selectedCountry, setSelectedCountry] = useState<string>(user?.country || 'US');
 
-  // Get all countries from library
+  // Get all countries
   const countryOptions = useMemo(() => {
     const countries = Country.getAllCountries();
     return countries.map((country: ICountry) => ({
@@ -33,7 +46,7 @@ export default function AddressPage() {
     }));
   }, []);
 
-  // Get states/provinces for selected country
+  // Get states for selected country
   const stateOptions = useMemo(() => {
     const states = State.getStatesOfCountry(selectedCountry);
     return states.map((state: IState) => ({
@@ -43,13 +56,7 @@ export default function AddressPage() {
     }));
   }, [selectedCountry]);
 
-  // Check if selected country has states
   const hasStates = stateOptions.length > 0;
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsAnimated(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -57,13 +64,11 @@ export default function AddressPage() {
       return;
     }
 
-    // Load existing data
     const loadData = async () => {
       try {
         const details = await getKycDetails();
         if (details?.address) {
           const { street1, street2, city, region, postalCode, country } = details.address;
-          // Use KYC country if exists, otherwise use user's registration country
           const countryValue = country || user?.country || 'US';
           form.setFieldsValue({
             street1: street1 || '',
@@ -75,13 +80,11 @@ export default function AddressPage() {
           });
           setSelectedCountry(countryValue);
         } else {
-          // No KYC data yet - pre-populate with user's registration country
           const userCountry = user?.country || 'US';
           form.setFieldsValue({ country: userCountry });
           setSelectedCountry(userCountry);
         }
       } catch {
-        // Continue with form using user's country from registration
         const userCountry = user?.country || 'US';
         form.setFieldsValue({ country: userCountry });
         setSelectedCountry(userCountry);
@@ -117,7 +120,7 @@ export default function AddressPage() {
 
   const handleCountryChange = (value: string) => {
     setSelectedCountry(value);
-    form.setFieldValue('region', ''); // Reset region when country changes
+    form.setFieldValue('region', '');
   };
 
   const filterOption = (input: string, option: { label?: string; value?: string; searchValue?: string } | undefined) => {
@@ -125,49 +128,116 @@ export default function AddressPage() {
     return searchValue.toLowerCase().startsWith(input.toLowerCase());
   };
 
-  const inputStyle: React.CSSProperties = {
-    height: token.controlHeightLG,
-    fontSize: token.fontSize,
-    borderRadius: token.borderRadius,
-  };
-
-  const labelStyle: React.CSSProperties = {
-    fontWeight: fontWeights.medium,
-    fontSize: token.fontSize,
-  };
-
-  const formContainerStyle: React.CSSProperties = {
-    opacity: isAnimated ? 1 : 0,
-    transform: `translateY(${isAnimated ? 0 : 20}px)`,
-    transition: 'all 0.5s ease-out',
-  };
-
-  const backButtonStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: token.marginXS,
-    color: token.colorTextSecondary,
-    fontSize: token.fontSize,
-    cursor: 'pointer',
-    marginBottom: token.marginLG,
-  };
-
-  // Dynamic label based on country
+  // Dynamic labels
   const getRegionLabel = () => {
     if (selectedCountry === 'US') return 'State';
     if (selectedCountry === 'CA') return 'Province';
     if (selectedCountry === 'GB') return 'County';
     if (selectedCountry === 'AU') return 'State/Territory';
     if (selectedCountry === 'IN') return 'State';
-    return 'State/Province/Region';
+    return 'Region';
   };
 
   const getPostalCodeLabel = () => {
     if (selectedCountry === 'US') return 'ZIP Code';
     if (selectedCountry === 'GB') return 'Postcode';
-    if (selectedCountry === 'CA') return 'Postal Code';
     return 'Postal Code';
   };
+
+  // Themed styles
+  const getInputStyle = (): React.CSSProperties => ({
+    background: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.9)',
+    border: isDark ? '1px solid rgba(255,255,255,0.15)' : '1px solid rgba(255,255,255,0.5)',
+    borderRadius: 12,
+    height: 48,
+    fontSize: token.fontSize,
+    color: isDark ? '#ffffff' : '#1a1a2e',
+  });
+
+  const getLabelStyle = (): React.CSSProperties => ({
+    fontWeight: fontWeights.medium,
+    fontSize: token.fontSize,
+    color: '#ffffff',
+    textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+  });
+
+  const getButtonStyle = (primary = true): React.CSSProperties => ({
+    background: primary
+      ? (isDark
+          ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.dark} 100%)`
+          : 'linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)')
+      : (isDark
+          ? 'rgba(255,255,255,0.1)'
+          : 'rgba(255,255,255,0.2)'),
+    boxShadow: primary
+      ? (isDark ? `0 4px 14px rgba(99, 102, 241, 0.4)` : `0 4px 14px rgba(0,0,0,0.2)`)
+      : 'none',
+    border: primary ? 'none' : '1px solid rgba(255,255,255,0.3)',
+    borderRadius: 12,
+    color: primary ? (isDark ? '#ffffff' : themeColors.dark) : '#ffffff',
+    fontWeight: fontWeights.bold,
+    height: 48,
+    fontSize: token.fontSize,
+  });
+
+  // Form error styles
+  const formStyles = isDark 
+    ? `
+      .onboarding-form .ant-form-item-explain-error {
+        color: #FCA5A5 !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        font-weight: 500;
+      }
+      .onboarding-form .ant-form-item-has-error .ant-input,
+      .onboarding-form .ant-form-item-has-error .ant-select-selector {
+        border-color: #FCA5A5 !important;
+      }
+      .onboarding-form .ant-input::placeholder {
+        color: rgba(255,255,255,0.4) !important;
+      }
+      .onboarding-form .ant-input-prefix {
+        color: rgba(255,255,255,0.5) !important;
+      }
+      .onboarding-form .ant-select-selector {
+        background: rgba(0,0,0,0.3) !important;
+        border: 1px solid rgba(255,255,255,0.15) !important;
+        border-radius: 12px !important;
+        height: 48px !important;
+      }
+      .onboarding-form .ant-select-selection-item {
+        color: #ffffff !important;
+        line-height: 46px !important;
+      }
+      .onboarding-form .ant-select-selection-placeholder {
+        color: rgba(255,255,255,0.4) !important;
+      }
+      .onboarding-form .ant-select-arrow {
+        color: rgba(255,255,255,0.5) !important;
+      }
+    `
+    : `
+      .onboarding-form .ant-form-item-explain-error {
+        color: #FFE066 !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        font-weight: 500;
+      }
+      .onboarding-form .ant-form-item-has-error .ant-input,
+      .onboarding-form .ant-form-item-has-error .ant-select-selector {
+        border-color: #FFE066 !important;
+      }
+      .onboarding-form .ant-input::placeholder {
+        color: rgba(0,0,0,0.35) !important;
+      }
+      .onboarding-form .ant-select-selector {
+        background: rgba(255,255,255,0.9) !important;
+        border: 1px solid rgba(255,255,255,0.5) !important;
+        border-radius: 12px !important;
+        height: 48px !important;
+      }
+      .onboarding-form .ant-select-selection-item {
+        line-height: 46px !important;
+      }
+    `;
 
   if (pageLoading) {
     return (
@@ -175,10 +245,8 @@ export default function AddressPage() {
         <Head>
           <title>Address - InTuition Exchange</title>
         </Head>
-        <OnboardingLayout currentStep={1} title="Your Address" subtitle="Where do you currently reside?">
-          <div style={{ maxWidth: 400, margin: '0 auto' }}>
-            <Skeleton active paragraph={{ rows: 8 }} />
-          </div>
+        <OnboardingLayout currentStep={1} title="Your Address" subtitle="Where do you currently live?">
+          <Skeleton active paragraph={{ rows: 8 }} />
         </OnboardingLayout>
       </>
     );
@@ -195,149 +263,158 @@ export default function AddressPage() {
         currentStep={1}
         title="Your Address"
         subtitle="Enter your current residential address"
+        showBack
+        onBack={() => router.push('/onboarding/personal')}
       >
-        <div style={formContainerStyle}>
-          <div style={{ maxWidth: 400, margin: '0 auto' }}>
-            {/* Back Button */}
-            <div style={backButtonStyle} onClick={() => router.push('/onboarding/personal')}>
-              <ArrowLeftOutlined />
-              Back to Personal Details
-            </div>
-
-            <Form
-              form={form}
-              layout="vertical"
-              onFinish={handleSubmit}
-              requiredMark={false}
-              size="large"
-              initialValues={{ country: user?.country || 'US' }}
+        <style>{formStyles}</style>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleSubmit}
+            requiredMark={false}
+            size="large"
+            initialValues={{ country: user?.country || 'US' }}
+            className="onboarding-form"
+          >
+            {/* Country */}
+            <Form.Item
+              name="country"
+              label={<span style={getLabelStyle()}>Country</span>}
+              rules={[{ required: true, message: 'Please select your country' }]}
+              style={{ marginBottom: token.marginMD }}
             >
-              {/* Country */}
-              <Form.Item
-                name="country"
-                label={<span style={labelStyle}>Country</span>}
-                rules={[{ required: true, message: 'Please select your country' }]}
-                style={{ marginBottom: token.marginMD }}
-              >
-                <Select
-                  showSearch
-                  placeholder="Select country"
-                  options={countryOptions}
-                  disabled={loading}
-                  onChange={handleCountryChange}
-                  optionFilterProp="searchValue"
-                  filterOption={filterOption}
-                  style={inputStyle}
-                />
-              </Form.Item>
+              <Select
+                showSearch
+                placeholder="Select country"
+                options={countryOptions}
+                disabled={loading}
+                onChange={handleCountryChange}
+                optionFilterProp="searchValue"
+                filterOption={filterOption}
+              />
+            </Form.Item>
 
-              {/* Street Address */}
-              <Form.Item
-                name="street1"
-                label={<span style={labelStyle}>Street Address</span>}
-                rules={[
-                  { required: true, message: 'Please enter your street address' },
-                  { max: 200, message: 'Address is too long' },
-                ]}
-                style={{ marginBottom: token.marginMD }}
-              >
-                <Input
-                  prefix={<HomeOutlined style={{ color: token.colorTextSecondary }} />}
-                  placeholder="123 Main Street"
-                  style={inputStyle}
-                  disabled={loading}
-                />
-              </Form.Item>
+            {/* Street Address */}
+            <Form.Item
+              name="street1"
+              label={<span style={getLabelStyle()}>Street Address</span>}
+              rules={[
+                { required: true, message: 'Please enter your street address' },
+                { max: 200, message: 'Address is too long' },
+              ]}
+              style={{ marginBottom: token.marginMD }}
+            >
+              <Input
+                prefix={<HomeOutlined />}
+                placeholder="123 Main Street"
+                style={getInputStyle()}
+                disabled={loading}
+              />
+            </Form.Item>
 
-              {/* Street Address 2 (Optional) */}
-              <Form.Item
-                name="street2"
-                label={<span style={labelStyle}>Apartment, Suite, etc. (Optional)</span>}
-                rules={[{ max: 200, message: 'Address is too long' }]}
-                style={{ marginBottom: token.marginMD }}
-              >
-                <Input
-                  placeholder="Apt 4B"
-                  style={inputStyle}
-                  disabled={loading}
-                />
-              </Form.Item>
+            {/* Street 2 */}
+            <Form.Item
+              name="street2"
+              label={<span style={getLabelStyle()}>Apt, Suite, etc. <span style={{ fontWeight: 400, opacity: 0.7 }}>(Optional)</span></span>}
+              rules={[{ max: 200, message: 'Address is too long' }]}
+              style={{ marginBottom: token.marginMD }}
+            >
+              <Input
+                placeholder="Apt 4B"
+                style={getInputStyle()}
+                disabled={loading}
+              />
+            </Form.Item>
 
-              {/* City & Region Row */}
-              <Row gutter={token.marginMD}>
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    name="city"
-                    label={<span style={labelStyle}>City</span>}
-                    rules={[
-                      { required: true, message: 'Please enter your city' },
-                      { max: 100, message: 'City name is too long' },
-                    ]}
-                    style={{ marginBottom: token.marginMD }}
-                  >
+            {/* City & Region */}
+            <Row gutter={token.marginSM}>
+              <Col xs={24} sm={12}>
+                <Form.Item
+                  name="city"
+                  label={<span style={getLabelStyle()}>City</span>}
+                  rules={[
+                    { required: true, message: 'Required' },
+                    { max: 100, message: 'Too long' },
+                  ]}
+                  style={{ marginBottom: token.marginMD }}
+                >
+                  <Input
+                    placeholder="City"
+                    style={getInputStyle()}
+                    disabled={loading}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12}>
+                <Form.Item
+                  name="region"
+                  label={<span style={getLabelStyle()}>{getRegionLabel()}</span>}
+                  rules={[{ required: true, message: 'Required' }]}
+                  style={{ marginBottom: token.marginMD }}
+                >
+                  {hasStates ? (
+                    <Select
+                      showSearch
+                      placeholder={`Select ${getRegionLabel().toLowerCase()}`}
+                      options={stateOptions}
+                      disabled={loading}
+                      filterOption={filterOption}
+                    />
+                  ) : (
                     <Input
-                      placeholder="City"
-                      style={inputStyle}
+                      placeholder={getRegionLabel()}
+                      style={getInputStyle()}
                       disabled={loading}
                     />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    name="region"
-                    label={<span style={labelStyle}>{getRegionLabel()}</span>}
-                    rules={[
-                      { required: true, message: `Please ${hasStates ? 'select' : 'enter'} your ${getRegionLabel().toLowerCase()}` },
-                      { max: 100, message: `${getRegionLabel()} is too long` },
-                    ]}
-                    style={{ marginBottom: token.marginMD }}
-                  >
-                    {hasStates ? (
-                      <Select
-                        showSearch
-                        placeholder={`Select ${getRegionLabel().toLowerCase()}`}
-                        options={stateOptions}
-                        disabled={loading}
-                        filterOption={filterOption}
-                        style={inputStyle}
-                      />
-                    ) : (
-                      <Input
-                        placeholder={getRegionLabel()}
-                        style={inputStyle}
-                        disabled={loading}
-                      />
-                    )}
-                  </Form.Item>
-                </Col>
-              </Row>
+                  )}
+                </Form.Item>
+              </Col>
+            </Row>
 
-              {/* Postal Code */}
-              <Form.Item
-                name="postalCode"
-                label={<span style={labelStyle}>{getPostalCodeLabel()}</span>}
-                rules={[
-                  { required: true, message: `Please enter your ${getPostalCodeLabel().toLowerCase()}` },
-                  { max: 20, message: `${getPostalCodeLabel()} is too long` },
-                ]}
-                style={{ marginBottom: token.marginXL }}
-              >
-                <Input
-                  placeholder={getPostalCodeLabel()}
-                  style={{ ...inputStyle, maxWidth: 150 }}
-                  disabled={loading}
-                />
-              </Form.Item>
+            {/* Postal Code */}
+            <Form.Item
+              name="postalCode"
+              label={<span style={getLabelStyle()}>{getPostalCodeLabel()}</span>}
+              rules={[
+                { required: true, message: 'Required' },
+                { max: 20, message: 'Too long' },
+              ]}
+              style={{ marginBottom: token.marginXL }}
+            >
+              <Input
+                placeholder={getPostalCodeLabel()}
+                style={{ ...getInputStyle(), maxWidth: 150 }}
+                disabled={loading}
+              />
+            </Form.Item>
 
-              {/* Submit Button */}
-              <Form.Item style={{ marginBottom: 0 }}>
-                <LoadingButton loading={loading} htmlType="submit">
+            {/* Buttons */}
+            <Form.Item style={{ marginBottom: 0 }}>
+              <div style={{ display: 'flex', gap: token.marginSM }}>
+                <Button
+                  size="large"
+                  onClick={() => router.push('/onboarding/personal')}
+                  style={{ ...getButtonStyle(false), flex: 1 }}
+                >
+                  <ArrowLeftOutlined />
+                </Button>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={loading}
+                  style={{ ...getButtonStyle(), flex: 3 }}
+                >
                   Continue <ArrowRightOutlined />
-                </LoadingButton>
-              </Form.Item>
-            </Form>
-          </div>
-        </div>
+                </Button>
+              </div>
+            </Form.Item>
+          </Form>
+        </motion.div>
       </OnboardingLayout>
     </>
   );

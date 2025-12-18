@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import Image from 'next/image';
 import { Button, theme, Grid, Skeleton } from 'antd';
 import { ArrowRightOutlined, SafetyCertificateOutlined, ClockCircleOutlined, GlobalOutlined, LockOutlined } from '@ant-design/icons';
+import { motion } from 'motion/react';
 import OnboardingLayout from '@/components/onboarding/OnboardingLayout';
-import WelcomeAnimation from '@/components/onboarding/animations/WelcomeAnimation';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
+import { useThemeMode } from '@/context/ThemeContext';
 import { getKycStatus, KycStatus } from '@/services/api/onboarding';
 
 const { useToken } = theme;
@@ -15,42 +17,48 @@ const { useBreakpoint } = Grid;
 const features = [
   {
     icon: <SafetyCertificateOutlined />,
-    title: 'Secure Verification',
-    description: 'Your data is encrypted and protected with industry-leading security',
+    title: 'Secure',
+    description: 'Bank-level encryption protects your data',
+    emoji: '🔒',
   },
   {
     icon: <ClockCircleOutlined />,
-    title: 'Quick Process',
-    description: 'Complete your verification in just a few minutes',
+    title: 'Quick',
+    description: 'Done in 2-3 minutes',
+    emoji: '⚡',
   },
   {
     icon: <GlobalOutlined />,
-    title: 'Global Coverage',
-    description: 'We support ID documents from 230+ countries',
+    title: 'Global',
+    description: 'IDs from 230+ countries accepted',
+    emoji: '🌍',
   },
   {
     icon: <LockOutlined />,
-    title: 'Privacy First',
-    description: 'Your personal information is never shared without consent',
+    title: 'Private',
+    description: 'Your info stays confidential',
+    emoji: '🛡️',
   },
 ];
+
+// Theme colors
+const themeColors = {
+  primary: '#6366F1',
+  light: '#A5B4FC',
+  dark: '#4338CA',
+};
 
 export default function OnboardingWelcome() {
   const router = useRouter();
   const { token } = useToken();
   const { user } = useAuth();
+  const { mode } = useThemeMode();
   const screens = useBreakpoint();
+  const isDark = mode === 'dark';
   const isMobile = !screens.md;
   
   const [loading, setLoading] = useState(true);
   const [kycStatus, setKycStatus] = useState<KycStatus | null>(null);
-  const [isAnimated, setIsAnimated] = useState(false);
-
-  useEffect(() => {
-    // Trigger entrance animation
-    const timer = setTimeout(() => setIsAnimated(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     // Check if user is logged in
@@ -65,7 +73,7 @@ export default function OnboardingWelcome() {
         const status = await getKycStatus();
         setKycStatus(status);
         
-        // Redirect based on status (use replace to prevent back navigation)
+        // Redirect based on status
         if (status.status === 'APPROVED') {
           router.replace('/overview');
         } else if (status.currentStep >= 1) {
@@ -87,85 +95,33 @@ export default function OnboardingWelcome() {
     router.push('/onboarding/personal');
   };
 
-  const containerStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: token.marginXL,
-    padding: isMobile ? 0 : token.paddingLG,
-  };
-
-  const heroStyle: React.CSSProperties = {
-    textAlign: 'center',
-    marginBottom: token.marginMD,
-    opacity: isAnimated ? 1 : 0,
-    transform: `translateY(${isAnimated ? 0 : 20}px)`,
-    transition: 'all 0.6s ease-out',
-  };
-
-  const titleStyle: React.CSSProperties = {
-    fontSize: isMobile ? token.fontSizeHeading3 : token.fontSizeHeading2,
-    fontWeight: fontWeights.bold,
-    color: token.colorText,
-    marginBottom: token.marginSM,
-    marginTop: token.marginXL,
-  };
-
-  const subtitleStyle: React.CSSProperties = {
-    fontSize: token.fontSizeLG,
-    color: token.colorTextSecondary,
-    maxWidth: 400,
-    margin: '0 auto',
-  };
-
-  const featuresGridStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-    gap: token.marginMD,
-    width: '100%',
-    maxWidth: 500,
-  };
-
-  const featureCardStyle = (index: number): React.CSSProperties => ({
-    backgroundColor: token.colorBgContainer,
-    border: `1px solid ${token.colorBorderSecondary}`,
-    borderRadius: token.borderRadius,
-    padding: token.paddingMD,
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: token.marginSM,
-    opacity: isAnimated ? 1 : 0,
-    transform: `translateY(${isAnimated ? 0 : 20}px)`,
-    transition: `all 0.6s ease-out ${0.2 + index * 0.1}s`,
+  // Styles
+  const getCardStyle = (): React.CSSProperties => ({
+    background: isDark
+      ? 'rgba(255,255,255,0.08)'
+      : 'rgba(255,255,255,0.15)',
+    backdropFilter: 'blur(12px)',
+    border: isDark
+      ? '1px solid rgba(255,255,255,0.1)'
+      : '1px solid rgba(255,255,255,0.3)',
+    borderRadius: 16,
+    padding: isMobile ? token.paddingMD : token.paddingLG,
   });
 
-  const featureIconStyle: React.CSSProperties = {
-    fontSize: token.fontSizeXL,
-    color: token.colorPrimary,
-    flexShrink: 0,
-  };
-
-  const featureTitleStyle: React.CSSProperties = {
-    fontSize: token.fontSize,
-    fontWeight: fontWeights.semibold,
-    color: token.colorText,
-    marginBottom: token.marginXS / 2,
-  };
-
-  const featureDescStyle: React.CSSProperties = {
-    fontSize: token.fontSize,
-    color: token.colorTextSecondary,
-    lineHeight: 1.4,
-  };
-
-  const buttonContainerStyle: React.CSSProperties = {
-    width: '100%',
-    maxWidth: 400,
-    marginTop: token.marginLG,
-    opacity: isAnimated ? 1 : 0,
-    transform: `translateY(${isAnimated ? 0 : 20}px)`,
-    transition: 'all 0.6s ease-out 0.6s',
-  };
+  const getButtonStyle = (): React.CSSProperties => ({
+    background: isDark
+      ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.dark} 100%)`
+      : 'linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)',
+    boxShadow: isDark
+      ? `0 4px 14px rgba(99, 102, 241, 0.4)`
+      : `0 4px 14px rgba(0,0,0,0.2)`,
+    border: 'none',
+    borderRadius: 12,
+    color: isDark ? '#ffffff' : themeColors.dark,
+    fontWeight: fontWeights.bold,
+    height: 52,
+    fontSize: token.fontSizeLG,
+  });
 
   if (loading) {
     return (
@@ -174,14 +130,9 @@ export default function OnboardingWelcome() {
           <title>Verify Your Identity - InTuition Exchange</title>
         </Head>
         <OnboardingLayout currentStep={0}>
-          <div style={containerStyle}>
-            <Skeleton.Avatar active size={200} shape="square" />
-            <Skeleton active paragraph={{ rows: 2 }} style={{ width: 300 }} />
-            <div style={featuresGridStyle}>
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} active paragraph={{ rows: 2 }} />
-              ))}
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: token.marginLG }}>
+            <Skeleton.Avatar active size={140} shape="circle" />
+            <Skeleton active paragraph={{ rows: 2 }} style={{ width: '100%', maxWidth: 300 }} />
           </div>
         </OnboardingLayout>
       </>
@@ -195,62 +146,125 @@ export default function OnboardingWelcome() {
         <meta name="description" content="Complete KYC verification to start trading" />
       </Head>
 
-      <OnboardingLayout currentStep={0}>
-        <div style={containerStyle}>
-          {/* Animated Hero */}
-          <WelcomeAnimation />
+      <OnboardingLayout currentStep={0} title="Verify Your Identity" subtitle="Quick verification to unlock full trading access">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: isMobile ? token.marginMD : token.marginLG,
+          }}
+        >
+          {/* Hero Image */}
+          <motion.div
+            initial={{ scale: 0.9 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
+            style={{
+              filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.3))',
+              marginBottom: token.marginSM,
+            }}
+          >
+            <Image
+              src="/images/kyc-3d.png"
+              alt="KYC Verification"
+              width={isMobile ? 120 : 160}
+              height={isMobile ? 120 : 160}
+              style={{ objectFit: 'contain' }}
+            />
+          </motion.div>
 
-          <div style={heroStyle}>
-            <h1 style={titleStyle}>Verify Your Identity</h1>
-            <p style={subtitleStyle}>
-              Complete a quick verification to unlock full trading capabilities and secure your account
-            </p>
+          {/* Process Steps */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: isMobile ? token.marginSM : token.marginMD,
+            marginBottom: token.marginSM,
+            fontSize: isMobile ? 22 : 28,
+          }}>
+            <span>✏️</span>
+            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 16 }}>→</span>
+            <span>📄</span>
+            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 16 }}>→</span>
+            <span>📷</span>
+            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 16 }}>→</span>
+            <span>✅</span>
           </div>
 
           {/* Features Grid */}
-          <div style={featuresGridStyle}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: token.marginSM,
+            width: '100%',
+          }}>
             {features.map((feature, index) => (
-              <div key={index} style={featureCardStyle(index)}>
-                <span style={featureIconStyle}>{feature.icon}</span>
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.2 + index * 0.08 }}
+                style={{
+                  ...getCardStyle(),
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: token.marginSM,
+                  padding: isMobile ? `${token.paddingSM}px ${token.paddingMD}px` : token.paddingMD,
+                }}
+              >
+                <span style={{ fontSize: isMobile ? 20 : 24 }}>{feature.emoji}</span>
                 <div>
-                  <div style={featureTitleStyle}>{feature.title}</div>
-                  <div style={featureDescStyle}>{feature.description}</div>
+                  <div style={{
+                    fontSize: token.fontSize,
+                    fontWeight: fontWeights.semibold,
+                    color: '#ffffff',
+                  }}>
+                    {feature.title}
+                  </div>
+                  <div style={{
+                    fontSize: token.fontSizeSM,
+                    color: 'rgba(255,255,255,0.7)',
+                    lineHeight: 1.3,
+                  }}>
+                    {feature.description}
+                  </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
 
           {/* CTA Button */}
-          <div style={buttonContainerStyle}>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.5 }}
+            style={{ width: '100%', marginTop: token.marginSM }}
+          >
             <Button
               type="primary"
               size="large"
               block
               onClick={handleStart}
-              style={{
-                height: token.controlHeightLG,
-                fontSize: token.fontSizeLG,
-                fontWeight: fontWeights.semibold,
-                borderRadius: token.borderRadius,
-              }}
+              style={getButtonStyle()}
             >
               Get Started <ArrowRightOutlined />
             </Button>
 
-            <p
-              style={{
-                textAlign: 'center',
-                fontSize: token.fontSize,
-                color: token.colorTextSecondary,
-                marginTop: token.marginMD,
-              }}
-            >
-              This usually takes 2-3 minutes
+            <p style={{
+              textAlign: 'center',
+              fontSize: token.fontSizeSM,
+              color: 'rgba(255,255,255,0.6)',
+              marginTop: token.marginMD,
+            }}>
+              Takes about 2-3 minutes • Your data is encrypted
             </p>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </OnboardingLayout>
     </>
   );
 }
-

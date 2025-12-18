@@ -3,32 +3,36 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { Form, Input, DatePicker, Button, message, theme, Grid, Skeleton } from 'antd';
 import { UserOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import { motion } from 'motion/react';
 import dayjs from 'dayjs';
 import OnboardingLayout from '@/components/onboarding/OnboardingLayout';
-import LoadingButton from '@/components/auth/LoadingButton';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
+import { useThemeMode } from '@/context/ThemeContext';
 import { getKycDetails, savePersonalDetails, PersonalDetailsData, ApiError } from '@/services/api/onboarding';
 
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
 
+// Theme colors
+const themeColors = {
+  primary: '#6366F1',
+  light: '#A5B4FC',
+  dark: '#4338CA',
+};
+
 export default function PersonalDetailsPage() {
   const router = useRouter();
   const { token } = useToken();
   const { user } = useAuth();
+  const { mode } = useThemeMode();
   const [form] = Form.useForm();
   const screens = useBreakpoint();
+  const isDark = mode === 'dark';
   const isMobile = !screens.md;
 
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
-  const [isAnimated, setIsAnimated] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsAnimated(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -79,22 +83,77 @@ export default function PersonalDetailsPage() {
     }
   };
 
-  const inputStyle: React.CSSProperties = {
-    height: token.controlHeightLG,
+  // Themed input styles
+  const getInputStyle = (): React.CSSProperties => ({
+    background: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.9)',
+    border: isDark ? '1px solid rgba(255,255,255,0.15)' : '1px solid rgba(255,255,255,0.5)',
+    borderRadius: 12,
+    height: 48,
     fontSize: token.fontSize,
-    borderRadius: token.borderRadius,
-  };
+    color: isDark ? '#ffffff' : '#1a1a2e',
+  });
 
-  const labelStyle: React.CSSProperties = {
+  const getLabelStyle = (): React.CSSProperties => ({
     fontWeight: fontWeights.medium,
     fontSize: token.fontSize,
-  };
+    color: '#ffffff',
+    textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+  });
 
-  const formContainerStyle: React.CSSProperties = {
-    opacity: isAnimated ? 1 : 0,
-    transform: `translateY(${isAnimated ? 0 : 20}px)`,
-    transition: 'all 0.5s ease-out',
-  };
+  const getButtonStyle = (primary = true): React.CSSProperties => ({
+    background: primary
+      ? (isDark
+          ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.dark} 100%)`
+          : 'linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)')
+      : (isDark
+          ? 'rgba(255,255,255,0.1)'
+          : 'rgba(255,255,255,0.2)'),
+    boxShadow: primary
+      ? (isDark ? `0 4px 14px rgba(99, 102, 241, 0.4)` : `0 4px 14px rgba(0,0,0,0.2)`)
+      : 'none',
+    border: primary ? 'none' : '1px solid rgba(255,255,255,0.3)',
+    borderRadius: 12,
+    color: primary ? (isDark ? '#ffffff' : themeColors.dark) : '#ffffff',
+    fontWeight: fontWeights.bold,
+    height: 48,
+    fontSize: token.fontSize,
+  });
+
+  // Form error styles for visibility
+  const formStyles = isDark 
+    ? `
+      .onboarding-form .ant-form-item-explain-error {
+        color: #FCA5A5 !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        font-weight: 500;
+      }
+      .onboarding-form .ant-form-item-has-error .ant-input,
+      .onboarding-form .ant-form-item-has-error .ant-picker {
+        border-color: #FCA5A5 !important;
+      }
+      .onboarding-form .ant-input::placeholder,
+      .onboarding-form .ant-picker-input input::placeholder {
+        color: rgba(255,255,255,0.4) !important;
+      }
+      .onboarding-form .ant-input-prefix {
+        color: rgba(255,255,255,0.5) !important;
+      }
+    `
+    : `
+      .onboarding-form .ant-form-item-explain-error {
+        color: #FFE066 !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        font-weight: 500;
+      }
+      .onboarding-form .ant-form-item-has-error .ant-input,
+      .onboarding-form .ant-form-item-has-error .ant-picker {
+        border-color: #FFE066 !important;
+      }
+      .onboarding-form .ant-input::placeholder,
+      .onboarding-form .ant-picker-input input::placeholder {
+        color: rgba(0,0,0,0.35) !important;
+      }
+    `;
 
   if (pageLoading) {
     return (
@@ -103,9 +162,7 @@ export default function PersonalDetailsPage() {
           <title>Personal Details - InTuition Exchange</title>
         </Head>
         <OnboardingLayout currentStep={0} title="Personal Details" subtitle="Tell us about yourself">
-          <div style={{ maxWidth: 400, margin: '0 auto' }}>
-            <Skeleton active paragraph={{ rows: 6 }} />
-          </div>
+          <Skeleton active paragraph={{ rows: 6 }} />
         </OnboardingLayout>
       </>
     );
@@ -123,19 +180,24 @@ export default function PersonalDetailsPage() {
         title="Personal Details"
         subtitle="Enter your legal name as it appears on your ID"
       >
-        <div style={formContainerStyle}>
+        <style>{formStyles}</style>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
           <Form
             form={form}
             layout="vertical"
             onFinish={handleSubmit}
             requiredMark={false}
             size="large"
-            style={{ maxWidth: 400, margin: '0 auto' }}
+            className="onboarding-form"
           >
             {/* First Name */}
             <Form.Item
               name="firstName"
-              label={<span style={labelStyle}>First Name</span>}
+              label={<span style={getLabelStyle()}>First Name</span>}
               rules={[
                 { required: true, message: 'Please enter your first name' },
                 { max: 100, message: 'First name is too long' },
@@ -143,9 +205,9 @@ export default function PersonalDetailsPage() {
               style={{ marginBottom: token.marginMD }}
             >
               <Input
-                prefix={<UserOutlined style={{ color: token.colorTextSecondary }} />}
+                prefix={<UserOutlined />}
                 placeholder="John"
-                style={inputStyle}
+                style={getInputStyle()}
                 disabled={loading}
               />
             </Form.Item>
@@ -153,13 +215,13 @@ export default function PersonalDetailsPage() {
             {/* Middle Name (Optional) */}
             <Form.Item
               name="middleName"
-              label={<span style={labelStyle}>Middle Name (Optional)</span>}
+              label={<span style={getLabelStyle()}>Middle Name <span style={{ fontWeight: 400, opacity: 0.7 }}>(Optional)</span></span>}
               rules={[{ max: 100, message: 'Middle name is too long' }]}
               style={{ marginBottom: token.marginMD }}
             >
               <Input
                 placeholder="William"
-                style={inputStyle}
+                style={getInputStyle()}
                 disabled={loading}
               />
             </Form.Item>
@@ -167,7 +229,7 @@ export default function PersonalDetailsPage() {
             {/* Last Name */}
             <Form.Item
               name="lastName"
-              label={<span style={labelStyle}>Last Name</span>}
+              label={<span style={getLabelStyle()}>Last Name</span>}
               rules={[
                 { required: true, message: 'Please enter your last name' },
                 { max: 100, message: 'Last name is too long' },
@@ -176,7 +238,7 @@ export default function PersonalDetailsPage() {
             >
               <Input
                 placeholder="Doe"
-                style={inputStyle}
+                style={getInputStyle()}
                 disabled={loading}
               />
             </Form.Item>
@@ -184,7 +246,7 @@ export default function PersonalDetailsPage() {
             {/* Date of Birth */}
             <Form.Item
               name="dateOfBirth"
-              label={<span style={labelStyle}>Date of Birth</span>}
+              label={<span style={getLabelStyle()}>Date of Birth</span>}
               rules={[
                 { required: true, message: 'Please select your date of birth' },
                 {
@@ -205,7 +267,7 @@ export default function PersonalDetailsPage() {
             >
               <DatePicker
                 placeholder="Select date"
-                style={{ ...inputStyle, width: '100%' }}
+                style={{ ...getInputStyle(), width: '100%' }}
                 format="MMMM D, YYYY"
                 disabledDate={(current) => current && current > dayjs().subtract(18, 'year')}
                 disabled={loading}
@@ -214,14 +276,19 @@ export default function PersonalDetailsPage() {
 
             {/* Submit Button */}
             <Form.Item style={{ marginBottom: 0 }}>
-              <LoadingButton loading={loading} htmlType="submit">
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={loading}
+                block
+                style={getButtonStyle()}
+              >
                 Continue <ArrowRightOutlined />
-              </LoadingButton>
+              </Button>
             </Form.Item>
           </Form>
-        </div>
+        </motion.div>
       </OnboardingLayout>
     </>
   );
 }
-

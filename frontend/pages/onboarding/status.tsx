@@ -3,11 +3,13 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { Button, theme, Grid, Skeleton, Alert } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, ArrowRightOutlined, ReloadOutlined } from '@ant-design/icons';
+import { motion } from 'motion/react';
 import OnboardingLayout from '@/components/onboarding/OnboardingLayout';
 import SuccessAnimation from '@/components/onboarding/animations/SuccessAnimation';
 import LoadingAnimation from '@/components/onboarding/animations/LoadingAnimation';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
+import { useThemeMode } from '@/context/ThemeContext';
 import { getKycStatus, checkVeriffDecision, KycStatus } from '@/services/api/onboarding';
 
 const { useToken } = theme;
@@ -15,22 +17,25 @@ const { useBreakpoint } = Grid;
 
 type StatusType = 'loading' | 'approved' | 'pending' | 'rejected' | 'error';
 
+// Theme colors
+const themeColors = {
+  primary: '#6366F1',
+  light: '#A5B4FC',
+  dark: '#4338CA',
+};
+
 export default function StatusPage() {
   const router = useRouter();
   const { token } = useToken();
   const { user } = useAuth();
+  const { mode } = useThemeMode();
   const screens = useBreakpoint();
+  const isDark = mode === 'dark';
   const isMobile = !screens.md;
 
   const [status, setStatus] = useState<StatusType>('loading');
   const [kycData, setKycData] = useState<KycStatus | null>(null);
   const [rejectReason, setRejectReason] = useState<string | null>(null);
-  const [isAnimated, setIsAnimated] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsAnimated(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -47,17 +52,15 @@ export default function StatusPage() {
           setStatus('approved');
         } else if (kycStatus.status === 'REJECTED') {
           setStatus('rejected');
-          // Try to get the reason
           try {
             const decision = await checkVeriffDecision();
             setRejectReason(decision.reason);
           } catch {
-            // Ignore error
+            // Ignore
           }
         } else if (kycStatus.status === 'SUBMITTED' || kycStatus.hasVeriffSession) {
           setStatus('pending');
         } else {
-          // Not started or incomplete
           router.push('/onboarding');
         }
       } catch {
@@ -68,13 +71,12 @@ export default function StatusPage() {
     checkStatus();
   }, [user, router]);
 
-  // Poll for updates if pending - call checkVeriffDecision to fetch from Veriff API and update DB
+  // Poll for updates if pending
   useEffect(() => {
     if (status !== 'pending') return;
 
     const pollInterval = setInterval(async () => {
       try {
-        // First, fetch decision from Veriff API (this updates the database if decision is available)
         const decision = await checkVeriffDecision();
         
         if (decision.status === 'APPROVED') {
@@ -88,80 +90,94 @@ export default function StatusPage() {
       } catch {
         // Continue polling
       }
-    }, 10000); // Poll every 10 seconds
+    }, 10000);
 
     return () => clearInterval(pollInterval);
   }, [status]);
 
-  const containerStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: token.marginXL,
-    padding: isMobile ? token.paddingMD : token.paddingXL,
-    opacity: isAnimated ? 1 : 0,
-    transform: `translateY(${isAnimated ? 0 : 20}px)`,
-    transition: 'all 0.5s ease-out',
-    textAlign: 'center',
-  };
-
-  const titleStyle: React.CSSProperties = {
-    fontSize: isMobile ? token.fontSizeHeading3 : token.fontSizeHeading2,
-    fontWeight: fontWeights.bold,
-    color: token.colorText,
-    marginBottom: token.marginXS,
-  };
-
-  const subtitleStyle: React.CSSProperties = {
-    fontSize: token.fontSizeLG,
-    color: token.colorTextSecondary,
-    maxWidth: 400,
-  };
-
-  const featureListStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: token.marginSM,
-    textAlign: 'left',
-    backgroundColor: token.colorBgContainer,
-    border: `1px solid ${token.colorBorderSecondary}`,
-    borderRadius: token.borderRadius,
-    padding: token.paddingLG,
+  // Styles
+  const getCardStyle = (): React.CSSProperties => ({
+    background: isDark
+      ? 'rgba(255,255,255,0.08)'
+      : 'rgba(255,255,255,0.15)',
+    backdropFilter: 'blur(12px)',
+    border: isDark
+      ? '1px solid rgba(255,255,255,0.1)'
+      : '1px solid rgba(255,255,255,0.3)',
+    borderRadius: 16,
+    padding: token.paddingMD,
     width: '100%',
-    maxWidth: 400,
-  };
+  });
 
-  const featureItemStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: token.marginSM,
-    fontSize: token.fontSize,
-    color: token.colorText,
-  };
+  const getButtonStyle = (primary = true): React.CSSProperties => ({
+    background: primary
+      ? (isDark
+          ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.dark} 100%)`
+          : 'linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)')
+      : (isDark
+          ? 'rgba(255,255,255,0.1)'
+          : 'rgba(255,255,255,0.2)'),
+    boxShadow: primary
+      ? (isDark ? `0 4px 14px rgba(99, 102, 241, 0.4)` : `0 4px 14px rgba(0,0,0,0.2)`)
+      : 'none',
+    border: primary ? 'none' : '1px solid rgba(255,255,255,0.3)',
+    borderRadius: 12,
+    color: primary ? (isDark ? '#ffffff' : themeColors.dark) : '#ffffff',
+    fontWeight: fontWeights.bold,
+    height: 52,
+    fontSize: token.fontSizeLG,
+  });
 
   const renderApproved = () => (
-    <>
-      <SuccessAnimation size={120} />
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4 }}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: token.marginLG, textAlign: 'center' }}
+    >
+      <SuccessAnimation size={100} />
       
       <div>
-        <h1 style={titleStyle}>Verification Complete!</h1>
-        <p style={subtitleStyle}>
-          Your identity has been verified. You now have full access to all trading features.
+        <h2 style={{
+          fontSize: isMobile ? 24 : 32,
+          fontWeight: fontWeights.bold,
+          color: '#ffffff',
+          marginBottom: token.marginXS,
+          textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+        }}>
+          You're Verified! 🎉
+        </h2>
+        <p style={{
+          fontSize: token.fontSize,
+          color: 'rgba(255,255,255,0.8)',
+        }}>
+          Full access to all trading features unlocked
         </p>
       </div>
 
-      <div style={featureListStyle}>
-        <h4 style={{ fontSize: token.fontSize, fontWeight: fontWeights.semibold, color: token.colorText, marginBottom: token.marginXS }}>
+      <div style={getCardStyle()}>
+        <div style={{ 
+          fontSize: token.fontSizeSM, 
+          fontWeight: fontWeights.semibold, 
+          color: 'rgba(255,255,255,0.7)',
+          marginBottom: token.marginSM,
+        }}>
           What you can do now:
-        </h4>
+        </div>
         {[
-          'Buy & sell cryptocurrencies',
-          'Deposit and withdraw funds',
-          'Access P2P marketplace',
-          'Trade with higher limits',
+          '💰 Buy & sell cryptocurrencies',
+          '🏦 Deposit and withdraw funds',
+          '🤝 Access P2P marketplace',
+          '📈 Trade with higher limits',
         ].map((feature, index) => (
-          <div key={index} style={featureItemStyle}>
-            <CheckCircleOutlined style={{ color: token.colorSuccess }} />
+          <div key={index} style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: token.marginSM,
+            fontSize: token.fontSize,
+            color: '#ffffff',
+            marginBottom: index < 3 ? token.marginXS : 0,
+          }}>
             {feature}
           </div>
         ))}
@@ -170,85 +186,99 @@ export default function StatusPage() {
       <Button
         type="primary"
         size="large"
+        block
         onClick={() => router.replace('/overview')}
-        style={{
-          width: '100%',
-          maxWidth: 400,
-          height: token.controlHeightLG,
-          fontSize: token.fontSizeLG,
-          fontWeight: fontWeights.semibold,
-          borderRadius: token.borderRadius,
-        }}
+        style={getButtonStyle()}
       >
         Go to Dashboard <ArrowRightOutlined />
       </Button>
-    </>
+    </motion.div>
   );
 
   const renderPending = () => (
-    <>
-      <LoadingAnimation size={100} text="" />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: token.marginLG, textAlign: 'center' }}
+    >
+      <LoadingAnimation size={80} text="" />
       
       <div>
-        <h1 style={titleStyle}>Verification in Progress</h1>
-        <p style={subtitleStyle}>
-          We&apos;re reviewing your documents. This usually takes just a few minutes, but can take up to 24 hours in some cases.
+        <h2 style={{
+          fontSize: isMobile ? 22 : 28,
+          fontWeight: fontWeights.bold,
+          color: '#ffffff',
+          marginBottom: token.marginXS,
+          textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+        }}>
+          Verification in Progress
+        </h2>
+        <p style={{
+          fontSize: token.fontSize,
+          color: 'rgba(255,255,255,0.8)',
+          maxWidth: 300,
+        }}>
+          We're reviewing your documents. This usually takes just a few minutes.
         </p>
       </div>
 
-      <div
-        style={{
-          backgroundColor: token.colorPrimaryBg,
-          border: `1px solid ${token.colorPrimaryBorder}`,
-          borderRadius: token.borderRadius,
-          padding: token.paddingLG,
-          width: '100%',
-          maxWidth: 400,
-        }}
-      >
-        <ClockCircleOutlined style={{ fontSize: token.fontSizeXL, color: token.colorPrimary, marginBottom: token.marginSM }} />
-        <p style={{ fontSize: token.fontSize, color: token.colorText, margin: 0 }}>
-          We&apos;ll send you an email notification when the review is complete.
-        </p>
+      <div style={{
+        ...getCardStyle(),
+        display: 'flex',
+        alignItems: 'center',
+        gap: token.marginMD,
+        justifyContent: 'center',
+      }}>
+        <ClockCircleOutlined style={{ fontSize: 24, color: themeColors.light }} />
+        <span style={{ fontSize: token.fontSize, color: '#ffffff' }}>
+          We'll email you when it's done
+        </span>
       </div>
 
       <Button
-        type="default"
         size="large"
         icon={<ReloadOutlined />}
         onClick={() => window.location.reload()}
-        style={{
-          height: token.controlHeightLG,
-          fontSize: token.fontSize,
-          fontWeight: fontWeights.medium,
-          borderRadius: token.borderRadius,
-        }}
+        style={getButtonStyle(false)}
       >
         Refresh Status
       </Button>
-    </>
+    </motion.div>
   );
 
   const renderRejected = () => (
-    <>
-      <div
-        style={{
-          width: 120,
-          height: 120,
-          borderRadius: '50%',
-          backgroundColor: `${token.colorError}15`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <CloseCircleOutlined style={{ fontSize: 60, color: token.colorError }} />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: token.marginLG, textAlign: 'center' }}
+    >
+      <div style={{
+        width: 100,
+        height: 100,
+        borderRadius: '50%',
+        background: 'rgba(239, 68, 68, 0.2)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <CloseCircleOutlined style={{ fontSize: 50, color: '#EF4444' }} />
       </div>
       
       <div>
-        <h1 style={titleStyle}>Verification Unsuccessful</h1>
-        <p style={subtitleStyle}>
-          Unfortunately, we couldn&apos;t verify your identity. Don&apos;t worry - you can try again.
+        <h2 style={{
+          fontSize: isMobile ? 22 : 28,
+          fontWeight: fontWeights.bold,
+          color: '#ffffff',
+          marginBottom: token.marginXS,
+          textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+        }}>
+          Verification Unsuccessful
+        </h2>
+        <p style={{
+          fontSize: token.fontSize,
+          color: 'rgba(255,255,255,0.8)',
+        }}>
+          Don't worry - you can try again
         </p>
       </div>
 
@@ -258,22 +288,33 @@ export default function StatusPage() {
           message="Reason"
           description={rejectReason}
           showIcon
-          style={{ width: '100%', maxWidth: 400, textAlign: 'left' }}
+          style={{ width: '100%', textAlign: 'left' }}
         />
       )}
 
-      <div style={featureListStyle}>
-        <h4 style={{ fontSize: token.fontSize, fontWeight: fontWeights.semibold, color: token.colorText, marginBottom: token.marginXS }}>
+      <div style={getCardStyle()}>
+        <div style={{ 
+          fontSize: token.fontSizeSM, 
+          fontWeight: fontWeights.semibold, 
+          color: 'rgba(255,255,255,0.7)',
+          marginBottom: token.marginSM,
+        }}>
           Tips for your next attempt:
-        </h4>
+        </div>
         {[
-          'Use a valid, unexpired ID document',
-          'Ensure good lighting and clear photos',
-          'Make sure all text is readable',
-          'Match the name on your ID to your account',
+          '🪪 Use a valid, unexpired ID',
+          '💡 Ensure good lighting',
+          '📝 Make sure text is readable',
+          '👤 Match the name to your account',
         ].map((tip, index) => (
-          <div key={index} style={featureItemStyle}>
-            <CheckCircleOutlined style={{ color: token.colorPrimary }} />
+          <div key={index} style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: token.marginSM,
+            fontSize: token.fontSize,
+            color: '#ffffff',
+            marginBottom: index < 3 ? token.marginXS : 0,
+          }}>
             {tip}
           </div>
         ))}
@@ -282,44 +323,43 @@ export default function StatusPage() {
       <Button
         type="primary"
         size="large"
+        block
         onClick={() => router.push('/onboarding/verify')}
-        style={{
-          width: '100%',
-          maxWidth: 400,
-          height: token.controlHeightLG,
-          fontSize: token.fontSizeLG,
-          fontWeight: fontWeights.semibold,
-          borderRadius: token.borderRadius,
-        }}
+        style={getButtonStyle()}
       >
         <ReloadOutlined /> Try Again
       </Button>
-    </>
+    </motion.div>
   );
 
   const renderLoading = () => (
     <div style={{ padding: token.paddingXL }}>
-      <Skeleton active avatar={{ shape: 'circle', size: 120 }} paragraph={{ rows: 3 }} />
+      <Skeleton active avatar={{ shape: 'circle', size: 100 }} paragraph={{ rows: 3 }} />
     </div>
   );
 
   const renderError = () => (
-    <>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: token.marginLG }}
+    >
       <Alert
         type="error"
         message="Something went wrong"
         description="We couldn't load your verification status. Please try again."
         showIcon
-        style={{ maxWidth: 400 }}
+        style={{ width: '100%' }}
       />
       <Button
         type="primary"
         icon={<ReloadOutlined />}
         onClick={() => window.location.reload()}
+        style={getButtonStyle()}
       >
         Refresh
       </Button>
-    </>
+    </motion.div>
   );
 
   return (
@@ -330,15 +370,12 @@ export default function StatusPage() {
       </Head>
 
       <OnboardingLayout currentStep={3}>
-        <div style={containerStyle}>
-          {status === 'loading' && renderLoading()}
-          {status === 'approved' && renderApproved()}
-          {status === 'pending' && renderPending()}
-          {status === 'rejected' && renderRejected()}
-          {status === 'error' && renderError()}
-        </div>
+        {status === 'loading' && renderLoading()}
+        {status === 'approved' && renderApproved()}
+        {status === 'pending' && renderPending()}
+        {status === 'rejected' && renderRejected()}
+        {status === 'error' && renderError()}
       </OnboardingLayout>
     </>
   );
 }
-

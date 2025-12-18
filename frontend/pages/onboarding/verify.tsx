@@ -1,37 +1,46 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { Button, message, theme, Alert } from 'antd';
+import { Button, message, theme, Alert, Grid } from 'antd';
 import { CameraOutlined, IdcardOutlined, BulbOutlined, ArrowLeftOutlined, ReloadOutlined } from '@ant-design/icons';
+import { motion } from 'motion/react';
 import OnboardingLayout from '@/components/onboarding/OnboardingLayout';
 import LoadingAnimation from '@/components/onboarding/animations/LoadingAnimation';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
+import { useThemeMode } from '@/context/ThemeContext';
 import { createVeriffSession, checkVeriffDecision, ApiError } from '@/services/api/onboarding';
 
 const { useToken } = theme;
+const { useBreakpoint } = Grid;
 
 type VerifyState = 'prepare' | 'loading' | 'verifying' | 'processing' | 'error';
 
+// Theme colors
+const themeColors = {
+  primary: '#6366F1',
+  light: '#A5B4FC',
+  dark: '#4338CA',
+};
+
 const tips = [
-  { icon: <CameraOutlined />, text: 'Good lighting - find a well-lit area' },
-  { icon: <IdcardOutlined />, text: 'Have your valid ID ready' },
-  { icon: <BulbOutlined />, text: 'Remove glasses and hats for the selfie' },
+  { icon: <CameraOutlined />, text: 'Good lighting - find a well-lit area', emoji: '💡' },
+  { icon: <IdcardOutlined />, text: 'Have your valid ID ready', emoji: '🪪' },
+  { icon: <BulbOutlined />, text: 'Remove glasses & hats for selfie', emoji: '🧢' },
 ];
 
 export default function VerifyPage() {
   const router = useRouter();
   const { token } = useToken();
   const { user } = useAuth();
+  const { mode } = useThemeMode();
+  const screens = useBreakpoint();
+  const isDark = mode === 'dark';
+  const isMobile = !screens.md;
+  
   const [state, setState] = useState<VerifyState>('prepare');
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const [isAnimated, setIsAnimated] = useState(false);
   const [pollingCount, setPollingCount] = useState(0);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsAnimated(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -40,7 +49,7 @@ export default function VerifyPage() {
     }
   }, [user, router]);
 
-  // Poll for decision when in processing state
+  // Poll for decision when processing
   useEffect(() => {
     if (state !== 'processing') return;
 
@@ -57,14 +66,13 @@ export default function VerifyPage() {
           message.error('Verification was not successful');
           router.push('/onboarding/status');
         } else if (pollingCount >= 60) {
-          // Stop polling after ~5 minutes (60 * 5 seconds)
           clearInterval(pollInterval);
           router.push('/onboarding/status');
         }
         
         setPollingCount((prev) => prev + 1);
       } catch {
-        // Continue polling on error
+        // Continue polling
       }
     }, 5000);
 
@@ -78,16 +86,11 @@ export default function VerifyPage() {
     try {
       const sessionData = await createVeriffSession();
 
-      // For now, use direct URL approach until Veriff SDK is installed
-      // Once @veriff/js-sdk is installed, we can use the embedded flow
       if (sessionData.sessionUrl) {
-        // Open Veriff in a new tab
         window.open(sessionData.sessionUrl, '_blank');
         setState('processing');
         message.info('Complete verification in the new tab');
       } else {
-        // Fallback: Use the session URL from backend
-        // Load Veriff SDK dynamically (requires @veriff/js-sdk package)
         try {
           const VeriffModule = await import('@veriff/js-sdk');
           const Veriff = VeriffModule.default || VeriffModule.Veriff;
@@ -117,10 +120,8 @@ export default function VerifyPage() {
             },
           });
 
-          // Create an event listener for Veriff messages
           const handleVeriffMessage = (event: MessageEvent) => {
             if (event.origin !== 'https://stationapi.veriff.com') return;
-
             const { msg } = event.data || {};
             
             if (msg === 'FINISHED') {
@@ -133,7 +134,6 @@ export default function VerifyPage() {
 
           window.addEventListener('message', handleVeriffMessage);
         } catch {
-          // SDK not installed, fall back to URL approach
           setErrorMessage('Verification SDK not available. Please contact support.');
           setState('error');
         }
@@ -146,136 +146,163 @@ export default function VerifyPage() {
     }
   };
 
-  const containerStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: token.marginLG,
-    opacity: isAnimated ? 1 : 0,
-    transform: `translateY(${isAnimated ? 0 : 20}px)`,
-    transition: 'all 0.5s ease-out',
-  };
-
-  const tipCardStyle: React.CSSProperties = {
-    backgroundColor: token.colorBgContainer,
-    border: `1px solid ${token.colorBorderSecondary}`,
-    borderRadius: token.borderRadius,
-    padding: token.paddingMD,
+  // Styles
+  const getCardStyle = (): React.CSSProperties => ({
+    background: isDark
+      ? 'rgba(255,255,255,0.08)'
+      : 'rgba(255,255,255,0.15)',
+    backdropFilter: 'blur(12px)',
+    border: isDark
+      ? '1px solid rgba(255,255,255,0.1)'
+      : '1px solid rgba(255,255,255,0.3)',
+    borderRadius: 16,
+    padding: isMobile ? `${token.paddingSM}px ${token.paddingMD}px` : token.paddingMD,
     display: 'flex',
     alignItems: 'center',
     gap: token.marginMD,
     width: '100%',
-    maxWidth: 400,
-  };
+  });
 
-  const tipIconStyle: React.CSSProperties = {
-    fontSize: token.fontSizeXL,
-    color: token.colorPrimary,
-    flexShrink: 0,
-  };
-
-  const tipTextStyle: React.CSSProperties = {
-    fontSize: token.fontSize,
-    color: token.colorText,
-  };
-
-  const backButtonStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: token.marginXS,
-    color: token.colorTextSecondary,
-    fontSize: token.fontSize,
-    cursor: 'pointer',
-    marginBottom: token.marginMD,
-  };
+  const getButtonStyle = (primary = true): React.CSSProperties => ({
+    background: primary
+      ? (isDark
+          ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.dark} 100%)`
+          : 'linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)')
+      : (isDark
+          ? 'rgba(255,255,255,0.1)'
+          : 'rgba(255,255,255,0.2)'),
+    boxShadow: primary
+      ? (isDark ? `0 4px 14px rgba(99, 102, 241, 0.4)` : `0 4px 14px rgba(0,0,0,0.2)`)
+      : 'none',
+    border: primary ? 'none' : '1px solid rgba(255,255,255,0.3)',
+    borderRadius: 12,
+    color: primary ? (isDark ? '#ffffff' : themeColors.dark) : '#ffffff',
+    fontWeight: fontWeights.bold,
+    height: 52,
+    fontSize: token.fontSizeLG,
+  });
 
   const renderPrepare = () => (
-    <>
-      <div style={{ maxWidth: 400, width: '100%' }}>
-        <div style={backButtonStyle} onClick={() => router.push('/onboarding/address')}>
-          <ArrowLeftOutlined />
-          Back to Address
-        </div>
-      </div>
-
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      style={{ display: 'flex', flexDirection: 'column', gap: token.marginMD }}
+    >
       {/* Tips */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginSM, width: '100%', maxWidth: 400 }}>
-        <h3 style={{ fontSize: token.fontSizeLG, fontWeight: fontWeights.semibold, color: token.colorText, marginBottom: token.marginSM }}>
-          Before you start
-        </h3>
-        {tips.map((tip, index) => (
-          <div key={index} style={tipCardStyle}>
-            <span style={tipIconStyle}>{tip.icon}</span>
-            <span style={tipTextStyle}>{tip.text}</span>
-          </div>
-        ))}
+      <div style={{ 
+        fontSize: token.fontSizeLG, 
+        fontWeight: fontWeights.semibold, 
+        color: '#ffffff',
+        textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+        marginBottom: token.marginXS,
+      }}>
+        Before you start
       </div>
+      
+      {tips.map((tip, index) => (
+        <motion.div
+          key={index}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3, delay: index * 0.1 }}
+          style={getCardStyle()}
+        >
+          <span style={{ fontSize: 24 }}>{tip.emoji}</span>
+          <span style={{ fontSize: token.fontSize, color: '#ffffff' }}>{tip.text}</span>
+        </motion.div>
+      ))}
 
       {/* Veriff container */}
-      <div id="veriff-root" style={{ width: '100%', maxWidth: 400 }} />
+      <div id="veriff-root" style={{ width: '100%' }} />
 
-      {/* Start Button */}
-      <Button
-        type="primary"
-        size="large"
-        onClick={startVerification}
-        style={{
-          width: '100%',
-          maxWidth: 400,
-          height: token.controlHeightLG,
-          fontSize: token.fontSizeLG,
-          fontWeight: fontWeights.semibold,
-          borderRadius: token.borderRadius,
-        }}
-      >
-        <CameraOutlined /> Start Verification
-      </Button>
+      {/* Buttons */}
+      <div style={{ display: 'flex', gap: token.marginSM, marginTop: token.marginMD }}>
+        <Button
+          size="large"
+          onClick={() => router.push('/onboarding/address')}
+          style={{ ...getButtonStyle(false), flex: 1 }}
+        >
+          <ArrowLeftOutlined />
+        </Button>
+        <Button
+          type="primary"
+          size="large"
+          onClick={startVerification}
+          style={{ ...getButtonStyle(), flex: 3 }}
+        >
+          <CameraOutlined /> Start Verification
+        </Button>
+      </div>
 
-      <p style={{ fontSize: token.fontSize, color: token.colorTextSecondary, textAlign: 'center', maxWidth: 350 }}>
-        You&apos;ll be asked to take a photo of your ID and a selfie. This usually takes about 2 minutes.
+      <p style={{ 
+        fontSize: token.fontSizeSM, 
+        color: 'rgba(255,255,255,0.6)', 
+        textAlign: 'center',
+        marginTop: token.marginSM,
+      }}>
+        You'll take a photo of your ID and a quick selfie
       </p>
-    </>
+    </motion.div>
   );
 
   const renderLoading = () => (
-    <div style={{ padding: token.paddingXL, textAlign: 'center' }}>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      style={{ padding: token.paddingXL, textAlign: 'center' }}
+    >
       <LoadingAnimation text="Starting verification..." />
-    </div>
+    </motion.div>
   );
 
   const renderVerifying = () => (
     <div style={{ width: '100%', textAlign: 'center' }}>
       <div id="veriff-root" style={{ width: '100%', minHeight: 400 }} />
-      <p style={{ fontSize: token.fontSize, color: token.colorTextSecondary, marginTop: token.marginLG }}>
+      <p style={{ fontSize: token.fontSize, color: 'rgba(255,255,255,0.7)', marginTop: token.marginLG }}>
         Complete the verification in the window above
       </p>
     </div>
   );
 
   const renderProcessing = () => (
-    <div style={{ padding: token.paddingXL, textAlign: 'center' }}>
-      <LoadingAnimation size={100} text="Processing your verification..." />
-      <p style={{ fontSize: token.fontSize, color: token.colorTextSecondary, marginTop: token.marginXL, maxWidth: 350, margin: `${token.marginXL}px auto 0` }}>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      style={{ padding: token.paddingXL, textAlign: 'center' }}
+    >
+      <LoadingAnimation size={80} text="Processing your verification..." />
+      <p style={{ 
+        fontSize: token.fontSize, 
+        color: 'rgba(255,255,255,0.7)', 
+        marginTop: token.marginXL,
+        maxWidth: 300,
+        margin: `${token.marginXL}px auto 0`,
+      }}>
         This usually takes less than a minute. You can wait here or check back later.
       </p>
       <Button
         type="link"
         onClick={() => router.push('/onboarding/status')}
-        style={{ marginTop: token.marginMD }}
+        style={{ marginTop: token.marginMD, color: themeColors.light }}
       >
         Check status later →
       </Button>
-    </div>
+    </motion.div>
   );
 
   const renderError = () => (
-    <div style={{ textAlign: 'center', padding: token.paddingXL }}>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      style={{ textAlign: 'center', padding: token.paddingLG }}
+    >
       <Alert
         type="error"
         message="Verification Error"
         description={errorMessage}
         showIcon
-        style={{ marginBottom: token.marginLG, maxWidth: 400 }}
+        style={{ marginBottom: token.marginLG, textAlign: 'left' }}
       />
       <Button
         type="primary"
@@ -284,16 +311,11 @@ export default function VerifyPage() {
           setState('prepare');
           setErrorMessage('');
         }}
-        style={{
-          height: token.controlHeightLG,
-          fontSize: token.fontSize,
-          fontWeight: fontWeights.semibold,
-          borderRadius: token.borderRadius,
-        }}
+        style={getButtonStyle()}
       >
         Try Again
       </Button>
-    </div>
+    </motion.div>
   );
 
   return (
@@ -305,22 +327,21 @@ export default function VerifyPage() {
 
       <OnboardingLayout
         currentStep={2}
-        title={state === 'processing' ? 'Verification in Progress' : 'Identity Verification'}
+        title={state === 'processing' ? 'Processing...' : 'Identity Verification'}
         subtitle={
           state === 'processing'
             ? "We're reviewing your documents"
-            : 'Scan your ID and take a selfie to verify your identity'
+            : 'Quick ID scan and selfie to verify you'
         }
+        showBack={state === 'prepare'}
+        onBack={() => router.push('/onboarding/address')}
       >
-        <div style={containerStyle}>
-          {state === 'prepare' && renderPrepare()}
-          {state === 'loading' && renderLoading()}
-          {state === 'verifying' && renderVerifying()}
-          {state === 'processing' && renderProcessing()}
-          {state === 'error' && renderError()}
-        </div>
+        {state === 'prepare' && renderPrepare()}
+        {state === 'loading' && renderLoading()}
+        {state === 'verifying' && renderVerifying()}
+        {state === 'processing' && renderProcessing()}
+        {state === 'error' && renderError()}
       </OnboardingLayout>
     </>
   );
 }
-

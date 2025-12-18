@@ -78,6 +78,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [greeting, setGreeting] = useState('Welcome');
   const [appMode, setAppMode] = useState<'learner' | 'investor'>('investor');
+  const [kycBannerDismissed, setKycBannerDismissed] = useState(false);
 
   // Wait for client-side mount to avoid hydration mismatch with useBreakpoint
   const isMobile = mounted ? !screens.md : false;
@@ -195,12 +196,25 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           <div style={{ fontWeight: fontWeights.semibold, color: token.colorText }}>
             {displayName}
           </div>
-          <div style={{ fontSize: token.fontSize, color: token.colorTextSecondary }}>
-            {user?.kycStatus === 'APPROVED' ? '✓ Verified' : 'Complete verification'}
-          </div>
+          {user?.kycStatus === 'APPROVED' ? (
+            <div style={{ fontSize: token.fontSize, color: token.colorSuccess }}>
+              ✓ Verified
+            </div>
+          ) : (
+            <div 
+              style={{ 
+                fontSize: token.fontSize, 
+                color: token.colorPrimary, 
+                cursor: 'pointer',
+              }}
+              onClick={() => router.push('/onboarding')}
+            >
+              Complete verification →
+            </div>
+          )}
         </div>
       ),
-      disabled: true,
+      disabled: user?.kycStatus === 'APPROVED',
     },
     { type: 'divider' },
     { key: 'profile', label: 'Profile', icon: <UserOutlined /> },
@@ -855,7 +869,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                     {fullName}
                   </div>
                   <div style={{ fontSize: token.fontSizeSM, color: isLearnerMode ? 'rgba(255,255,255,0.7)' : (isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)') }}>
-                    {user?.kycStatus === 'APPROVED' ? '✓ Verified' : 'Pending'}
+                    {user?.kycStatus === 'APPROVED' ? '✓ Verified' : 'Unverified'}
                   </div>
                 </div>
                 <PoweroffOutlined
@@ -1067,20 +1081,36 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       {/* Main */}
       <main style={mainStyle}>
         {/* KYC Banner - Show when user is not verified */}
-        {mounted && user && user.kycStatus !== 'APPROVED' && (
+        {mounted && user && user.kycStatus !== 'APPROVED' && !kycBannerDismissed && (
           <div
             style={{
               background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
               color: '#ffffff',
               padding: `${token.paddingSM}px ${token.paddingLG}px`,
               display: 'flex',
-              alignItems: 'center',
+              flexDirection: isMobile ? 'column' : 'row',
+              alignItems: isMobile ? 'stretch' : 'center',
               justifyContent: 'space-between',
-              gap: token.marginMD,
-              flexWrap: 'wrap',
+              gap: isMobile ? token.marginSM : token.marginMD,
+              position: 'relative',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM }}>
+            {/* Close button - positioned top right on mobile only */}
+            {isMobile && (
+              <CloseOutlined 
+                style={{ 
+                  position: 'absolute',
+                  top: token.paddingSM,
+                  right: token.paddingSM,
+                  fontSize: 14, 
+                  color: 'rgba(255,255,255,0.8)', 
+                  cursor: 'pointer',
+                  padding: 4,
+                }}
+                onClick={() => setKycBannerDismissed(true)}
+              />
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM, flex: 1, paddingRight: isMobile ? 24 : 0 }}>
               <span style={{ fontSize: 18 }}>⚠️</span>
               <span style={{ fontWeight: fontWeights.medium, fontSize: token.fontSize }}>
                 {user.kycStatus === 'SUBMITTED'
@@ -1088,22 +1118,51 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   : 'Complete identity verification to unlock real trading and deposits.'}
               </span>
             </div>
-            {user.kycStatus !== 'SUBMITTED' && (
-              <Button
-                type="primary"
-                size="small"
-                onClick={() => router.push('/onboarding')}
-                style={{
-                  background: '#fff',
-                  color: '#DC2626',
-                  border: 'none',
-                  fontWeight: fontWeights.semibold,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                }}
-              >
-                Complete Verification
-              </Button>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM, justifyContent: isMobile ? 'flex-start' : 'flex-end' }}>
+              {user.kycStatus !== 'SUBMITTED' && (
+                <>
+                  <Button
+                    size="small"
+                    onClick={() => router.push('/tuition-center')}
+                    style={{
+                      background: 'transparent',
+                      color: '#fff',
+                      border: '1px solid rgba(255,255,255,0.5)',
+                      fontWeight: fontWeights.medium,
+                    }}
+                  >
+                    Practice KYC
+                  </Button>
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => router.push('/onboarding')}
+                    style={{
+                      background: '#fff',
+                      color: '#DC2626',
+                      border: 'none',
+                      fontWeight: fontWeights.semibold,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                    }}
+                  >
+                    Complete Verification
+                  </Button>
+                </>
+              )}
+              {/* Close button - inline on desktop */}
+              {!isMobile && (
+                <CloseOutlined 
+                  style={{ 
+                    fontSize: 14, 
+                    color: 'rgba(255,255,255,0.8)', 
+                    cursor: 'pointer',
+                    padding: 4,
+                    marginLeft: token.marginXS,
+                  }}
+                  onClick={() => setKycBannerDismissed(true)}
+                />
+              )}
+            </div>
           </div>
         )}
         <div style={contentStyle}>

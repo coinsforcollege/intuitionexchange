@@ -134,7 +134,7 @@ export default function TuitionCenterPage() {
 
   const isDark = mode === 'dark';
   const isMobile = mounted ? !screens.md : false;
-  const isTablet = mounted ? screens.md && !screens.lg : false;
+  const isSmallScreen = mounted ? !screens.lg : false; // Mobile + Tablet (< 992px)
 
   useEffect(() => {
     setMounted(true);
@@ -199,7 +199,7 @@ export default function TuitionCenterPage() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(2, 1fr)',
+            gridTemplateColumns: isSmallScreen ? '1fr' : 'repeat(2, 1fr)',
             gap: isMobile ? token.marginMD : token.marginLG,
           }}
         >
