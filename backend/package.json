@@ -24,7 +24,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "build:prod": "npm run prisma:generate && npm run prisma:migrate:deploy && npm run build",
-    "render:build": "npm install && npm run build:prod"
+    "render:build": "npm install --include=dev && npm run build:prod"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
