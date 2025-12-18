@@ -22,6 +22,12 @@ const themeColors = {
   dark: '#4338CA',
 };
 
+// Warm palette for light mode buttons
+const warmColors = {
+  buttonText: '#3D2B1F',
+  coral: '#E07A5F',
+};
+
 export default function AddressPage() {
   const router = useRouter();
   const { token } = useToken();
@@ -74,7 +80,7 @@ export default function AddressPage() {
             street1: street1 || '',
             street2: street2 || '',
             city: city || '',
-            region: region || '',
+            region: region || undefined,
             postalCode: postalCode || '',
             country: countryValue,
           });
@@ -120,7 +126,7 @@ export default function AddressPage() {
 
   const handleCountryChange = (value: string) => {
     setSelectedCountry(value);
-    form.setFieldValue('region', '');
+    form.setFieldValue('region', undefined);
   };
 
   const filterOption = (input: string, option: { label?: string; value?: string; searchValue?: string } | undefined) => {
@@ -165,16 +171,16 @@ export default function AddressPage() {
     background: primary
       ? (isDark
           ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.dark} 100%)`
-          : 'linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)')
+          : `linear-gradient(135deg, ${warmColors.coral} 0%, #C45C44 100%)`)
       : (isDark
           ? 'rgba(255,255,255,0.1)'
-          : 'rgba(255,255,255,0.2)'),
+          : 'rgba(255,255,255,0.15)'),
     boxShadow: primary
-      ? (isDark ? `0 4px 14px rgba(99, 102, 241, 0.4)` : `0 4px 14px rgba(0,0,0,0.2)`)
+      ? (isDark ? `0 4px 14px rgba(99, 102, 241, 0.4)` : `0 4px 14px rgba(224,122,95,0.4)`)
       : 'none',
     border: primary ? 'none' : '1px solid rgba(255,255,255,0.3)',
     borderRadius: 12,
-    color: primary ? (isDark ? '#ffffff' : themeColors.dark) : '#ffffff',
+    color: '#ffffff',
     fontWeight: fontWeights.bold,
     height: 48,
     fontSize: token.fontSize,
@@ -198,17 +204,26 @@ export default function AddressPage() {
       .onboarding-form .ant-input-prefix {
         color: rgba(255,255,255,0.5) !important;
       }
+      .onboarding-form .ant-select {
+        height: 48px !important;
+      }
       .onboarding-form .ant-select-selector {
         background: rgba(0,0,0,0.3) !important;
         border: 1px solid rgba(255,255,255,0.15) !important;
         border-radius: 12px !important;
         height: 48px !important;
+        min-height: 48px !important;
+        padding: 0 11px !important;
+      }
+      .onboarding-form .ant-select-selection-search-input {
+        height: 46px !important;
       }
       .onboarding-form .ant-select-selection-item {
         color: #ffffff !important;
         line-height: 46px !important;
       }
       .onboarding-form .ant-select-selection-placeholder {
+        line-height: 46px !important;
         color: rgba(255,255,255,0.4) !important;
       }
       .onboarding-form .ant-select-arrow {
@@ -228,14 +243,30 @@ export default function AddressPage() {
       .onboarding-form .ant-input::placeholder {
         color: rgba(0,0,0,0.35) !important;
       }
+      .onboarding-form .ant-select {
+        height: 48px !important;
+      }
       .onboarding-form .ant-select-selector {
         background: rgba(255,255,255,0.9) !important;
         border: 1px solid rgba(255,255,255,0.5) !important;
         border-radius: 12px !important;
         height: 48px !important;
+        min-height: 48px !important;
+        padding: 0 11px !important;
+      }
+      .onboarding-form .ant-select-selection-search-input {
+        height: 46px !important;
       }
       .onboarding-form .ant-select-selection-item {
         line-height: 46px !important;
+        color: #1a1a2e !important;
+      }
+      .onboarding-form .ant-select-selection-placeholder {
+        line-height: 46px !important;
+        color: rgba(0,0,0,0.35) !important;
+      }
+      .onboarding-form .ant-select-arrow {
+        color: rgba(0,0,0,0.4) !important;
       }
     `;
 
@@ -281,25 +312,7 @@ export default function AddressPage() {
             initialValues={{ country: user?.country || 'US' }}
             className="onboarding-form"
           >
-            {/* Country */}
-            <Form.Item
-              name="country"
-              label={<span style={getLabelStyle()}>Country</span>}
-              rules={[{ required: true, message: 'Please select your country' }]}
-              style={{ marginBottom: token.marginMD }}
-            >
-              <Select
-                showSearch
-                placeholder="Select country"
-                options={countryOptions}
-                disabled={loading}
-                onChange={handleCountryChange}
-                optionFilterProp="searchValue"
-                filterOption={filterOption}
-              />
-            </Form.Item>
-
-            {/* Street Address */}
+            {/* Street Address - full width */}
             <Form.Item
               name="street1"
               label={<span style={getLabelStyle()}>Street Address</span>}
@@ -317,7 +330,7 @@ export default function AddressPage() {
               />
             </Form.Item>
 
-            {/* Street 2 */}
+            {/* Apt/Suite - full width */}
             <Form.Item
               name="street2"
               label={<span style={getLabelStyle()}>Apt, Suite, etc. <span style={{ fontWeight: 400, opacity: 0.7 }}>(Optional)</span></span>}
@@ -331,9 +344,27 @@ export default function AddressPage() {
               />
             </Form.Item>
 
-            {/* City & Region */}
+            {/* Row 1: Country + City */}
             <Row gutter={token.marginSM}>
-              <Col xs={24} sm={12}>
+              <Col xs={12}>
+                <Form.Item
+                  name="country"
+                  label={<span style={getLabelStyle()}>Country</span>}
+                  rules={[{ required: true, message: 'Required' }]}
+                  style={{ marginBottom: token.marginMD }}
+                >
+                  <Select
+                    showSearch
+                    placeholder="Select"
+                    options={countryOptions}
+                    disabled={loading}
+                    onChange={handleCountryChange}
+                    optionFilterProp="searchValue"
+                    filterOption={filterOption}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={12}>
                 <Form.Item
                   name="city"
                   label={<span style={getLabelStyle()}>City</span>}
@@ -350,17 +381,21 @@ export default function AddressPage() {
                   />
                 </Form.Item>
               </Col>
-              <Col xs={24} sm={12}>
+            </Row>
+
+            {/* Row 2: State + Postal Code */}
+            <Row gutter={token.marginSM}>
+              <Col xs={12}>
                 <Form.Item
                   name="region"
                   label={<span style={getLabelStyle()}>{getRegionLabel()}</span>}
                   rules={[{ required: true, message: 'Required' }]}
-                  style={{ marginBottom: token.marginMD }}
+                  style={{ marginBottom: token.marginLG }}
                 >
                   {hasStates ? (
                     <Select
                       showSearch
-                      placeholder={`Select ${getRegionLabel().toLowerCase()}`}
+                      placeholder="Select"
                       options={stateOptions}
                       disabled={loading}
                       filterOption={filterOption}
@@ -374,24 +409,24 @@ export default function AddressPage() {
                   )}
                 </Form.Item>
               </Col>
+              <Col xs={12}>
+                <Form.Item
+                  name="postalCode"
+                  label={<span style={getLabelStyle()}>{getPostalCodeLabel()}</span>}
+                  rules={[
+                    { required: true, message: 'Required' },
+                    { max: 20, message: 'Too long' },
+                  ]}
+                  style={{ marginBottom: token.marginLG }}
+                >
+                  <Input
+                    placeholder={getPostalCodeLabel()}
+                    style={getInputStyle()}
+                    disabled={loading}
+                  />
+                </Form.Item>
+              </Col>
             </Row>
-
-            {/* Postal Code */}
-            <Form.Item
-              name="postalCode"
-              label={<span style={getLabelStyle()}>{getPostalCodeLabel()}</span>}
-              rules={[
-                { required: true, message: 'Required' },
-                { max: 20, message: 'Too long' },
-              ]}
-              style={{ marginBottom: token.marginXL }}
-            >
-              <Input
-                placeholder={getPostalCodeLabel()}
-                style={{ ...getInputStyle(), maxWidth: 150 }}
-                disabled={loading}
-              />
-            </Form.Item>
 
             {/* Buttons */}
             <Form.Item style={{ marginBottom: 0 }}>

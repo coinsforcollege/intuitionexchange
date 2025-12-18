@@ -23,12 +23,20 @@ interface OnboardingLayoutProps {
   onBack?: () => void;
 }
 
-// Professional indigo/purple theme colors
+// Professional indigo/purple theme colors (dark mode)
 const themeColors = {
   primary: '#6366F1',
   light: '#A5B4FC',
   dark: '#4338CA',
   accent: '#818CF8',
+};
+
+// Warm palette for light mode
+const warmColors = {
+  sand: '#D4C4A8',
+  coral: '#E07A5F',
+  terracotta: '#B85C38',
+  warmBrown: '#5D4037',
 };
 
 const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
@@ -50,21 +58,62 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
 
   const progressPercent = Math.round((currentStep / totalSteps) * 100);
 
-  // Get background gradient based on theme
-  const getBackground = () => {
-    if (isDark) {
-      return `linear-gradient(160deg, #0f0a1e 0%, #1a1033 30%, #0f0a1e 60%, #1a0a2e 100%)`;
-    }
-    return `linear-gradient(160deg, ${themeColors.primary} 0%, ${themeColors.dark} 40%, #312E81 100%)`;
-  };
-
-  // Container
+  // Container with layered background
   const containerStyle: React.CSSProperties = {
     minHeight: '100vh',
-    background: getBackground(),
+    background: isDark
+      ? `linear-gradient(160deg, #0f0a1e 0%, #1a1033 30%, #0f0a1e 60%, #1a0a2e 100%)`
+      : `linear-gradient(145deg, #3D2B1F 0%, #4A3728 35%, #5D4037 65%, #4E342E 100%)`,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+  };
+
+  // Decorative background elements for light mode (soft warm glows)
+  const renderBackgroundDecor = () => {
+    if (isDark || isMobile) return null;
+    
+    return (
+      <>
+        {/* Soft coral glow - top right */}
+        <div style={{
+          position: 'absolute',
+          top: '-10%',
+          right: '-5%',
+          width: '45%',
+          height: '50%',
+          background: `radial-gradient(ellipse at center, ${warmColors.coral}25 0%, transparent 70%)`,
+          pointerEvents: 'none',
+          filter: 'blur(60px)',
+        }} />
+        
+        {/* Soft sand glow - bottom left */}
+        <div style={{
+          position: 'absolute',
+          bottom: '-15%',
+          left: '-10%',
+          width: '50%',
+          height: '55%',
+          background: `radial-gradient(ellipse at center, ${warmColors.sand}20 0%, transparent 70%)`,
+          pointerEvents: 'none',
+          filter: 'blur(80px)',
+        }} />
+        
+        {/* Subtle terracotta accent - center right */}
+        <div style={{
+          position: 'absolute',
+          top: '40%',
+          right: '5%',
+          width: '25%',
+          height: '30%',
+          background: `radial-gradient(ellipse at center, ${warmColors.terracotta}15 0%, transparent 70%)`,
+          pointerEvents: 'none',
+          filter: 'blur(50px)',
+        }} />
+      </>
+    );
   };
 
   // Header
@@ -89,25 +138,28 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
     paddingBottom: isMobile ? token.paddingXL * 2 : token.paddingXL,
   };
 
-  // Title area
+  // Title area - compact inline style
   const titleContainerStyle: React.CSSProperties = {
-    marginBottom: isMobile ? token.marginMD : token.marginLG,
-    textAlign: 'center',
+    marginBottom: isMobile ? token.marginSM : token.marginMD,
+    display: 'flex',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    gap: token.marginSM,
+    flexWrap: 'wrap',
   };
 
   const titleStyle: React.CSSProperties = {
-    fontSize: isMobile ? 22 : 28,
+    fontSize: isMobile ? 18 : 22,
     fontWeight: fontWeights.bold,
     color: '#ffffff',
-    marginBottom: token.marginXS,
-    textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+    margin: 0,
+    textShadow: '0 1px 3px rgba(0,0,0,0.3)',
   };
 
   const subtitleStyle: React.CSSProperties = {
-    fontSize: isMobile ? token.fontSize : token.fontSizeLG,
-    color: 'rgba(255,255,255,0.8)',
-    textShadow: '0 1px 2px rgba(0,0,0,0.2)',
-    lineHeight: 1.5,
+    fontSize: isMobile ? token.fontSizeSM : token.fontSize,
+    color: 'rgba(255,255,255,0.7)',
+    margin: 0,
   };
 
   // Content area
@@ -119,6 +171,9 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
 
   return (
     <div style={containerStyle}>
+      {/* Decorative background elements */}
+      {renderBackgroundDecor()}
+      
       {/* Header */}
       <header style={headerStyle}>
         <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM }}>
@@ -183,11 +238,11 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
                 height: '100%',
                 background: isDark
                   ? `linear-gradient(90deg, ${themeColors.accent} 0%, ${themeColors.light} 100%)`
-                  : `linear-gradient(90deg, #FFE066 0%, #FFC107 100%)`,
+                  : `linear-gradient(90deg, ${warmColors.sand} 0%, ${warmColors.coral} 100%)`,
                 borderRadius: 4,
                 boxShadow: isDark
                   ? `0 0 8px ${themeColors.accent}80`
-                  : '0 0 8px rgba(255,224,102,0.6)',
+                  : `0 0 8px ${warmColors.coral}60`,
               }}
             />
           </div>
@@ -196,11 +251,12 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
 
       {/* Main */}
       <main style={mainStyle}>
-        {/* Title & Subtitle */}
+        {/* Title & Subtitle - inline compact */}
         {(title || subtitle) && (
           <div style={titleContainerStyle}>
             {title && <h1 style={titleStyle}>{title}</h1>}
-            {subtitle && <p style={subtitleStyle}>{subtitle}</p>}
+            {title && subtitle && <span style={{ color: 'rgba(255,255,255,0.4)' }}>•</span>}
+            {subtitle && <span style={subtitleStyle}>{subtitle}</span>}
           </div>
         )}
 

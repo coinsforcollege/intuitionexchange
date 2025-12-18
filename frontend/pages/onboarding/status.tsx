@@ -24,6 +24,12 @@ const themeColors = {
   dark: '#4338CA',
 };
 
+// Warm palette for light mode buttons
+const warmColors = {
+  buttonText: '#3D2B1F',
+  coral: '#E07A5F',
+};
+
 export default function StatusPage() {
   const router = useRouter();
   const { token } = useToken();
@@ -113,16 +119,16 @@ export default function StatusPage() {
     background: primary
       ? (isDark
           ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.dark} 100%)`
-          : 'linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)')
+          : `linear-gradient(135deg, ${warmColors.coral} 0%, #C45C44 100%)`)
       : (isDark
           ? 'rgba(255,255,255,0.1)'
-          : 'rgba(255,255,255,0.2)'),
+          : 'rgba(255,255,255,0.15)'),
     boxShadow: primary
-      ? (isDark ? `0 4px 14px rgba(99, 102, 241, 0.4)` : `0 4px 14px rgba(0,0,0,0.2)`)
+      ? (isDark ? `0 4px 14px rgba(99, 102, 241, 0.4)` : `0 4px 14px rgba(224,122,95,0.4)`)
       : 'none',
     border: primary ? 'none' : '1px solid rgba(255,255,255,0.3)',
     borderRadius: 12,
-    color: primary ? (isDark ? '#ffffff' : themeColors.dark) : '#ffffff',
+    color: '#ffffff',
     fontWeight: fontWeights.bold,
     height: 52,
     fontSize: token.fontSizeLG,
@@ -187,7 +193,7 @@ export default function StatusPage() {
         type="primary"
         size="large"
         block
-        onClick={() => router.replace('/overview')}
+        onClick={() => window.location.href = '/overview'}
         style={getButtonStyle()}
       >
         Go to Dashboard <ArrowRightOutlined />
@@ -369,7 +375,7 @@ export default function StatusPage() {
         <meta name="description" content="Check your identity verification status" />
       </Head>
 
-      <OnboardingLayout currentStep={3}>
+      <OnboardingLayout currentStep={4}>
         {status === 'loading' && renderLoading()}
         {status === 'approved' && renderApproved()}
         {status === 'pending' && renderPending()}

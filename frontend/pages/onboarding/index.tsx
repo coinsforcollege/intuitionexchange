@@ -48,6 +48,12 @@ const themeColors = {
   dark: '#4338CA',
 };
 
+// Warm palette for light mode buttons
+const warmColors = {
+  buttonText: '#3D2B1F',
+  coral: '#E07A5F',
+};
+
 export default function OnboardingWelcome() {
   const router = useRouter();
   const { token } = useToken();
@@ -111,13 +117,13 @@ export default function OnboardingWelcome() {
   const getButtonStyle = (): React.CSSProperties => ({
     background: isDark
       ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.dark} 100%)`
-      : 'linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)',
+      : `linear-gradient(135deg, ${warmColors.coral} 0%, #C45C44 100%)`,
     boxShadow: isDark
       ? `0 4px 14px rgba(99, 102, 241, 0.4)`
-      : `0 4px 14px rgba(0,0,0,0.2)`,
+      : `0 4px 14px rgba(224,122,95,0.4)`,
     border: 'none',
     borderRadius: 12,
-    color: isDark ? '#ffffff' : themeColors.dark,
+    color: '#ffffff',
     fontWeight: fontWeights.bold,
     height: 52,
     fontSize: token.fontSizeLG,
