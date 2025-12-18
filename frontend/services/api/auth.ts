@@ -16,7 +16,7 @@ export interface RegisterData {
 
 export interface RegisterVerifyData extends RegisterData {
   otpEmail: string;
-  otpPhone: string;
+  otpPhone?: string; // Phone OTP temporarily disabled
 }
 
 export interface LoginData {
