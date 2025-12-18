@@ -27,6 +27,7 @@ import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
 import { useExchange } from '@/context/ExchangeContext';
 import { useThemeMode } from '@/context/ThemeContext';
+import { useSidebar } from '@/context/SidebarContext';
 import { getWatchlist, toggleWatchlist } from '@/services/api/watchlist';
 import {
   getTokenDetails,
@@ -162,6 +163,7 @@ export default function TokenDetailsPage() {
   const { user, isLoading } = useAuth();
   const { pairs, setSelectedPair } = useExchange();
   const { mode } = useThemeMode();
+  const { isEffectiveDesktop, isEffectiveMobile } = useSidebar();
   const screens = useBreakpoint();
 
   const [mounted, setMounted] = useState(false);
@@ -174,8 +176,9 @@ export default function TokenDetailsPage() {
   const [loadingSparkline, setLoadingSparkline] = useState(true);
 
   const isDark = mode === 'dark';
-  const isMobile = mounted ? !screens.md : true;
-  const isDesktop = mounted ? screens.lg : false;
+  // Use effective breakpoints that account for sidebar width
+  const isMobile = isEffectiveMobile;
+  const isDesktop = isEffectiveDesktop;
 
   // Get live price from exchange context
   const pairData = useMemo(() => {

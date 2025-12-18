@@ -9,6 +9,7 @@ import themeConfig from "@/theme/themeConfig";
 import { ThemeProvider, useThemeMode } from "@/context/ThemeContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { ExchangeProvider } from "@/context/ExchangeContext";
+import { SidebarProvider } from "@/context/SidebarContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 const inter = Inter({
@@ -104,7 +105,9 @@ export default function App(props: AppProps) {
         <ThemeProvider>
           <AuthProvider>
             <ExchangeProvider>
-              <ThemedApp {...props} />
+              <SidebarProvider>
+                <ThemedApp {...props} />
+              </SidebarProvider>
             </ExchangeProvider>
           </AuthProvider>
         </ThemeProvider>

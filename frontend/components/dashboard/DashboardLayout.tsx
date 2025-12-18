@@ -32,6 +32,7 @@ import { motion } from 'motion/react';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeMode } from '@/context/ThemeContext';
+import { useSidebar } from '@/context/SidebarContext';
 import MobileBottomNav from '@/components/layout/MobileBottomNav';
 
 const { useToken } = theme;
@@ -75,7 +76,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const screens = useBreakpoint();
   const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { sidebarCollapsed, setSidebarCollapsed } = useSidebar();
   const [greeting, setGreeting] = useState('Welcome');
   const [appMode, setAppMode] = useState<'learner' | 'investor'>('investor');
   const [kycBannerDismissed, setKycBannerDismissed] = useState(false);
