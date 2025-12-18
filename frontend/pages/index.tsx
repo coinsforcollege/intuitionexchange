@@ -2,8 +2,11 @@ import Head from "next/head";
 import Header, { HEADER_HEIGHT } from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import HeroSection from "@/components/home/HeroSection";
+import CollegeCoinsSection from "@/components/home/CollegeCoinsSection";
+import EcosystemSection from "@/components/home/EcosystemSection";
+import LearningSection from "@/components/home/LearningSection";
 import FeaturesSection from "@/components/home/FeaturesSection";
-import HowItWorksSection from "@/components/home/HowItWorksSection";
+import MarketsSection from "@/components/home/MarketsSection";
 import CTASection from "@/components/home/CTASection";
 import { theme } from "antd";
 
@@ -40,8 +43,11 @@ export default function Home() {
         <Header />
         <main style={mainStyle}>
           <HeroSection />
+          <CollegeCoinsSection />
+          <EcosystemSection />
+          <LearningSection />
           <FeaturesSection />
-          <HowItWorksSection />
+          <MarketsSection />
           <CTASection />
         </main>
         <Footer />

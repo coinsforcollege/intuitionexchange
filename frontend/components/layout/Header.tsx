@@ -214,90 +214,251 @@ export default function Header() {
         />
       </header>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer - Claymorphic Style */}
       <Drawer
-        title={
-          <div style={{ display: "flex", alignItems: "center", gap: token.marginSM }}>
-            <Image
-              src="/images/intuition-logo-no-text.svg"
-              alt="InTuition"
-              width={32}
-              height={32}
-            />
-            <span style={{ fontWeight: fontWeights.bold }}>InTuition</span>
-          </div>
-        }
+        title={null}
         placement="right"
         onClose={() => setMobileMenuOpen(false)}
         open={mobileMenuOpen}
+        width={300}
         styles={{
-          body: { padding: 0 },
+          header: { display: "none" },
+          body: { 
+            padding: 0,
+            background: mode === "dark"
+              ? "linear-gradient(180deg, #0a0f1a 0%, #1e1b4b 100%)"
+              : "linear-gradient(180deg, #f8fafc 0%, #e0e7ff 100%)",
+          },
+          wrapper: {},
         }}
+        closeIcon={null}
       >
-        <Menu
-          mode="vertical"
-          style={{ border: "none" }}
-          items={[
-            ...navItems.map((item) => ({
-              key: item.key,
-              icon: item.icon,
-              label: <Link href={item.href}>{item.label}</Link>,
-            })),
-            { type: "divider" as const },
-            ...(isLoggedIn 
-              ? [
-                  {
-                    key: "dashboard",
-                    icon: <AppstoreOutlined style={{ color: '#fff' }} />,
-                    label: (
-                      <Link 
-                        href="/overview"
-                        style={{
-                          fontWeight: fontWeights.semibold,
-                          color: '#fff',
-                        }}
-                      >
-                        Dashboard
-                      </Link>
-                    ),
-                    style: {
-                      backgroundColor: token.colorPrimary,
-                      borderRadius: 0,
-                      marginInline: 0,
-                    },
-                  },
-                ]
-              : [
-                  {
-                    key: "login",
-                    icon: <LoginOutlined />,
-                    label: <Link href="/login">Log In</Link>,
-                  },
-                  {
-                    key: "signup",
-                    icon: <UserOutlined />,
-                    label: <Link href="/register">Sign Up</Link>,
-                  },
-                ]
-            ),
-          ]}
-        />
-        <div style={{ padding: token.paddingMD }}>
-          <Divider style={{ margin: `${token.marginSM}px 0` }} />
-          <div style={{ 
-            display: "flex", 
-            alignItems: "center", 
-            justifyContent: "space-between",
-            padding: `${token.paddingSM}px 0`,
-          }}>
-            <span style={{ color: token.colorTextSecondary }}>Theme</span>
-            <Switch
-              checked={mode === "dark"}
-              onChange={toggleMode}
-              checkedChildren={<MoonOutlined />}
-              unCheckedChildren={<SunOutlined />}
-            />
+        {/* Custom Header */}
+        <div
+          style={{
+            padding: `${token.paddingLG}px`,
+            borderBottom: `1px solid ${mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)"}`,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: token.marginSM }}>
+              <Image
+                src="/images/intuition-logo-no-text.svg"
+                alt="InTuition"
+                width={36}
+                height={36}
+              />
+              <span style={{ 
+                fontWeight: fontWeights.bold, 
+                fontSize: token.fontSizeLG,
+                color: mode === "dark" ? "#ffffff" : "#0f172a",
+              }}>
+                InTuition
+              </span>
+            </div>
+            <Button
+              type="text"
+              onClick={() => setMobileMenuOpen(false)}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)",
+                color: mode === "dark" ? "#ffffff" : "#0f172a",
+              }}
+            >
+              ✕
+            </Button>
           </div>
+        </div>
+
+        {/* Nav Items - Claymorphic */}
+        <div style={{ padding: token.paddingMD }}>
+          {navItems.map((item, index) => (
+            <Link
+              key={item.key}
+              href={item.href}
+              style={{ textDecoration: "none" }}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: token.marginMD,
+                  padding: `${token.paddingMD}px`,
+                  marginBottom: token.marginXS,
+                  borderRadius: 14,
+                  background: mode === "dark"
+                    ? "rgba(255,255,255,0.04)"
+                    : "rgba(255,255,255,0.6)",
+                  border: mode === "dark"
+                    ? "1px solid rgba(255,255,255,0.08)"
+                    : "1px solid rgba(0,0,0,0.05)",
+                  boxShadow: mode === "dark"
+                    ? "4px 4px 12px rgba(0,0,0,0.3), -2px -2px 8px rgba(255,255,255,0.03)"
+                    : "4px 4px 12px rgba(0,0,0,0.06), -2px -2px 8px rgba(255,255,255,0.8)",
+                  transition: "all 0.2s",
+                }}
+              >
+                {/* Icon with 3D effect */}
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 18,
+                    color: "#ffffff",
+                    background: `linear-gradient(145deg, ${
+                      ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#06b6d4"][index % 5]
+                    } 0%, ${
+                      ["#1e40af", "#047857", "#5b21b6", "#b45309", "#0e7490"][index % 5]
+                    } 100%)`,
+                    boxShadow: `
+                      4px 4px 10px rgba(0,0,0,0.3),
+                      inset 2px 2px 4px rgba(255,255,255,0.15),
+                      inset -2px -2px 4px rgba(0,0,0,0.2)
+                    `,
+                  }}
+                >
+                  {item.icon}
+                </div>
+                <span
+                  style={{
+                    fontWeight: fontWeights.semibold,
+                    color: mode === "dark" ? "#ffffff" : "#0f172a",
+                    fontSize: token.fontSizeLG,
+                  }}
+                >
+                  {item.label}
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Divider */}
+        <div
+          style={{
+            height: 1,
+            margin: `0 ${token.paddingMD}px`,
+            background: mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)",
+          }}
+        />
+
+        {/* Auth Section */}
+        <div style={{ padding: token.paddingMD }}>
+          {isLoggedIn ? (
+            <Link href="/overview" style={{ textDecoration: "none" }} onClick={() => setMobileMenuOpen(false)}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: token.marginSM,
+                  padding: `${token.paddingMD}px`,
+                  borderRadius: 14,
+                  fontWeight: fontWeights.bold,
+                  fontSize: token.fontSizeLG,
+                  color: "#ffffff",
+                  background: `linear-gradient(145deg, #3b82f6 0%, #1e40af 50%, #1e3a8a 100%)`,
+                  boxShadow: `
+                    6px 6px 16px rgba(0,0,0,0.4),
+                    -2px -2px 8px rgba(96, 165, 250, 0.2),
+                    inset 2px 2px 6px rgba(255,255,255,0.15),
+                    inset -2px -2px 6px rgba(0,0,0,0.2)
+                  `,
+                  border: "1px solid rgba(96, 165, 250, 0.3)",
+                }}
+              >
+                <AppstoreOutlined />
+                Dashboard
+              </div>
+            </Link>
+          ) : (
+            <div style={{ display: "flex", gap: token.marginSM }}>
+              <Link href="/login" style={{ flex: 1, textDecoration: "none" }} onClick={() => setMobileMenuOpen(false)}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: token.marginXS,
+                    padding: `${token.paddingMD}px`,
+                    borderRadius: 14,
+                    fontWeight: fontWeights.semibold,
+                    color: mode === "dark" ? "#ffffff" : "#0f172a",
+                    background: mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.7)",
+                    border: mode === "dark" ? "1px solid rgba(255,255,255,0.15)" : "1px solid rgba(0,0,0,0.1)",
+                    boxShadow: mode === "dark"
+                      ? "4px 4px 12px rgba(0,0,0,0.3)"
+                      : "4px 4px 12px rgba(0,0,0,0.08)",
+                  }}
+                >
+                  <LoginOutlined />
+                  Log In
+                </div>
+              </Link>
+              <Link href="/register" style={{ flex: 1, textDecoration: "none" }} onClick={() => setMobileMenuOpen(false)}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: token.marginXS,
+                    padding: `${token.paddingMD}px`,
+                    borderRadius: 14,
+                    fontWeight: fontWeights.bold,
+                    color: "#ffffff",
+                    background: `linear-gradient(145deg, #3b82f6 0%, #1e40af 100%)`,
+                    boxShadow: `
+                      4px 4px 12px rgba(0,0,0,0.3),
+                      inset 2px 2px 4px rgba(255,255,255,0.15)
+                    `,
+                    border: "1px solid rgba(96, 165, 250, 0.3)",
+                  }}
+                >
+                  <UserOutlined />
+                  Sign Up
+                </div>
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Theme Toggle */}
+        <div
+          style={{
+            margin: token.paddingMD,
+            padding: token.paddingMD,
+            borderRadius: 14,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            background: mode === "dark" ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.6)",
+            border: mode === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.05)",
+          }}
+        >
+          <span
+            style={{
+              fontWeight: fontWeights.medium,
+              color: mode === "dark" ? "rgba(255,255,255,0.7)" : "rgba(15,23,42,0.7)",
+            }}
+          >
+            Dark Mode
+          </span>
+          <Switch
+            checked={mode === "dark"}
+            onChange={toggleMode}
+            checkedChildren={<MoonOutlined />}
+            unCheckedChildren={<SunOutlined />}
+          />
         </div>
       </Drawer>
 
