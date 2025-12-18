@@ -99,7 +99,7 @@ export default function VerifyPage() {
       } else {
         try {
           const VeriffModule = await import('@veriff/js-sdk');
-          const Veriff = VeriffModule.default || VeriffModule.Veriff;
+          const Veriff = VeriffModule.default;
           
           const veriff = Veriff({
             host: 'https://stationapi.veriff.com',

@@ -223,7 +223,7 @@ export default function DepositModal({ visible, onClose, onSuccess }: DepositMod
         zIndex={isMobile ? token.zIndexPopupBase + 20 : undefined}
         styles={isMobile ? {
           body: { padding: token.paddingLG, paddingTop: 60 },
-          content: { borderRadius: 0 },
+          wrapper: { borderRadius: 0 },
           mask: { background: token.colorBgContainer },
         } : undefined}
         style={isMobile ? { top: 0, margin: 0, padding: 0, maxWidth: '100vw' } : undefined}
@@ -328,12 +328,10 @@ export default function DepositModal({ visible, onClose, onSuccess }: DepositMod
           minHeight: isMobile ? '100vh' : undefined,
           boxSizing: 'border-box',
         },
-        content: isMobile ? {
+        wrapper: isMobile ? {
           borderRadius: 0,
           minHeight: '100vh',
           boxShadow: 'none',
-        } : undefined,
-        wrapper: isMobile ? {
           overflow: 'hidden',
         } : undefined,
         mask: isMobile ? {

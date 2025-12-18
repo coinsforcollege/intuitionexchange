@@ -294,4 +294,3 @@ const PairSelector: React.FC<PairSelectorProps> = ({
 };
 
 export default PairSelector;
-export { mockPairs };

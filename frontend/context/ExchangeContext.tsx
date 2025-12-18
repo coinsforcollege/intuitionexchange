@@ -47,6 +47,8 @@ interface TradingPair {
   baseCurrency: string;
   quoteCurrency: string;
   iconUrl: string;
+  _rawVolume24h?: number;
+  _usdVolume?: number;
 }
 
 interface ExchangeContextType {
@@ -811,7 +813,7 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       // Check if this is a synthetic pair (ETH or USDT quote, not directly on Coinbase)
       // All pairs with ETH or USDT as quote are synthetic (converted from USD pairs)
-      const isSynthetic = (quoteAsset === 'ETH' || quoteAsset === 'USDT') && quoteAsset !== 'USD';
+      const isSynthetic = quoteAsset === 'ETH' || quoteAsset === 'USDT';
       
       if (isSynthetic) {
         // Validate minimum order size: Synthetic pairs must be at least $1 USD

@@ -192,9 +192,18 @@ export default function WalletPage() {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }),
+      availableBalance: usd.availableBalance.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+      lockedBalance: usd.lockedBalance.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
       value: `$${usd.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       change: 0,
       color: '#4CAF50',
+      iconUrl: undefined,
     } : null;
   }, [balances]);
 

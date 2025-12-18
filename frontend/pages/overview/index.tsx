@@ -568,7 +568,7 @@ export default function DashboardPage() {
                     display: 'flex', 
                     flexWrap: 'wrap',
                     gap: isTablet ? token.marginSM : token.marginLG, 
-                    fontSize: isTablet ? token.fontSizeXS : token.fontSizeSM 
+                    fontSize: isTablet ? 12 : token.fontSizeSM 
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: token.marginXS }}>
                       <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(255, 255, 255, 0.9)' }} />
@@ -687,7 +687,7 @@ export default function DashboardPage() {
                 <Skeleton active paragraph={{ rows: 2 }} />
               ) : watchlistTokens.length === 0 ? (
                 <div
-                  onClick={handleNavigateToWatchlist}
+                  onClick={() => handleNavigateToWatchlist()}
                   style={{
                     display: 'flex',
                     flexDirection: 'column',

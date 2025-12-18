@@ -44,8 +44,8 @@ function AddBankAccountForm() {
     setLoading(true);
 
     try {
-      // Submit the elements to get payment method
-      const { error: submitError, paymentMethod } = await elements.submit();
+      // Submit the elements to validate
+      const { error: submitError, selectedPaymentMethod } = await elements.submit();
       
       if (submitError) {
         message.error(submitError.message || 'Please check your bank account details');
@@ -53,14 +53,14 @@ function AddBankAccountForm() {
         return;
       }
 
-      if (!paymentMethod) {
+      if (!selectedPaymentMethod) {
         message.error('Failed to collect bank account details');
         setLoading(false);
         return;
       }
 
       // Add bank account to backend
-      await addBankAccount(paymentMethod.id, values.accountName);
+      await addBankAccount(selectedPaymentMethod, values.accountName);
       
       message.success('Bank account added successfully');
       router.push('/portfolio/bank-accounts');
@@ -105,7 +105,6 @@ function AddBankAccountForm() {
                 address: 'never',
               },
             },
-            paymentMethodTypes: ['us_bank_account'],
           }}
         />
       </div>

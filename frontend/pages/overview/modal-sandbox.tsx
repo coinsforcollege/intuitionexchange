@@ -36,6 +36,7 @@ export default function ModalSandboxPage() {
 
     return {
       id: `mock-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+      transactionId: '',
       productId,
       asset,
       quote,

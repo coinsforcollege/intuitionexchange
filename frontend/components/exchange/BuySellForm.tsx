@@ -322,6 +322,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
     const productId = `${selectedAsset}-USD`;
     const pendingOrder: InternalOrder = {
       id: `pending-${Date.now()}`,
+      transactionId: '',
       productId,
       asset: selectedAsset,
       quote: 'USD',
@@ -920,7 +921,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
         centered
         destroyOnClose={false}
         styles={{
-          content: {
+          body: {
             borderRadius: token.borderRadiusLG,
             padding: 0,
             overflow: 'hidden',
@@ -1065,7 +1066,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
         centered
         width={380}
         styles={{
-          content: {
+          body: {
             borderRadius: token.borderRadiusLG,
             padding: token.paddingLG,
             background: token.colorBgContainer,

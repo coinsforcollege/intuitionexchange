@@ -105,6 +105,7 @@ function ExchangePageContent() {
     // Create pending order immediately
     const pendingOrder: InternalOrder = {
       id: `pending-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+      transactionId: '',
       productId: selectedPair,
       asset: baseAsset,
       quote: quoteAsset,
