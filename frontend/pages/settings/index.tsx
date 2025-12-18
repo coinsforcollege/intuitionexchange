@@ -517,35 +517,32 @@ export default function SettingsPage() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM }}>
-                  <div
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: token.borderRadiusSM,
-                      background: appMode === 'investor' 
-                        ? 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
-                        : 'linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff',
-                      fontSize: token.fontSizeLG,
-                      transition: 'all 0.3s ease',
-                      boxShadow: appMode === 'learner' 
-                        ? '0 4px 12px rgba(245, 158, 11, 0.3)'
-                        : '0 4px 12px rgba(17, 153, 142, 0.3)',
-                    }}
-                  >
-                    {appMode === 'investor' ? <RocketOutlined /> : <ExperimentOutlined />}
-                  </div>
+                  {!isMobile && (
+                    <div
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: token.borderRadiusSM,
+                        background: appMode === 'investor' 
+                          ? 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
+                          : 'linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#fff',
+                        fontSize: token.fontSizeLG,
+                        transition: 'all 0.3s ease',
+                        boxShadow: appMode === 'learner' 
+                          ? '0 4px 12px rgba(245, 158, 11, 0.3)'
+                          : '0 4px 12px rgba(17, 153, 142, 0.3)',
+                      }}
+                    >
+                      {appMode === 'investor' ? <RocketOutlined /> : <ExperimentOutlined />}
+                    </div>
+                  )}
                   <div>
                     <Text style={{ fontWeight: fontWeights.medium, display: 'block' }}>
                       Trading Mode
-                    </Text>
-                    <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-                      {appMode === 'investor' 
-                        ? 'Real trading with actual funds'
-                        : 'Practice trading with virtual funds'}
                     </Text>
                   </div>
                 </div>
