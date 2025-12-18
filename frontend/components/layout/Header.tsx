@@ -275,7 +275,7 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Nav Items - Claymorphic */}
+        {/* Nav Items */}
         <div style={{ padding: token.paddingMD }}>
           {navItems.map((item, index) => (
             <Link
@@ -289,18 +289,8 @@ export default function Header() {
                   display: "flex",
                   alignItems: "center",
                   gap: token.marginMD,
-                  padding: `${token.paddingMD}px`,
+                  padding: `${token.paddingSM}px 0`,
                   marginBottom: token.marginXS,
-                  borderRadius: 14,
-                  background: mode === "dark"
-                    ? "rgba(255,255,255,0.04)"
-                    : "rgba(255,255,255,0.6)",
-                  border: mode === "dark"
-                    ? "1px solid rgba(255,255,255,0.08)"
-                    : "1px solid rgba(0,0,0,0.05)",
-                  boxShadow: mode === "dark"
-                    ? "4px 4px 12px rgba(0,0,0,0.3), -2px -2px 8px rgba(255,255,255,0.03)"
-                    : "4px 4px 12px rgba(0,0,0,0.06), -2px -2px 8px rgba(255,255,255,0.8)",
                   transition: "all 0.2s",
                 }}
               >
