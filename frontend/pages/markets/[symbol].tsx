@@ -36,6 +36,7 @@ import {
   formatLargeNumber,
   formatSupply,
 } from '@/services/api/coingecko';
+import { getDemoCollegeCoin, DemoCollegeCoin } from '@/services/api/college-coins';
 
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
@@ -169,6 +170,8 @@ export default function TokenDetailsPage() {
   const [mounted, setMounted] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [tokenData, setTokenData] = useState<TokenMarketData | null>(null);
+  const [collegeCoinData, setCollegeCoinData] = useState<DemoCollegeCoin | null>(null);
+  const [referenceTokenData, setReferenceTokenData] = useState<TokenMarketData | null>(null);
   const [loadingToken, setLoadingToken] = useState(true);
   const [isWatchlisted, setIsWatchlisted] = useState(false);
   const [isTogglingWatchlist, setIsTogglingWatchlist] = useState(false);
@@ -186,7 +189,12 @@ export default function TokenDetailsPage() {
     return pairs.find((p) => p.baseCurrency === symbol.toUpperCase() && p.quote === 'USD');
   }, [pairs, symbol]);
 
-  const livePrice = pairData?.price || tokenData?.market_data?.current_price?.usd || 0;
+  // Check if this is a college coin
+  const isCollegeCoin = useMemo(() => {
+    return (pairData as any)?.isCollegeCoin === true;
+  }, [pairData]);
+
+  const livePrice = collegeCoinData?.currentPrice || pairData?.price || tokenData?.market_data?.current_price?.usd || 0;
   const liveChange = pairData?.change || tokenData?.market_data?.price_change_percentage_24h || 0;
 
   // Check if user is authenticated (for conditional layout and features)
@@ -203,32 +211,77 @@ export default function TokenDetailsPage() {
   }, [isLoading]);
 
   // Fetch token data (public)
+  // For college coins, fetch from backend; for regular tokens, fetch from CoinGecko
   useEffect(() => {
     if (!pageLoading && symbol && typeof symbol === 'string') {
       setLoadingToken(true);
-      getTokenDetails(symbol.toUpperCase())
-        .then((data) => { setTokenData(data); setLoadingToken(false); })
-        .catch(() => setLoadingToken(false));
+      
+      // First check if it's a college coin
+      getDemoCollegeCoin(symbol.toUpperCase())
+        .then((response) => {
+          if (response.success && response.coin) {
+            setCollegeCoinData(response.coin);
+            setTokenData(null); // Not a regular token
+            
+            // Also fetch the reference token's data for stats
+            if (response.coin.peggedToAsset) {
+              getTokenDetails(response.coin.peggedToAsset.toUpperCase())
+                .then((refData) => {
+                  setReferenceTokenData(refData);
+                  setLoadingToken(false);
+                })
+                .catch(() => {
+                  setReferenceTokenData(null);
+                  setLoadingToken(false);
+                });
+            } else {
+              setLoadingToken(false);
+            }
+          } else {
+            // Not a college coin, fetch from CoinGecko
+            setCollegeCoinData(null);
+            setReferenceTokenData(null);
+            getTokenDetails(symbol.toUpperCase())
+              .then((data) => { setTokenData(data); setLoadingToken(false); })
+              .catch(() => setLoadingToken(false));
+          }
+        })
+        .catch(() => {
+          // Failed to check college coin, try CoinGecko
+          setCollegeCoinData(null);
+          setReferenceTokenData(null);
+          getTokenDetails(symbol.toUpperCase())
+            .then((data) => { setTokenData(data); setLoadingToken(false); })
+            .catch(() => setLoadingToken(false));
+        });
     }
   }, [pageLoading, symbol]);
 
   // Fetch sparkline data for chart (public)
+  // For college coins, fetch the pegged token's sparkline and scale it
   useEffect(() => {
     if (!pageLoading && symbol && typeof symbol === 'string') {
       setLoadingSparkline(true);
+      
+      // Determine which symbol to fetch sparkline for
+      const targetSymbol = collegeCoinData?.peggedToAsset || symbol;
+      const scaleFactor = collegeCoinData?.peggedPercentage ? collegeCoinData.peggedPercentage / 100 : 1;
+      
       getMarketsList(1, 100, true)
         .then((markets) => {
           const market = markets.find(
-            (m) => m.symbol.toUpperCase() === symbol.toUpperCase()
+            (m) => m.symbol.toUpperCase() === targetSymbol.toUpperCase()
           );
           if (market?.sparkline_in_7d?.price) {
-            setSparklineData(market.sparkline_in_7d.price);
+            // Scale the sparkline data for college coins
+            const scaledPrices = market.sparkline_in_7d.price.map(p => p * scaleFactor);
+            setSparklineData(scaledPrices);
           }
           setLoadingSparkline(false);
         })
         .catch(() => setLoadingSparkline(false));
     }
-  }, [pageLoading, symbol]);
+  }, [pageLoading, symbol, collegeCoinData]);
 
   // Fetch watchlist (only for authenticated users)
   useEffect(() => {
@@ -350,6 +403,412 @@ export default function TokenDetailsPage() {
 
           {loadingToken ? (
             <Skeleton active paragraph={{ rows: 10 }} />
+          ) : collegeCoinData ? (
+            /* College Coin Details */
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: isDesktop ? '1fr 360px' : '1fr',
+                gap: themeToken.marginLG,
+              }}
+            >
+              {/* Main content */}
+              <div>
+                {/* Header */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: themeToken.marginMD,
+                  marginBottom: themeToken.marginLG,
+                }}>
+                  <img
+                    src={collegeCoinData.iconUrl || `https://ui-avatars.com/api/?name=${collegeCoinData.ticker}&size=72&background=8E2DE2&color=fff`}
+                    alt={collegeCoinData.name}
+                    width={isMobile ? 56 : 72}
+                    height={isMobile ? 56 : 72}
+                    style={{ borderRadius: '50%' }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${collegeCoinData.ticker}&size=72&background=8E2DE2&color=fff`;
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <h1 style={{
+                        fontSize: isMobile ? themeToken.fontSizeHeading3 : themeToken.fontSizeHeading2,
+                        fontWeight: fontWeights.bold,
+                        color: themeToken.colorText,
+                        margin: 0,
+                      }}>
+                        {collegeCoinData.name}
+                      </h1>
+                      <span style={{
+                        fontSize: themeToken.fontSizeSM,
+                        color: themeToken.colorTextSecondary,
+                        background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(142, 45, 226, 0.1)',
+                        padding: '3px 10px',
+                        borderRadius: 50,
+                        fontWeight: fontWeights.medium,
+                      }}>
+                        {collegeCoinData.ticker}
+                      </span>
+                      <span style={{
+                        fontSize: themeToken.fontSizeSM,
+                        color: '#fff',
+                        background: 'linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)',
+                        padding: '3px 10px',
+                        borderRadius: 50,
+                        fontWeight: fontWeights.semibold,
+                      }}>
+                        College Token
+                      </span>
+                    </div>
+                    {collegeCoinData.categories && collegeCoinData.categories.length > 0 && (
+                      <div style={{
+                        fontSize: themeToken.fontSizeSM,
+                        color: themeToken.colorTextSecondary,
+                        marginTop: 4,
+                      }}>
+                        {collegeCoinData.categories.slice(0, 2).join(' • ')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Price section - Two columns on desktop (matching regular tokens) */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05 }}
+                  style={{
+                    display: 'flex',
+                    flexDirection: isDesktop ? 'row' : 'column',
+                    gap: themeToken.marginMD,
+                    marginBottom: themeToken.marginLG,
+                  }}
+                >
+                  {/* Left - Price Card */}
+                  <div
+                    style={{
+                      flex: isDesktop ? '1 1 50%' : '1 1 auto',
+                      padding: isMobile ? themeToken.paddingLG : themeToken.paddingXL,
+                      background: 'linear-gradient(135deg, #8E2DE2 0%, #4A00E0 50%, #667eea 100%)',
+                      borderRadius: themeToken.borderRadiusLG,
+                      color: '#fff',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      minHeight: isDesktop ? 180 : 'auto',
+                    }}
+                  >
+                    <div style={{
+                      position: 'absolute',
+                      top: -30,
+                      right: -30,
+                      width: 100,
+                      height: 100,
+                      borderRadius: '50%',
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      filter: 'blur(20px)',
+                    }} />
+
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                      <div style={{ fontSize: themeToken.fontSizeSM, opacity: 0.8, marginBottom: 4 }}>
+                        Current Price
+                      </div>
+                      <div style={{
+                        fontSize: isMobile ? 28 : 32,
+                        fontWeight: fontWeights.bold,
+                        fontVariantNumeric: 'tabular-nums',
+                        lineHeight: 1.2,
+                        marginBottom: themeToken.marginSM,
+                        whiteSpace: 'nowrap',
+                      }}>
+                        ${livePrice.toLocaleString('en-US', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: livePrice < 1 ? 6 : 2,
+                        })}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: themeToken.marginXS, flexWrap: 'wrap' }}>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          padding: '4px 10px',
+                          borderRadius: 50,
+                          background: liveChange >= 0 ? 'rgba(22, 196, 127, 0.3)' : 'rgba(252, 111, 3, 0.3)',
+                          fontWeight: fontWeights.semibold,
+                          fontSize: themeToken.fontSizeSM,
+                        }}>
+                          {liveChange >= 0 ? <RiseOutlined /> : <FallOutlined />}
+                          {liveChange >= 0 ? '+' : ''}{liveChange.toFixed(2)}%
+                        </span>
+                      </div>
+                      <div style={{ marginTop: themeToken.marginXS, opacity: 0.8, fontSize: themeToken.fontSizeSM }}>
+                        {collegeCoinData.peggedPercentage}% of {collegeCoinData.peggedToAsset}
+                        {collegeCoinData.referencePrice && (
+                          <span> (${collegeCoinData.referencePrice.toLocaleString()})</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right - Mini Chart (Desktop only) */}
+                  {isDesktop && (
+                    <div
+                      style={{
+                        flex: '1 1 50%',
+                        padding: themeToken.paddingMD,
+                        background: isDark ? 'rgba(255,255,255,0.03)' : '#fff',
+                        borderRadius: themeToken.borderRadiusLG,
+                        border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(102, 126, 234, 0.1)'}`,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minHeight: 180,
+                      }}
+                    >
+                      <div style={{
+                        fontSize: themeToken.fontSizeSM,
+                        color: themeToken.colorTextSecondary,
+                        marginBottom: themeToken.marginXS,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexShrink: 0,
+                      }}>
+                        <span>7 Day Price</span>
+                        <span style={{
+                          color: liveChange >= 0 ? '#16C47F' : '#fc6f03',
+                          fontWeight: fontWeights.semibold,
+                        }}>
+                          {liveChange >= 0 ? '+' : ''}{liveChange.toFixed(2)}%
+                        </span>
+                      </div>
+                      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+                        <MiniPriceChart
+                          prices={sparklineData}
+                          isLoading={loadingSparkline}
+                          isPositive={liveChange >= 0}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+
+                {/* About section */}
+                {collegeCoinData.description && (
+                  <div style={{
+                    padding: themeToken.paddingLG,
+                    background: isDark ? 'rgba(255,255,255,0.03)' : '#fff',
+                    borderRadius: themeToken.borderRadiusLG,
+                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(102, 126, 234, 0.1)'}`,
+                    marginBottom: themeToken.marginLG,
+                  }}>
+                    <h3 style={{
+                      fontSize: themeToken.fontSizeLG,
+                      fontWeight: fontWeights.semibold,
+                      color: themeToken.colorText,
+                      margin: `0 0 ${themeToken.marginMD}px 0`,
+                    }}>
+                      About {collegeCoinData.name}
+                    </h3>
+                    <div style={{
+                      color: themeToken.colorTextSecondary,
+                      lineHeight: 1.7,
+                      fontSize: themeToken.fontSize,
+                    }}>
+                      {collegeCoinData.description}
+                    </div>
+                    {collegeCoinData.genesisDate && (
+                      <div style={{ marginTop: themeToken.marginMD, color: themeToken.colorTextTertiary, fontSize: themeToken.fontSizeSM }}>
+                        <strong>Genesis:</strong> {formatDate(collegeCoinData.genesisDate)}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Links */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: themeToken.marginSM }}>
+                  {collegeCoinData.website && (
+                    <SocialLink href={collegeCoinData.website} icon={<GlobalOutlined />} label="Website" />
+                  )}
+                  {collegeCoinData.whitepaper && (
+                    <SocialLink href={collegeCoinData.whitepaper} icon={<LinkOutlined />} label="Whitepaper" />
+                  )}
+                  {collegeCoinData.twitter && (
+                    <SocialLink href={collegeCoinData.twitter} icon={<XOutlined />} label="Twitter" />
+                  )}
+                  {collegeCoinData.discord && (
+                    <SocialLink href={collegeCoinData.discord} icon={<LinkOutlined />} label="Discord" />
+                  )}
+                </div>
+              </div>
+
+              {/* Sidebar - Desktop */}
+              {isDesktop && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: themeToken.marginMD }}>
+                  {/* Action card */}
+                  <div style={{
+                    padding: themeToken.paddingLG,
+                    background: isDark ? 'rgba(255,255,255,0.03)' : '#fff',
+                    borderRadius: themeToken.borderRadiusLG,
+                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(102, 126, 234, 0.1)'}`,
+                    position: 'sticky',
+                    top: 100,
+                  }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: themeToken.marginSM }}>
+                      <Button
+                        type="primary"
+                        icon={<SwapOutlined />}
+                        onClick={handleBuy}
+                        block
+                        size="large"
+                        style={{
+                          background: 'linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)',
+                          border: 'none',
+                          height: 52,
+                          borderRadius: themeToken.borderRadiusLG,
+                          fontWeight: fontWeights.semibold,
+                          fontSize: themeToken.fontSizeLG,
+                        }}
+                      >
+                        Trade {collegeCoinData.ticker}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Price Reference */}
+                  <div style={{
+                    padding: themeToken.paddingMD,
+                    background: isDark ? 'rgba(255,255,255,0.03)' : '#fff',
+                    borderRadius: themeToken.borderRadiusLG,
+                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(102, 126, 234, 0.1)'}`,
+                  }}>
+                    <h3 style={{
+                      fontSize: themeToken.fontSizeLG,
+                      fontWeight: fontWeights.semibold,
+                      color: themeToken.colorText,
+                      margin: `0 0 ${themeToken.marginMD}px 0`,
+                    }}>
+                      Price Reference
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: themeToken.marginSM }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ color: themeToken.colorTextSecondary }}>Reference Token</span>
+                        <span style={{ color: themeToken.colorText, fontWeight: fontWeights.semibold }}>{collegeCoinData.peggedToAsset}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ color: themeToken.colorTextSecondary }}>Percentage</span>
+                        <span style={{ color: themeToken.colorPrimary, fontWeight: fontWeights.semibold }}>{collegeCoinData.peggedPercentage}%</span>
+                      </div>
+                      {collegeCoinData.referencePrice && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: themeToken.colorTextSecondary }}>{collegeCoinData.peggedToAsset} Price</span>
+                          <span style={{ color: themeToken.colorText, fontWeight: fontWeights.medium }}>
+                            ${collegeCoinData.referencePrice.toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Performance - borrowed from reference token */}
+                  {referenceTokenData && (
+                    <div style={{
+                      padding: themeToken.paddingMD,
+                      background: isDark ? 'rgba(255,255,255,0.03)' : '#fff',
+                      borderRadius: themeToken.borderRadiusLG,
+                      border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(102, 126, 234, 0.1)'}`,
+                    }}>
+                      <h3 style={{
+                        fontSize: themeToken.fontSizeLG,
+                        fontWeight: fontWeights.semibold,
+                        color: themeToken.colorText,
+                        margin: `0 0 ${themeToken.marginMD}px 0`,
+                      }}>
+                        Performance
+                      </h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: themeToken.marginSM }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: themeToken.colorTextSecondary }}>24h</span>
+                          <PriceChangeBadge value={referenceTokenData.market_data.price_change_percentage_24h || 0} size="small" />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: themeToken.colorTextSecondary }}>7 Days</span>
+                          <PriceChangeBadge value={referenceTokenData.market_data.price_change_percentage_7d || 0} size="small" />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: themeToken.colorTextSecondary }}>30 Days</span>
+                          <PriceChangeBadge value={referenceTokenData.market_data.price_change_percentage_30d || 0} size="small" />
+                        </div>
+                      </div>
+                      <div style={{ 
+                        marginTop: themeToken.marginSM, 
+                        fontSize: themeToken.fontSizeSM - 1, 
+                        color: themeToken.colorTextTertiary 
+                      }}>
+                        Based on {collegeCoinData.peggedToAsset} performance
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Market Stats - borrowed from reference token, scaled */}
+                  {referenceTokenData && (
+                    <div style={{
+                      padding: themeToken.paddingMD,
+                      background: isDark ? 'rgba(255,255,255,0.03)' : '#fff',
+                      borderRadius: themeToken.borderRadiusLG,
+                      border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(102, 126, 234, 0.1)'}`,
+                    }}>
+                      <h3 style={{
+                        fontSize: themeToken.fontSizeLG,
+                        fontWeight: fontWeights.semibold,
+                        color: themeToken.colorText,
+                        margin: `0 0 ${themeToken.marginMD}px 0`,
+                      }}>
+                        Simulated Stats
+                      </h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: themeToken.marginSM }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: themeToken.colorTextSecondary }}>24h High</span>
+                          <span style={{ color: themeToken.colorText, fontWeight: fontWeights.medium }}>
+                            ${((referenceTokenData.market_data.high_24h.usd || 0) * (collegeCoinData.peggedPercentage / 100)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: themeToken.colorTextSecondary }}>24h Low</span>
+                          <span style={{ color: themeToken.colorText, fontWeight: fontWeights.medium }}>
+                            ${((referenceTokenData.market_data.low_24h.usd || 0) * (collegeCoinData.peggedPercentage / 100)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: '#16C47F', fontWeight: fontWeights.semibold }}>ATH (scaled)</span>
+                          <span style={{ color: themeToken.colorText, fontWeight: fontWeights.medium }}>
+                            ${((referenceTokenData.market_data.ath.usd || 0) * (collegeCoinData.peggedPercentage / 100)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: '#fc6f03', fontWeight: fontWeights.semibold }}>ATL (scaled)</span>
+                          <span style={{ color: themeToken.colorText, fontWeight: fontWeights.medium }}>
+                            ${((referenceTokenData.market_data.atl.usd || 0) * (collegeCoinData.peggedPercentage / 100)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ 
+                        marginTop: themeToken.marginSM, 
+                        fontSize: themeToken.fontSizeSM - 1, 
+                        color: themeToken.colorTextTertiary 
+                      }}>
+                        Scaled from {collegeCoinData.peggedToAsset} at {collegeCoinData.peggedPercentage}%
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </motion.div>
           ) : !tokenData ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}

@@ -26,6 +26,7 @@ export interface LoginData {
 }
 
 export type AppMode = 'LEARNER' | 'INVESTOR';
+export type UserRole = 'USER' | 'ADMIN';
 
 export interface User {
   id: string;
@@ -35,6 +36,7 @@ export interface User {
   country: string;
   kycStatus: string;
   appMode: AppMode;
+  role: UserRole;
   firstName: string | null;
   lastName: string | null;
 }

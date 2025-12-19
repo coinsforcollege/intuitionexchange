@@ -16,6 +16,8 @@ import { WatchlistModule } from './modules/watchlist/watchlist.module';
 import { CoinGeckoModule } from './modules/coingecko/coingecko.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { LearnerModule } from './modules/learner/learner.module';
+import { CollegeCoinsModule } from './modules/college-coins/college-coins.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -49,6 +51,10 @@ import { LearnerModule } from './modules/learner/learner.module';
     SettingsModule,
     // Learner mode (virtual trading) module
     LearnerModule,
+    // Demo college coins module
+    CollegeCoinsModule,
+    // Admin panel module
+    AdminModule,
   ],
   controllers: [AppController, TestController],
   providers: [AppService, PrismaService, EmailService],

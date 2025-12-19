@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { fontWeights } from '@/theme/themeConfig';
 import { useThemeMode } from '@/context/ThemeContext';
 import { useExchange } from '@/context/ExchangeContext';
+import { useAuth } from '@/context/AuthContext';
 import { InternalOrder } from '@/services/api/coinbase';
 import OrderStatusModal from './OrderStatusModal';
 
@@ -138,6 +139,7 @@ interface TradingPair {
   baseCurrency: string;
   quoteCurrency: string;
   iconUrl: string;
+  isCollegeCoin?: boolean;
 }
 
 interface BuySellFormProps {
@@ -154,7 +156,9 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
   const { token } = useToken();
   const { mode } = useThemeMode();
   const screens = useBreakpoint();
+  const { user } = useAuth();
   const isDark = mode === 'dark';
+  const isLearnerMode = user?.appMode === 'LEARNER';
   
   const [mounted, setMounted] = useState(false);
   
@@ -179,14 +183,30 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Get only USD pairs for simplicity
+  // In learner mode, include college coins as well
   const usdPairs = useMemo(() => {
-    return pairs.filter(p => p.quote === 'USD').sort((a, b) => {
-      // Sort by volume
-      const aVol = (a as any)._usdVolume || 0;
-      const bVol = (b as any)._usdVolume || 0;
-      return bVol - aVol;
-    });
-  }, [pairs]);
+    return pairs
+      .filter(p => {
+        // Always include USD pairs
+        if (p.quote === 'USD') {
+          // In learner mode, include all USD pairs (both regular and college coins)
+          // In investor mode, exclude college coins
+          if (isLearnerMode) return true;
+          return !(p as TradingPair).isCollegeCoin;
+        }
+        return false;
+      })
+      .sort((a, b) => {
+        // Sort college coins last, then by volume
+        const aIsCollege = (a as TradingPair).isCollegeCoin ? 1 : 0;
+        const bIsCollege = (b as TradingPair).isCollegeCoin ? 1 : 0;
+        if (aIsCollege !== bIsCollege) return aIsCollege - bIsCollege;
+        
+        const aVol = (a as any)._usdVolume || 0;
+        const bVol = (b as any)._usdVolume || 0;
+        return bVol - aVol;
+      });
+  }, [pairs, isLearnerMode]);
   
   const [side, setSide] = useState<OrderSide>('BUY');
   const [selectedAsset, setSelectedAsset] = useState<string>(initialAsset || 'BTC');
@@ -1011,21 +1031,39 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
                         (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${pair.baseCurrency}&background=667eea&color=fff&size=80`;
                       }}
                     />
-                    <div style={{ flex: 1 }}>
-                      <div style={{
-                        fontWeight: fontWeights.semibold,
-                        color: token.colorText,
-                        fontSize: token.fontSize,
-                      }}>
-                        {pair.baseCurrency}
-                      </div>
-                      <div style={{
-                        fontSize: token.fontSizeSM,
-                        color: token.colorTextSecondary,
-                      }}>
-                        {pair.name}
-                      </div>
-                    </div>
+<div style={{ flex: 1 }}>
+                                <div style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 6,
+                                }}>
+                                  <span style={{
+                                    fontWeight: fontWeights.semibold,
+                                    color: token.colorText,
+                                    fontSize: token.fontSize,
+                                  }}>
+                                    {pair.baseCurrency}
+                                  </span>
+                                  {(pair as TradingPair).isCollegeCoin && (
+                                    <span style={{
+                                      fontSize: 10,
+                                      color: '#fff',
+                                      background: 'linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)',
+                                      padding: '2px 6px',
+                                      borderRadius: 4,
+                                      fontWeight: fontWeights.medium,
+                                    }}>
+                                      College
+                                    </span>
+                                  )}
+                                </div>
+                                <div style={{
+                                  fontSize: token.fontSizeSM,
+                                  color: token.colorTextSecondary,
+                                }}>
+                                  {pair.name}
+                                </div>
+                              </div>
                     <div style={{ textAlign: 'right' }}>
                       <div style={{
                         fontSize: token.fontSizeSM,

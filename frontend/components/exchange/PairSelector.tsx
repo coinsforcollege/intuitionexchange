@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { theme, Input, Drawer } from 'antd';
 import { SearchOutlined, SwapOutlined, CaretUpOutlined, CaretDownOutlined } from '@ant-design/icons';
 import { fontWeights } from '@/theme/themeConfig';
 import { useThemeMode } from '@/context/ThemeContext';
+import { useAuth } from '@/context/AuthContext';
 
 const { useToken } = theme;
 
@@ -18,6 +19,7 @@ interface TradingPair {
   baseCurrency?: string;
   quoteCurrency?: string;
   iconUrl?: string;
+  isCollegeCoin?: boolean; // Flag for demo college coins
 }
 
 interface PairSelectorProps {
@@ -27,7 +29,10 @@ interface PairSelectorProps {
   isMobile?: boolean;
 }
 
-const BASE_CURRENCIES = ['USD', 'USDT', 'ETH', 'TUIT'];
+// Investor mode shows all currencies
+const INVESTOR_CURRENCIES = ['USD', 'USDT', 'ETH', 'TUIT'];
+// Learner mode shows Colleges first, then Popular (USD pairs)
+const LEARNER_CURRENCIES = ['Colleges', 'Popular'];
 
 export const mockPairs: TradingPair[] = [
   { symbol: 'BTC-USD', name: 'Bitcoin', price: 90366.33, change: -2.05, volume: '5.4B', quote: 'USD' },
@@ -61,19 +66,43 @@ const PairSelector: React.FC<PairSelectorProps> = ({
 }) => {
   const { token } = useToken();
   const { mode } = useThemeMode();
+  const { user } = useAuth();
   const isDark = mode === 'dark';
   const [search, setSearch] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [activeQuote, setActiveQuote] = useState('USD');
+  // Default to 'Colleges' in learner mode, 'USD' in investor mode
+  const isLearnerMode = user?.appMode === 'LEARNER';
+  const [activeQuote, setActiveQuote] = useState(isLearnerMode ? 'Colleges' : 'USD');
   const [hoveredPair, setHoveredPair] = useState<string | null>(null);
 
-  const filteredPairs = pairs.filter(pair => {
-    const matchesQuote = pair.quote === activeQuote;
-    const matchesSearch = search === '' || 
-      pair.symbol.toLowerCase().includes(search.toLowerCase()) ||
-      pair.name.toLowerCase().includes(search.toLowerCase());
-    return matchesQuote && matchesSearch;
-  });
+  // Get available currencies based on app mode
+  const availableCurrencies = useMemo(() => {
+    return isLearnerMode ? LEARNER_CURRENCIES : INVESTOR_CURRENCIES;
+  }, [isLearnerMode]);
+
+  const filteredPairs = useMemo(() => {
+    return pairs.filter(pair => {
+      let matchesQuote = false;
+      
+      if (isLearnerMode) {
+        if (activeQuote === 'Popular') {
+          // Show USD pairs that are NOT college coins
+          matchesQuote = pair.quote === 'USD' && !pair.isCollegeCoin;
+        } else if (activeQuote === 'Colleges') {
+          // Show only college coins
+          matchesQuote = pair.isCollegeCoin === true;
+        }
+      } else {
+        // Investor mode: filter by quote currency as before
+        matchesQuote = pair.quote === activeQuote;
+      }
+      
+      const matchesSearch = search === '' || 
+        pair.symbol.toLowerCase().includes(search.toLowerCase()) ||
+        pair.name.toLowerCase().includes(search.toLowerCase());
+      return matchesQuote && matchesSearch;
+    });
+  }, [pairs, activeQuote, search, isLearnerMode]);
 
   const formatPrice = (price: number, quote: string) => {
     if (quote === 'ETH') return price.toFixed(4);
@@ -191,7 +220,7 @@ const PairSelector: React.FC<PairSelectorProps> = ({
       marginBottom: token.marginSM,
       borderBottom: `1px solid ${token.colorBorderSecondary}`,
     }}>
-      {BASE_CURRENCIES.map((quote) => (
+      {availableCurrencies.map((quote) => (
         <div
           key={quote}
           onClick={() => setActiveQuote(quote)}

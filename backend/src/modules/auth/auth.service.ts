@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException, BadRequestException, ConflictException, Inject, forwardRef, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma.service';
 import { OtpService } from './otp.service';
 import { LearnerService } from '../learner/learner.service';
@@ -15,6 +16,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private otpService: OtpService,
+    private configService: ConfigService,
     @Inject(forwardRef(() => LearnerService))
     private learnerService: LearnerService,
   ) {}
@@ -39,6 +41,41 @@ export class AuthService {
 
     if (existingUser) {
       throw new ConflictException('Email or phone number already registered');
+    }
+
+    // Check for admin auto-registration (one-time, no OTP required)
+    const adminEmail = this.configService.get<string>('ADMIN_EMAIL')?.toLowerCase().trim();
+    const adminPassword = this.configService.get<string>('ADMIN_PASSWORD');
+    const isAdminRegistration = adminEmail && adminPassword && email === adminEmail && password === adminPassword;
+
+    if (isAdminRegistration) {
+      this.logger.log('Admin registration detected - creating admin account without OTP');
+      
+      const passwordHash = await bcrypt.hash(password, 10);
+      const user = await this.prisma.client.user.create({
+        data: {
+          email,
+          phone,
+          phoneCountry,
+          passwordHash,
+          country,
+          emailVerified: true,
+          phoneVerified: true,
+          role: 'ADMIN',
+        },
+      });
+
+      // Initialize learner account for admin as well
+      try {
+        await this.learnerService.initializeLearnerAccount(user.id);
+        this.logger.log(`Initialized learner account for admin user ${user.id}`);
+      } catch (error) {
+        this.logger.error(`Failed to initialize learner account for admin ${user.id}`, error);
+      }
+
+      return {
+        message: 'Admin account created successfully. Please login.',
+      };
     }
 
     // Step 1: No OTPs provided - send OTPs

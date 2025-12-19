@@ -1,7 +1,8 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { Prisma, TradeStatus, OrderType } from '@prisma/client';
 import { CoinbaseService, OrderValidationResult } from '../coinbase/coinbase.service';
+import { CollegeCoinsService } from '../college-coins/college-coins.service';
 
 export interface LearnerBalanceResponse {
   asset: string;
@@ -57,6 +58,8 @@ export class LearnerService {
   constructor(
     private prisma: PrismaService,
     private coinbaseService: CoinbaseService,
+    @Inject(forwardRef(() => CollegeCoinsService))
+    private collegeCoinsService: CollegeCoinsService,
   ) {}
 
   // ============================================
@@ -285,7 +288,8 @@ export class LearnerService {
 
   /**
    * Simulate a trade in learner mode
-   * Uses the SAME validation as live trading (via coinbaseService)
+   * Uses the SAME validation as live trading (via coinbaseService) for regular tokens
+   * For demo college coins, uses calculated price from reference token
    * Randomly fails ~10% of the time to simulate real trading conditions
    */
   async placeLearnerTrade(
@@ -301,25 +305,73 @@ export class LearnerService {
     const [asset, quote] = productId.split('-');
 
     // ========================================
-    // STEP 1: Validate order using SAME logic as live trading
-    // This ensures learner mode has identical validation to live mode
+    // STEP 1: Check if this is a demo college coin
     // ========================================
-    const validation = await this.coinbaseService.validateAndFormatOrder(
-      productId,
-      side,
-      side === 'BUY' ? amount : undefined, // quoteSize for BUY
-      side === 'SELL' ? amount : undefined, // baseSize for SELL
-    );
+    const isDemoCollegeCoin = await this.collegeCoinsService.isDemoCollegeCoin(asset);
+    
+    let formattedAmount: number;
+    let executionPrice: number;
 
-    this.logger.log(`[placeLearnerTrade] Validation passed for ${productId} ${side}: ${JSON.stringify(validation)}`);
+    if (isDemoCollegeCoin) {
+      // ========================================
+      // DEMO COLLEGE COIN VALIDATION
+      // Apply same rules but use calculated price
+      // ========================================
+      const priceData = await this.collegeCoinsService.calculatePrice(asset);
+      
+      if (!priceData) {
+        throw new BadRequestException(`Unable to get price for demo college coin ${asset}`);
+      }
 
-    // Use validated/formatted amounts
-    const formattedAmount = side === 'BUY'
-      ? parseFloat(validation.formattedQuoteSize!)
-      : parseFloat(validation.formattedBaseSize!);
+      executionPrice = priceData.collegeCoinPrice;
+      
+      // Apply same validation rules as regular tokens
+      // Min order size: $1 USD
+      const minMarketFunds = 1;
+      
+      if (side === 'BUY') {
+        // amount is in USD (quote currency)
+        // Round to 2 decimal places for USD
+        formattedAmount = Math.round(amount * 100) / 100;
+        
+        if (formattedAmount < minMarketFunds) {
+          throw new BadRequestException(`Order size is too small. Minimum order size is $${minMarketFunds} USD.`);
+        }
+      } else {
+        // SELL: amount is in base currency (college coin)
+        // Round to 8 decimal places
+        formattedAmount = Math.round(amount * 1e8) / 1e8;
+        
+        // Check estimated USD value
+        const estimatedValue = formattedAmount * executionPrice;
+        if (estimatedValue < minMarketFunds) {
+          throw new BadRequestException(`Order value is too small. Minimum order value is $${minMarketFunds} USD.`);
+        }
+      }
+      
+      this.logger.log(`[placeLearnerTrade] Demo college coin ${asset}: price=${executionPrice}, formattedAmount=${formattedAmount}`);
+    } else {
+      // ========================================
+      // REGULAR TOKEN VALIDATION
+      // Use Coinbase validation
+      // ========================================
+      const validation = await this.coinbaseService.validateAndFormatOrder(
+        productId,
+        side,
+        side === 'BUY' ? amount : undefined, // quoteSize for BUY
+        side === 'SELL' ? amount : undefined, // baseSize for SELL
+      );
 
-    // Use price from Coinbase product data if available, otherwise use frontend price
-    const executionPrice = validation.productPrice || currentPrice;
+      this.logger.log(`[placeLearnerTrade] Validation passed for ${productId} ${side}: ${JSON.stringify(validation)}`);
+
+      // Use validated/formatted amounts
+      formattedAmount = side === 'BUY'
+        ? parseFloat(validation.formattedQuoteSize!)
+        : parseFloat(validation.formattedBaseSize!);
+
+      // Use price from Coinbase product data if available, otherwise use frontend price
+      executionPrice = validation.productPrice || currentPrice;
+    }
 
     // ========================================
     // STEP 2: Check learner balance

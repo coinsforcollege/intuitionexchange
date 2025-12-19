@@ -268,7 +268,7 @@ export default function WalletPage() {
         color: info.color,
         iconUrl: asset === 'TUIT' 
           ? undefined // TUIT will use fallback (colored circle with first letter)
-          : `https://assets.coincap.io/assets/icons/${asset.toLowerCase()}@2x.png`,
+          : (usdPair?.iconUrl || `https://assets.coincap.io/assets/icons/${asset.toLowerCase()}@2x.png`),
       };
     });
 
@@ -276,15 +276,19 @@ export default function WalletPage() {
     const otherAssets = balances
       .filter((b) => b.asset !== 'USD' && !REQUIRED_ASSETS.includes(b.asset))
       .map((balance) => {
+        // Check both regular pairs and college coin pairs
         const usdPair = pairs.find(
-          (p) => p.baseCurrency === balance.asset && p.quote === 'USD',
+          (p) => p.baseCurrency === balance.asset && (p.quote === 'USD' || p.isCollegeCoin),
         );
         const price = usdPair?.price || 0;
         const usdValue = balance.balance * price;
 
+        // Use iconUrl from pair data (for college coins) or fallback to CoinCap
+        const iconUrl = usdPair?.iconUrl || `https://assets.coincap.io/assets/icons/${balance.asset.toLowerCase()}@2x.png`;
+
         return {
           symbol: balance.asset,
-          name: balance.asset,
+          name: usdPair?.name || balance.asset,
           balance: balance.balance.toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 8,
@@ -302,7 +306,7 @@ export default function WalletPage() {
             : '$0.00',
           change: usdPair?.change || 0,
           color: token.colorPrimary,
-          iconUrl: `https://assets.coincap.io/assets/icons/${balance.asset.toLowerCase()}@2x.png`,
+          iconUrl,
         };
       });
 

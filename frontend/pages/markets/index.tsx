@@ -9,6 +9,7 @@ import {
   RiseOutlined,
   FallOutlined,
   FireOutlined,
+  BankOutlined,
 } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'motion/react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
@@ -25,7 +26,7 @@ const { useBreakpoint } = Grid;
 
 type SortField = 'volume' | 'price' | 'change' | 'name';
 type SortOrder = 'asc' | 'desc';
-type FilterTab = 'all' | 'watchlist' | 'gainers' | 'losers';
+type FilterTab = 'all' | 'watchlist' | 'gainers' | 'losers' | 'colleges';
 
 interface TradingPairExtended {
   symbol: string;
@@ -38,6 +39,7 @@ interface TradingPairExtended {
   quoteCurrency: string;
   iconUrl: string;
   _usdVolume?: number;
+  isCollegeCoin?: boolean;
 }
 
 // Filter pill component - responsive sizing
@@ -428,7 +430,9 @@ export default function MarketsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [watchlistAssets, setWatchlistAssets] = useState<string[]>([]);
   const [loadingWatchlist, setLoadingWatchlist] = useState(true);
-  const [activeTab, setActiveTab] = useState<FilterTab>('all');
+  // In learner mode, default to 'colleges' filter
+  const isLearnerMode = user?.appMode === 'LEARNER';
+  const [activeTab, setActiveTab] = useState<FilterTab>(isLearnerMode ? 'colleges' : 'all');
   const [sortField, setSortField] = useState<SortField>('volume');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
@@ -479,10 +483,13 @@ export default function MarketsPage() {
     }
   }, [pageLoading, isAuthenticated, needsOnboarding]);
 
-  const usdPairs = useMemo(() => pairs.filter((p) => p.quote === 'USD'), [pairs]);
+  // Filter to USD pairs, separating college coins
+  const usdPairs = useMemo(() => pairs.filter((p) => p.quote === 'USD' && !(p as TradingPairExtended).isCollegeCoin), [pairs]);
+  const collegePairs = useMemo(() => pairs.filter((p) => (p as TradingPairExtended).isCollegeCoin === true), [pairs]);
 
   const filteredPairs = useMemo(() => {
-    let result = [...usdPairs];
+    // For colleges filter, use college pairs
+    let result = activeTab === 'colleges' ? [...collegePairs] : [...usdPairs];
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -498,6 +505,7 @@ export default function MarketsPage() {
     } else if (activeTab === 'losers') {
       result = result.filter((p) => p.change < 0);
     }
+    // 'colleges' filter is handled above by using collegePairs as base
 
     result.sort((a, b) => {
       let comparison = 0;
@@ -515,7 +523,7 @@ export default function MarketsPage() {
     });
 
     return result;
-  }, [usdPairs, searchQuery, activeTab, watchlistAssets, sortField, sortOrder]);
+  }, [usdPairs, collegePairs, searchQuery, activeTab, watchlistAssets, sortField, sortOrder]);
 
   // Require login for watchlist actions
   const handleToggleWatchlist = useCallback(async (asset: string) => {
@@ -662,6 +670,16 @@ export default function MarketsPage() {
                 compact={useCompactFilters}
               >
                 Losers
+              </FilterPill>
+              {/* Colleges filter - show for everyone, highlighted in learner mode */}
+              <FilterPill
+                active={activeTab === 'colleges'}
+                onClick={() => setActiveTab('colleges')}
+                gradient="linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)"
+                icon={<BankOutlined />}
+                compact={useCompactFilters}
+              >
+                Colleges
               </FilterPill>
             </div>
           </motion.div>

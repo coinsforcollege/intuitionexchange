@@ -529,6 +529,20 @@ export class CoinbaseService implements OnModuleInit {
   }
 
   /**
+   * Get current price for a product
+   * Returns null if product not found or error
+   */
+  async getProductPrice(productId: string): Promise<number | null> {
+    try {
+      const product = await this.getProduct(productId);
+      return product.price ? parseFloat(product.price) : null;
+    } catch (error) {
+      this.logger.warn(`Failed to get price for ${productId}`, error);
+      return null;
+    }
+  }
+
+  /**
    * Get best bid/ask for order book
    */
   async getBestBidAsk(productIds: string[]): Promise<

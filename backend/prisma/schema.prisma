@@ -550,6 +550,38 @@ model LearnerPortfolioSnapshot {
   @@map("learner_portfolio_snapshots")
 }
 
+// ============================================
+// DEMO COLLEGE COINS (Learner Mode)
+// ============================================
+
+model DemoCollegeCoin {
+  id                String   @id @default(uuid())
+  ticker            String   @unique  // MIT, HARV, STAN, etc.
+  name              String   // MIT Coin, Harvard Coin, etc.
+  iconUrl           String?  // Path to icon in public/images/college-coins
+  
+  // Price pegging
+  peggedToAsset     String   // BTC, ETH, SOL, etc. (reference token)
+  peggedPercentage  Decimal  @db.Decimal(10, 4) // 10.0000 = 10% of reference token price
+  
+  // Status
+  isActive          Boolean  @default(true)
+  
+  // Optional marketing/info fields (matching token details page)
+  description       String?  @db.Text
+  website           String?
+  whitepaper        String?
+  twitter           String?
+  discord           String?
+  categories        String[] // ["Education", "College", "DeFi"]
+  genesisDate       DateTime?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@map("demo_college_coins")
+}
+
 // Live mode portfolio snapshots (for investor mode growth chart)
 model PortfolioSnapshot {
   id     String @id @default(uuid())
