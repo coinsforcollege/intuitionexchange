@@ -4,7 +4,7 @@
  */
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-const API_BASE = API_BASE_URL.replace('/api', '');
+const API_BASE = API_BASE_URL.replace(/\/api$/, '');
 
 /**
  * Resolve upload URLs - prepends API base for /api/uploads/ paths

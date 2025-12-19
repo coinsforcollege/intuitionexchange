@@ -25,7 +25,7 @@ import { useAuth } from '@/context/AuthContext';
 const COINBASE_FEE_RATE = 0.005; // 0.5%
 
 // API base URL for resolving upload paths
-const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:8000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, '') || 'http://localhost:8000';
 
 // Helper to resolve upload URLs (prepend API base for /api/ paths)
 const resolveUploadUrl = (url: string | null | undefined): string => {
