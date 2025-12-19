@@ -126,6 +126,20 @@ const MobileBottomNav: React.FC = () => {
     return () => clearInterval(interval);
   }, [appMode]);
 
+  // Sync activeKey with router path changes (e.g., browser back/forward navigation)
+  useEffect(() => {
+    const path = router.pathname;
+    let key = 'overview';
+    if (path.startsWith('/overview')) key = 'overview';
+    else if (path.startsWith('/buy-sell')) key = 'buy-sell';
+    else if (path.startsWith('/trade')) key = 'trade';
+    else if (path.startsWith('/portfolio')) key = 'portfolio';
+    else if (path.startsWith('/markets')) key = 'markets';
+    else if (path.startsWith('/tuition-center')) key = 'learning';
+    
+    setActiveKey(key);
+  }, [router.pathname]);
+
   // Handle nav click - update state IMMEDIATELY, then navigate
   // This decouples the animation from page load
   const handleNavClick = useCallback((item: NavItem) => {
@@ -158,8 +172,25 @@ const MobileBottomNav: React.FC = () => {
     ? (isLearnerMode ? '#1F1418' : '#0f0f1a') 
     : (isLearnerMode ? '#FFF5F5' : '#f5f5f5');
 
+  // Scrim height - covers nav area plus extra fade zone
+  const SCRIM_HEIGHT = NAV_HEIGHT + NAV_MARGIN + 40; // 40px extra for gradient fade
+
   return (
     <>
+      {/* Scrim gradient - subtle fade behind nav area */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: SCRIM_HEIGHT,
+          background: `linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.8) 100%)`,
+          zIndex: token.zIndexPopupBase + 8, // Behind nav but above content
+          pointerEvents: 'none',
+        }}
+      />
+
       <nav
         style={{
           position: 'fixed',
@@ -201,10 +232,10 @@ const MobileBottomNav: React.FC = () => {
                       inset -3px -3px 8px rgba(0, 0, 0, 0.3)
                     ` 
                     : `
-                      10px 10px 30px rgba(217, 72, 72, 0.5),
-                      -6px -6px 20px rgba(255, 255, 255, 0.4),
-                      inset 4px 4px 12px rgba(255, 255, 255, 0.35),
-                      inset -4px -4px 12px rgba(217, 72, 72, 0.4)
+                      8px 8px 24px rgba(0, 0, 0, 0.35),
+                      -3px -3px 12px rgba(255, 142, 142, 0.2),
+                      inset 3px 3px 8px rgba(255, 255, 255, 0.2),
+                      inset -3px -3px 8px rgba(0, 0, 0, 0.2)
                     `)
                 : (isDark
                     ? `
@@ -214,19 +245,19 @@ const MobileBottomNav: React.FC = () => {
                       inset -3px -3px 8px rgba(0, 0, 0, 0.3)
                     `
                     : `
-                      10px 10px 30px rgba(79, 70, 229, 0.45),
-                      -6px -6px 20px rgba(255, 255, 255, 0.5),
-                      inset 4px 4px 12px rgba(255, 255, 255, 0.4),
-                      inset -4px -4px 12px rgba(79, 70, 229, 0.35)
+                      8px 8px 24px rgba(0, 0, 0, 0.35),
+                      -3px -3px 12px rgba(129, 140, 248, 0.2),
+                      inset 3px 3px 8px rgba(255, 255, 255, 0.2),
+                      inset -3px -3px 8px rgba(0, 0, 0, 0.2)
                     `),
               // Beveled edge border
               border: isLearnerMode
                 ? (isDark 
                     ? '1px solid rgba(255, 142, 142, 0.4)' 
-                    : '2px solid rgba(255, 255, 255, 0.5)')
+                    : '1px solid rgba(255, 255, 255, 0.25)')
                 : (isDark
                     ? '1px solid rgba(129, 140, 248, 0.5)'
-                    : '2px solid rgba(255, 255, 255, 0.6)'),
+                    : '1px solid rgba(255, 255, 255, 0.3)'),
               overflow: 'visible',
             }}
           >
@@ -282,10 +313,10 @@ const MobileBottomNav: React.FC = () => {
                                 inset -2px -2px 6px rgba(0, 0, 0, 0.4)
                               `
                               : `
-                                6px 6px 16px ${primaryColor}80,
-                                -3px -3px 10px rgba(255, 255, 255, 0.7),
-                                inset 3px 3px 8px rgba(255, 255, 255, 0.6),
-                                inset -3px -3px 8px ${primaryColor}60
+                                6px 6px 16px rgba(0, 0, 0, 0.3),
+                                -2px -2px 8px ${secondaryColor}25,
+                                inset 2px 2px 6px rgba(255, 255, 255, 0.2),
+                                inset -2px -2px 6px rgba(0, 0, 0, 0.2)
                               `,
                             border: isDark
                               ? `4px solid ${pageBaseColor}`

@@ -238,7 +238,7 @@ const TuitionCenterPage: NextPageWithLayout = () => {
                   background: isDark
                     ? `linear-gradient(145deg, ${module.color}90 0%, ${module.colorDark} 50%, ${module.colorDark}dd 100%)`
                     : `linear-gradient(135deg, ${module.colorLight}ee 0%, ${module.color} 35%, ${module.colorDark} 100%)`,
-                  // Outer shadow - adjusted for dark mode
+                  // Outer shadow - 3D claymorphic style matching LearningSection icons
                   boxShadow: isDark
                     ? `
                       6px 6px 16px rgba(0,0,0,0.5),
@@ -247,10 +247,10 @@ const TuitionCenterPage: NextPageWithLayout = () => {
                       inset -2px -2px 6px rgba(0,0,0,0.3)
                     `
                     : `
-                      10px 10px 30px ${module.colorDark}90,
-                      -6px -6px 20px rgba(255,255,255,0.7),
-                      inset 4px 4px 12px rgba(255,255,255,0.35),
-                      inset -4px -4px 12px ${module.colorDark}60
+                      4px 4px 12px rgba(0,0,0,0.15),
+                      -2px -2px 8px ${module.colorLight}15,
+                      inset 2px 2px 4px rgba(255,255,255,0.2),
+                      inset -2px -2px 4px rgba(0,0,0,0.2)
                     `,
                   // Beveled edge
                   border: isDark 
@@ -315,10 +315,10 @@ const TuitionCenterPage: NextPageWithLayout = () => {
                           inset -2px -2px 4px rgba(0,0,0,0.3)
                         `
                         : `
-                          6px 6px 14px ${module.colorDark}70,
-                          -3px -3px 10px rgba(255,255,255,0.8),
-                          inset 3px 3px 6px rgba(255,255,255,0.95),
-                          inset -3px -3px 6px rgba(0,0,0,0.12)
+                          4px 4px 12px rgba(0,0,0,0.15),
+                          -2px -2px 8px ${module.colorLight}15,
+                          inset 2px 2px 4px rgba(255,255,255,0.2),
+                          inset -2px -2px 4px rgba(0,0,0,0.2)
                         `,
                       border: isDark 
                         ? `1px solid rgba(255,255,255,0.1)`
@@ -427,10 +427,10 @@ const TuitionCenterPage: NextPageWithLayout = () => {
                             inset 1px 1px 2px ${module.colorLight}20
                           `
                           : `
-                            3px 3px 8px ${module.colorDark}60,
-                            -2px -2px 6px rgba(255,255,255,0.6),
-                            inset 2px 2px 4px rgba(255,255,255,0.9),
-                            inset -1px -1px 3px rgba(0,0,0,0.08)
+                            2px 2px 6px rgba(0,0,0,0.12),
+                            -1px -1px 4px ${module.colorLight}15,
+                            inset 1px 1px 2px rgba(255,255,255,0.2),
+                            inset -1px -1px 2px rgba(0,0,0,0.1)
                           `,
                         border: isDark ? 'none' : '1px solid rgba(255,255,255,0.8)',
                       }}
@@ -487,10 +487,10 @@ const TuitionCenterPage: NextPageWithLayout = () => {
                             inset -1px -1px 2px rgba(0,0,0,0.2)
                           `
                           : `
-                            4px 4px 12px ${module.colorDark}70,
-                            -2px -2px 8px rgba(255,255,255,0.7),
-                            inset 2px 2px 5px rgba(255,255,255,0.95),
-                            inset -2px -2px 4px rgba(0,0,0,0.1)
+                            3px 3px 8px rgba(0,0,0,0.15),
+                            -1px -1px 4px ${module.colorLight}15,
+                            inset 1px 1px 3px rgba(255,255,255,0.2),
+                            inset -1px -1px 2px rgba(0,0,0,0.15)
                           `,
                         border: isDark ? 'none' : '1px solid rgba(255,255,255,0.8)',
                       }}
