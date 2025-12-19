@@ -16,7 +16,7 @@ export interface AdminUser {
   phoneCountry: string;
   country: string;
   role: 'USER' | 'ADMIN';
-  appMode: string;
+  appMode: 'LEARNER' | 'INVESTOR';
   kycStatus: string;
   emailVerified: boolean;
   phoneVerified: boolean;

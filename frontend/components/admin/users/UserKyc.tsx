@@ -125,7 +125,7 @@ export const UserKyc: React.FC<UserKycProps> = ({ user, onRefresh }) => {
         />
       )}
 
-      <Divider orientation="left">Personal Details</Divider>
+      <Divider titlePlacement="start">Personal Details</Divider>
       <Descriptions column={2} size="small">
         <Descriptions.Item label="First Name">{kyc.firstName || '-'}</Descriptions.Item>
         <Descriptions.Item label="Middle Name">{kyc.middleName || '-'}</Descriptions.Item>
@@ -135,7 +135,7 @@ export const UserKyc: React.FC<UserKycProps> = ({ user, onRefresh }) => {
         </Descriptions.Item>
       </Descriptions>
 
-      <Divider orientation="left">Address</Divider>
+      <Divider titlePlacement="start">Address</Divider>
       <Descriptions column={2} size="small">
         <Descriptions.Item label="Street 1" span={2}>{kyc.street1 || '-'}</Descriptions.Item>
         <Descriptions.Item label="Street 2" span={2}>{kyc.street2 || '-'}</Descriptions.Item>
@@ -145,7 +145,7 @@ export const UserKyc: React.FC<UserKycProps> = ({ user, onRefresh }) => {
         <Descriptions.Item label="Country">{kyc.country || '-'}</Descriptions.Item>
       </Descriptions>
 
-      <Divider orientation="left">Verification</Divider>
+      <Divider titlePlacement="start">Verification</Divider>
       <Descriptions column={2} size="small">
         <Descriptions.Item label="Veriff Session">
           {kyc.veriffSessionId ? (
@@ -158,7 +158,7 @@ export const UserKyc: React.FC<UserKycProps> = ({ user, onRefresh }) => {
 
       {(kyc.reviewedAt || kyc.reviewNotes) && (
         <>
-          <Divider orientation="left">Review History</Divider>
+          <Divider titlePlacement="start">Review History</Divider>
           <Descriptions column={1} size="small">
             <Descriptions.Item label="Reviewed By">{kyc.reviewedBy || '-'}</Descriptions.Item>
             <Descriptions.Item label="Reviewed At">
@@ -169,7 +169,7 @@ export const UserKyc: React.FC<UserKycProps> = ({ user, onRefresh }) => {
         </>
       )}
 
-      <Divider orientation="left">Manual Override</Divider>
+      <Divider titlePlacement="start">Manual Override</Divider>
       <Space>
         <Select
           placeholder="Change Status"

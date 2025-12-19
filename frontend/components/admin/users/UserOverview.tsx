@@ -140,7 +140,7 @@ export const UserOverview: React.FC<UserOverviewProps> = ({ user, onRefresh, onD
         </Col>
       </Row>
 
-      <Divider orientation="left">Account Information</Divider>
+      <Divider titlePlacement="start">Account Information</Divider>
       <Text type="secondary" style={{ marginBottom: 16, display: 'block' }}>ID: {user.id}</Text>
       
       <Descriptions column={2} size="small">
@@ -184,7 +184,7 @@ export const UserOverview: React.FC<UserOverviewProps> = ({ user, onRefresh, onD
         </Descriptions.Item>
       </Descriptions>
 
-      <Divider orientation="left">Role & Mode Settings</Divider>
+      <Divider titlePlacement="start">Role & Mode Settings</Divider>
       <Row gutter={48}>
         <Col span={12}>
           <Space direction="vertical" style={{ width: '100%' }}>
@@ -227,7 +227,7 @@ export const UserOverview: React.FC<UserOverviewProps> = ({ user, onRefresh, onD
       {/* Bank Accounts */}
       {user.bankAccounts.length > 0 && (
         <>
-          <Divider orientation="left">Bank Accounts</Divider>
+          <Divider titlePlacement="start">Bank Accounts</Divider>
           <Descriptions column={1} size="small">
             {user.bankAccounts.map((account) => (
               <Descriptions.Item
@@ -249,7 +249,7 @@ export const UserOverview: React.FC<UserOverviewProps> = ({ user, onRefresh, onD
       )}
 
       {/* Danger Zone */}
-      <Divider orientation="left" style={{ borderColor: '#ff4d4f' }}>
+      <Divider titlePlacement="start" style={{ borderColor: '#ff4d4f' }}>
         <Text type="danger">Danger Zone</Text>
       </Divider>
       <Space direction="vertical">

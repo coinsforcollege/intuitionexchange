@@ -92,7 +92,7 @@ export const CollegeCoinForm: React.FC<CollegeCoinFormProps> = ({
     >
       <Row gutter={48}>
         <Col xs={24} lg={12}>
-          <Divider orientation="left">Token Details</Divider>
+          <Divider titlePlacement="start">Token Details</Divider>
           
           <Form.Item
             name="ticker"
@@ -125,7 +125,7 @@ export const CollegeCoinForm: React.FC<CollegeCoinFormProps> = ({
             <Switch />
           </Form.Item>
 
-          <Divider orientation="left">Price Pegging</Divider>
+          <Divider titlePlacement="start">Price Pegging</Divider>
 
           <Form.Item name="peggedToAsset" label="Reference Token" rules={[{ required: true, message: 'Required' }]}>
             <Select
@@ -147,7 +147,7 @@ export const CollegeCoinForm: React.FC<CollegeCoinFormProps> = ({
         </Col>
 
         <Col xs={24} lg={12}>
-          <Divider orientation="left">Marketing (Optional)</Divider>
+          <Divider titlePlacement="start">Marketing (Optional)</Divider>
 
           <Form.Item name="description" label="Description">
             <TextArea rows={3} placeholder="Token description..." maxLength={2000} showCount />
@@ -161,7 +161,7 @@ export const CollegeCoinForm: React.FC<CollegeCoinFormProps> = ({
             <DatePicker style={{ width: '100%' }} />
           </Form.Item>
 
-          <Divider orientation="left">Links (Optional)</Divider>
+          <Divider titlePlacement="start">Links (Optional)</Divider>
 
           <Form.Item name="website" label="Website">
             <Input placeholder="https://example.edu" />

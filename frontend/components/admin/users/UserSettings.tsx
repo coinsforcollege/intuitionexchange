@@ -49,7 +49,7 @@ export const UserSettings: React.FC<UserSettingsProps> = ({ user }) => {
 
   return (
     <div>
-      <Divider orientation="left"><BellOutlined /> Notification Preferences</Divider>
+      <Divider titlePlacement="start"><BellOutlined /> Notification Preferences</Divider>
       {prefs ? (
         <>
           <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
@@ -87,7 +87,7 @@ export const UserSettings: React.FC<UserSettingsProps> = ({ user }) => {
         <Empty description="Using default notification settings" />
       )}
 
-      <Divider orientation="left"><BankOutlined /> Bank Accounts</Divider>
+      <Divider titlePlacement="start"><BankOutlined /> Bank Accounts</Divider>
       {user.bankAccounts.length > 0 ? (
         <Table
           columns={bankColumns}
@@ -100,7 +100,7 @@ export const UserSettings: React.FC<UserSettingsProps> = ({ user }) => {
         <Empty description="No bank accounts linked" />
       )}
 
-      <Divider orientation="left">Account Timeline</Divider>
+      <Divider titlePlacement="start">Account Timeline</Divider>
       <Descriptions column={2} size="small">
         <Descriptions.Item label="Created">{new Date(user.createdAt).toLocaleString()}</Descriptions.Item>
         <Descriptions.Item label="Updated">{new Date(user.updatedAt).toLocaleString()}</Descriptions.Item>
