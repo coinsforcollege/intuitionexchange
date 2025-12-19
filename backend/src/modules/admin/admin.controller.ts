@@ -410,6 +410,20 @@ export class AdminController {
       }
     }
 
+    // Helper to convert empty strings and "null" to actual null/undefined
+    const toNullable = (val: any): string | undefined => {
+      if (val === undefined || val === null || val === '' || val === 'null') return undefined;
+      return val;
+    };
+
+    // Parse genesis date safely
+    let genesisDate: Date | undefined = undefined;
+    const dateStr = toNullable(body.genesisDate);
+    if (dateStr) {
+      const parsed = new Date(dateStr);
+      genesisDate = isNaN(parsed.getTime()) ? undefined : parsed;
+    }
+
     const dto: CreateDemoCollegeCoinDto = {
       ticker: body.ticker,
       name: body.name,
@@ -417,13 +431,13 @@ export class AdminController {
       peggedToAsset: body.peggedToAsset,
       peggedPercentage: parseFloat(body.peggedPercentage),
       isActive: body.isActive === 'true' || body.isActive === true,
-      description: body.description,
-      website: body.website,
-      whitepaper: body.whitepaper,
-      twitter: body.twitter,
-      discord: body.discord,
+      description: toNullable(body.description),
+      website: toNullable(body.website),
+      whitepaper: toNullable(body.whitepaper),
+      twitter: toNullable(body.twitter),
+      discord: toNullable(body.discord),
       categories,
-      genesisDate: body.genesisDate ? new Date(body.genesisDate) : undefined,
+      genesisDate,
     };
 
     const coin = await this.collegeCoinsService.create(dto);
@@ -464,6 +478,24 @@ export class AdminController {
       }
     }
 
+    // Helper to convert empty strings and "null" to actual null
+    const toNullable = (val: any): string | null => {
+      if (val === undefined || val === null || val === '' || val === 'null') return null;
+      return val;
+    };
+
+    // Parse genesis date safely
+    let genesisDate: Date | null | undefined = undefined;
+    if (body.genesisDate !== undefined) {
+      const dateStr = toNullable(body.genesisDate);
+      if (dateStr) {
+        const parsed = new Date(dateStr);
+        genesisDate = isNaN(parsed.getTime()) ? null : parsed;
+      } else {
+        genesisDate = null;
+      }
+    }
+
     const dto: UpdateDemoCollegeCoinDto = {
       ...(body.ticker && { ticker: body.ticker }),
       ...(body.name && { name: body.name }),
@@ -476,15 +508,13 @@ export class AdminController {
       ...(body.isActive !== undefined && {
         isActive: body.isActive === 'true' || body.isActive === true,
       }),
-      ...(body.description !== undefined && { description: body.description }),
-      ...(body.website !== undefined && { website: body.website }),
-      ...(body.whitepaper !== undefined && { whitepaper: body.whitepaper }),
-      ...(body.twitter !== undefined && { twitter: body.twitter }),
-      ...(body.discord !== undefined && { discord: body.discord }),
+      ...(body.description !== undefined && { description: toNullable(body.description) }),
+      ...(body.website !== undefined && { website: toNullable(body.website) }),
+      ...(body.whitepaper !== undefined && { whitepaper: toNullable(body.whitepaper) }),
+      ...(body.twitter !== undefined && { twitter: toNullable(body.twitter) }),
+      ...(body.discord !== undefined && { discord: toNullable(body.discord) }),
       ...(categories !== undefined && { categories }),
-      ...(body.genesisDate !== undefined && {
-        genesisDate: body.genesisDate ? new Date(body.genesisDate) : null,
-      }),
+      ...(genesisDate !== undefined && { genesisDate }),
     };
 
     const coin = await this.collegeCoinsService.update(id, dto);

@@ -536,6 +536,7 @@ export async function createCollegeCoin(data: {
   categories?: string[];
   genesisDate?: string;
   icon?: File;
+  iconUrl?: string; // URL from media library or external URL
 }): Promise<{
   success: boolean;
   coin: DemoCollegeCoin;
@@ -556,6 +557,7 @@ export async function createCollegeCoin(data: {
   if (data.categories) formData.append('categories', JSON.stringify(data.categories));
   if (data.genesisDate) formData.append('genesisDate', data.genesisDate);
   if (data.icon) formData.append('icon', data.icon);
+  if (data.iconUrl && !data.icon) formData.append('iconUrl', data.iconUrl);
 
   return adminApiCall('/admin/college-coins', {
     method: 'POST',
@@ -582,6 +584,7 @@ export async function updateCollegeCoin(
     categories?: string[];
     genesisDate?: string;
     icon?: File;
+    iconUrl?: string; // URL from media library or external URL
   },
 ): Promise<{
   success: boolean;
@@ -603,6 +606,7 @@ export async function updateCollegeCoin(
   if (data.categories !== undefined) formData.append('categories', JSON.stringify(data.categories));
   if (data.genesisDate !== undefined) formData.append('genesisDate', data.genesisDate);
   if (data.icon) formData.append('icon', data.icon);
+  if (data.iconUrl && !data.icon) formData.append('iconUrl', data.iconUrl);
 
   return adminApiCall(`/admin/college-coins/${id}`, {
     method: 'PATCH',
