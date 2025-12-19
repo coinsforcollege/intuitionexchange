@@ -95,7 +95,8 @@ function ThemedApp({ Component, pageProps }: AppProps) {
   return (
     <ConfigProvider theme={themeWithAlgorithm}>
       <Head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
+        {/* Note: maximum-scale=1 prevents pinch-zoom. Users can still zoom via iOS Accessibility settings */}
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
         <title>InTuition Exchange - Sandbox</title>
       </Head>
       <Component {...pageProps} />

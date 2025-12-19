@@ -505,49 +505,6 @@ export default function TuitionCenterPage() {
           })}
         </div>
 
-        {/* Mr. Purple Mascot */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          style={{
-            position: 'fixed',
-            bottom: isMobile ? 110 : 32,
-            right: isMobile ? 12 : 32,
-            zIndex: 100,
-            pointerEvents: 'none',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          }}
-        >
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            style={{
-              height: isMobile ? 100 : 140,
-              width: 'auto',
-              objectFit: 'contain',
-              display: 'block',
-            }}
-          >
-            <source src="/images/mr-purple-explaining.webm" type="video/webm" />
-            <source src="/images/mr-purple-explaining.mp4" type="video/mp4" />
-          </video>
-          <div
-            style={{
-              width: isMobile ? 80 : 100,
-              height: 16,
-              marginTop: -10,
-              background: isDark 
-                ? 'radial-gradient(ellipse at center, rgba(255, 255, 255, 0.12) 0%, transparent 70%)'
-                : 'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.2) 0%, transparent 70%)',
-              borderRadius: '50%',
-            }}
-          />
-        </motion.div>
       </DashboardLayout>
     </>
   );

@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-import { theme, Grid, Form, Input, DatePicker, Select, Button, message } from 'antd';
+import { theme, Grid, Form, Input, Select, Button, message } from 'antd';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeftOutlined,
@@ -14,7 +14,6 @@ import {
   UserOutlined,
 } from '@ant-design/icons';
 import { Country, State, ICountry, IState } from 'country-state-city';
-import dayjs from 'dayjs';
 import { fontWeights } from '@/theme/themeConfig';
 import { useThemeMode } from '@/context/ThemeContext';
 
@@ -46,6 +45,34 @@ const moduleColors = {
   accent: '#34D399',
 };
 
+// Date of Birth options
+const MONTHS = [
+  { value: '01', label: 'January' },
+  { value: '02', label: 'February' },
+  { value: '03', label: 'March' },
+  { value: '04', label: 'April' },
+  { value: '05', label: 'May' },
+  { value: '06', label: 'June' },
+  { value: '07', label: 'July' },
+  { value: '08', label: 'August' },
+  { value: '09', label: 'September' },
+  { value: '10', label: 'October' },
+  { value: '11', label: 'November' },
+  { value: '12', label: 'December' },
+];
+
+const DAYS = Array.from({ length: 31 }, (_, i) => ({
+  value: String(i + 1).padStart(2, '0'),
+  label: String(i + 1),
+}));
+
+// Years from current year - 10 to current year - 100 (for practice, we allow younger ages)
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: 90 }, (_, i) => ({
+  value: String(currentYear - 10 - i),
+  label: String(currentYear - 10 - i),
+}));
+
 // All text is white with shadows on colorful background
 const getTextColor = (_isDark: boolean, primary = true) => 
   primary ? '#ffffff' : 'rgba(255,255,255,0.85)';
@@ -64,6 +91,7 @@ export default function KYC101Page() {
   
   // Camera states
   const [cameraActive, setCameraActive] = useState(false);
+  const [cameraUnavailable, setCameraUnavailable] = useState(false);
   const [capturedImages, setCapturedImages] = useState<{
     docFront: string | null;
     docBack: string | null;
@@ -86,7 +114,14 @@ export default function KYC101Page() {
     postalCode?: string;
   }>({});
 
-  const [selectedCountry, setSelectedCountry] = useState<string>('US');
+  const [selectedCountry, setSelectedCountry] = useState<string>('');
+  const [selectedRegion, setSelectedRegion] = useState<string>('');
+  
+  // Date of birth selections - no default values, user must select
+  const [birthMonth, setBirthMonth] = useState<string>('');
+  const [birthDay, setBirthDay] = useState<string>('');
+  const [birthYear, setBirthYear] = useState<string>('');
+  
 
   // Get countries and states
   const countryOptions = useMemo(() => {
@@ -120,6 +155,14 @@ export default function KYC101Page() {
     // Stop any existing stream first
     stopCamera();
     
+    // Check if mediaDevices is available (requires HTTPS or localhost)
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      console.error('Camera not available - mediaDevices requires HTTPS');
+      setCameraUnavailable(true);
+      message.warning('Camera requires HTTPS. This is just a practice - tap "Skip" to continue!');
+      return;
+    }
+    
     try {
       const newStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
@@ -128,6 +171,7 @@ export default function KYC101Page() {
       
       streamRef.current = newStream;
       setCameraActive(true);
+      setCameraUnavailable(false);
       
       if (videoRef.current) {
         videoRef.current.srcObject = newStream;
@@ -135,7 +179,8 @@ export default function KYC101Page() {
       }
     } catch (error) {
       console.error('Camera error:', error);
-      message.error('Could not access camera. Please allow camera permissions.');
+      setCameraUnavailable(true);
+      message.warning('Camera not available. This is just a practice - tap "Skip" to continue!');
     }
   }, [stopCamera]);
 
@@ -195,12 +240,14 @@ export default function KYC101Page() {
     }
   };
 
-  const handlePersonalSubmit = (values: { firstName: string; lastName: string; dateOfBirth: dayjs.Dayjs }) => {
+  const handlePersonalSubmit = (values: { firstName: string; lastName: string; birthMonth: string; birthDay: string; birthYear: string }) => {
+    const monthName = MONTHS.find(m => m.value === values.birthMonth)?.label || values.birthMonth;
+    const day = parseInt(values.birthDay, 10);
     setFormData(prev => ({
       ...prev,
       firstName: values.firstName,
       lastName: values.lastName,
-      dateOfBirth: values.dateOfBirth.format('MMMM D, YYYY'),
+      dateOfBirth: `${monthName} ${day}, ${values.birthYear}`,
     }));
     goToNextStep();
   };
@@ -436,17 +483,141 @@ export default function KYC101Page() {
           />
         </Form.Item>
 
-        <Form.Item
-          name="dateOfBirth"
-          label={<span style={{ color: '#fff', fontWeight: fontWeights.medium, textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>Date of Birth</span>}
-          rules={[{ required: true, message: 'Pick any date!' }]}
-        >
-          <DatePicker
-            placeholder="Pick a date"
-            style={{ ...getInputStyle(), width: '100%' }}
-            format="MMMM D, YYYY"
-          />
-        </Form.Item>
+        {/* Date of Birth - 3 separate dropdowns */}
+        <div style={{ marginBottom: token.marginMD }}>
+          <span style={{ 
+            color: '#fff', 
+            fontWeight: fontWeights.medium, 
+            textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+            display: 'block',
+            marginBottom: 8,
+          }}>
+            Date of Birth
+          </span>
+          <div style={{ display: 'flex', gap: token.marginSM }}>
+            {/* Month */}
+            <Form.Item
+              name="birthMonth"
+              rules={[{ required: true, message: 'Month!', validator: (_, value) => value ? Promise.resolve() : Promise.reject('Month!') }]}
+              style={{ flex: 1.5, marginBottom: 0 }}
+            >
+              {isMobile ? (
+                <select
+                  style={{
+                    ...getInputStyle(),
+                    width: '100%',
+                    padding: '0 12px',
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 12px center',
+                    cursor: 'pointer',
+                    color: birthMonth ? undefined : token.colorTextPlaceholder,
+                  }}
+                  value={birthMonth}
+                  onChange={(e) => {
+                    personalForm.setFieldsValue({ birthMonth: e.target.value });
+                    setBirthMonth(e.target.value);
+                  }}
+                >
+                  <option value="">Month</option>
+                  {MONTHS.map(m => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
+              ) : (
+                <Select
+                  placeholder="Month"
+                  options={MONTHS}
+                  style={getInputStyle()}
+                />
+              )}
+            </Form.Item>
+
+            {/* Day */}
+            <Form.Item
+              name="birthDay"
+              rules={[{ required: true, message: 'Day!', validator: (_, value) => value ? Promise.resolve() : Promise.reject('Day!') }]}
+              style={{ flex: 1, marginBottom: 0 }}
+            >
+              {isMobile ? (
+                <select
+                  style={{
+                    ...getInputStyle(),
+                    width: '100%',
+                    padding: '0 12px',
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 12px center',
+                    cursor: 'pointer',
+                    color: birthDay ? undefined : token.colorTextPlaceholder,
+                  }}
+                  value={birthDay}
+                  onChange={(e) => {
+                    personalForm.setFieldsValue({ birthDay: e.target.value });
+                    setBirthDay(e.target.value);
+                  }}
+                >
+                  <option value="">Day</option>
+                  {DAYS.map(d => (
+                    <option key={d.value} value={d.value}>{d.label}</option>
+                  ))}
+                </select>
+              ) : (
+                <Select
+                  placeholder="Day"
+                  options={DAYS}
+                  style={getInputStyle()}
+                />
+              )}
+            </Form.Item>
+
+            {/* Year */}
+            <Form.Item
+              name="birthYear"
+              rules={[{ required: true, message: 'Year!', validator: (_, value) => value ? Promise.resolve() : Promise.reject('Year!') }]}
+              style={{ flex: 1.2, marginBottom: 0 }}
+            >
+              {isMobile ? (
+                <select
+                  style={{
+                    ...getInputStyle(),
+                    width: '100%',
+                    padding: '0 12px',
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 12px center',
+                    cursor: 'pointer',
+                    color: birthYear ? undefined : token.colorTextPlaceholder,
+                  }}
+                  value={birthYear}
+                  onChange={(e) => {
+                    personalForm.setFieldsValue({ birthYear: e.target.value });
+                    setBirthYear(e.target.value);
+                  }}
+                >
+                  <option value="">Year</option>
+                  {YEARS.map(y => (
+                    <option key={y.value} value={y.value}>{y.label}</option>
+                  ))}
+                </select>
+              ) : (
+                <Select
+                  placeholder="Year"
+                  options={YEARS}
+                  style={getInputStyle()}
+                  showSearch
+                  optionFilterProp="label"
+                />
+              )}
+            </Form.Item>
+          </div>
+        </div>
 
         <div style={{ display: 'flex', gap: token.marginMD, marginTop: token.marginXL }}>
           <Button
@@ -481,21 +652,50 @@ export default function KYC101Page() {
         layout="vertical"
         onFinish={handleAddressSubmit}
         requiredMark={false}
-        initialValues={{ country: 'US' }}
+        initialValues={{  }}
         className="kyc-form"
       >
         <Form.Item
           name="country"
           label={<span style={{ color: '#fff', fontWeight: fontWeights.medium, textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>Country</span>}
-          rules={[{ required: true }]}
+          rules={[{ required: true, validator: (_, value) => value ? Promise.resolve() : Promise.reject('Select country!') }]}
         >
-          <Select
-            showSearch
-            options={countryOptions}
-            onChange={(val) => setSelectedCountry(val)}
-            style={getInputStyle()}
-            optionFilterProp="label"
-          />
+          {isMobile ? (
+            <select
+              style={{
+                ...getInputStyle(),
+                width: '100%',
+                padding: '0 12px',
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 12px center',
+                cursor: 'pointer',
+                color: selectedCountry ? undefined : token.colorTextPlaceholder,
+              }}
+              value={selectedCountry}
+              onChange={(e) => {
+                addressForm.setFieldsValue({ country: e.target.value, region: undefined });
+                setSelectedCountry(e.target.value);
+                setSelectedRegion('');
+              }}
+            >
+              <option value="">Select Country</option>
+              {countryOptions.map(c => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+          ) : (
+            <Select
+              showSearch
+              options={countryOptions}
+              onChange={(val) => setSelectedCountry(val)}
+              style={getInputStyle()}
+              optionFilterProp="label"
+              placeholder="Select Country"
+            />
+          )}
         </Form.Item>
 
         <Form.Item
@@ -523,17 +723,44 @@ export default function KYC101Page() {
           <Form.Item
             name="region"
             label={<span style={{ color: '#fff', fontWeight: fontWeights.medium, textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>State</span>}
-            rules={[{ required: true }]}
+            rules={[{ required: true, validator: (_, value) => value ? Promise.resolve() : Promise.reject('State!') }]}
             style={{ flex: 1 }}
           >
             {stateOptions.length > 0 ? (
-              <Select
-                showSearch
-                options={stateOptions}
-                style={getInputStyle()}
-                optionFilterProp="label"
-                placeholder="Select"
-              />
+              isMobile ? (
+                <select
+                  style={{
+                    ...getInputStyle(),
+                    width: '100%',
+                    padding: '0 12px',
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 12px center',
+                    cursor: 'pointer',
+                    color: selectedRegion ? undefined : token.colorTextPlaceholder,
+                  }}
+                  value={selectedRegion}
+                  onChange={(e) => {
+                    addressForm.setFieldsValue({ region: e.target.value });
+                    setSelectedRegion(e.target.value);
+                  }}
+                >
+                  <option value="">Select</option>
+                  {stateOptions.map(s => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              ) : (
+                <Select
+                  showSearch
+                  options={stateOptions}
+                  style={getInputStyle()}
+                  optionFilterProp="label"
+                  placeholder="Select"
+                />
+              )
             ) : (
               <Input placeholder="Region" style={getInputStyle()} />
             )}
@@ -594,6 +821,9 @@ export default function KYC101Page() {
             ? 'inset 4px 4px 10px rgba(0,0,0,0.5), inset -2px -2px 6px rgba(255,255,255,0.05)'
             : 'inset 4px 4px 10px rgba(0,0,0,0.15), inset -2px -2px 6px rgba(255,255,255,0.5)',
           marginBottom: token.marginLG,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}>
           {captured ? (
             <img
@@ -601,6 +831,23 @@ export default function KYC101Page() {
               alt="Captured"
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
+          ) : cameraUnavailable ? (
+            // Show placeholder when camera is not available
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: token.paddingLG,
+              color: 'rgba(255,255,255,0.7)',
+            }}>
+              <span style={{ fontSize: 48, marginBottom: token.marginSM }}>
+                {isDocument ? '📄' : '🤳'}
+              </span>
+              <span style={{ fontSize: token.fontSizeSM, textAlign: 'center' }}>
+                Camera requires HTTPS
+              </span>
+            </div>
           ) : (
             <>
               <video
@@ -647,9 +894,11 @@ export default function KYC101Page() {
         }}>
           {captured
             ? '✅ Looking good! Continue or retake.'
-            : isDocument
-              ? 'Align your card within the frame and tap capture'
-              : 'Center your face in the circle and tap capture'
+            : cameraUnavailable
+              ? '📱 Camera not available on HTTP. This is just practice - skip ahead!'
+              : isDocument
+                ? 'Align your card within the frame and tap capture'
+                : 'Center your face in the circle and tap capture'
           }
         </p>
 
@@ -681,6 +930,15 @@ export default function KYC101Page() {
                 Continue <ArrowRightOutlined />
               </Button>
             </>
+          ) : cameraUnavailable ? (
+            <Button
+              type="primary"
+              size="large"
+              onClick={goToNextStep}
+              style={{ ...getButtonStyle(), flex: 3 }}
+            >
+              Skip <ArrowRightOutlined />
+            </Button>
           ) : (
             <Button
               type="primary"

@@ -25,6 +25,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import LoadingButton from '@/components/auth/LoadingButton';
 import OTPInput from '@/components/auth/OTPInput';
+import MobileSelectDrawer from '@/components/auth/MobileSelectDrawer';
 import {
   registerUser,
   verifyRegistration,
@@ -73,6 +74,9 @@ export default function RegisterPage() {
   // const [otpPhone, setOtpPhone] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
   const [mounted, setMounted] = useState(false);
+  const [countryDrawerOpen, setCountryDrawerOpen] = useState(false);
+  const [phoneCodeDrawerOpen, setPhoneCodeDrawerOpen] = useState(false);
+  const [selectedPhoneCode, setSelectedPhoneCode] = useState<string>('US');
 
   const isDark = mode === 'dark';
   const isMobile = mounted ? !screens.md : false;
@@ -570,14 +574,54 @@ export default function RegisterPage() {
                       rules={[{ required: true, message: 'Please select your country' }]}
                       style={{ marginBottom: isMobile ? token.marginSM : token.marginMD }}
                     >
-                      <Select
-                        showSearch
-                        placeholder="Select your country"
-                        options={countryOptions}
-                        disabled={loading}
-                        filterOption={filterFromStart}
-                        style={{ height: isMobile ? 44 : 48 }}
-                      />
+                      {isMobile ? (
+                        <>
+                          <div
+                            onClick={() => !loading && setCountryDrawerOpen(true)}
+                            style={{
+                              height: 44,
+                              padding: `0 ${token.paddingSM}px`,
+                              borderRadius: token.borderRadius,
+                              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.15)' : '#d9d9d9'}`,
+                              backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : token.colorBgContainer,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              cursor: loading ? 'not-allowed' : 'pointer',
+                              opacity: loading ? 0.5 : 1,
+                            }}
+                          >
+                            <span style={{ 
+                              color: form.getFieldValue('country') ? token.colorText : token.colorTextPlaceholder,
+                            }}>
+                              {form.getFieldValue('country')
+                                ? countryOptions.find(c => c.value === form.getFieldValue('country'))?.label || 'Select your country'
+                                : 'Select your country'}
+                            </span>
+                            <span style={{ color: token.colorTextSecondary }}>▼</span>
+                          </div>
+                          <MobileSelectDrawer
+                            open={countryDrawerOpen}
+                            onClose={() => setCountryDrawerOpen(false)}
+                            title="Select Country"
+                            options={countryOptions}
+                            value={form.getFieldValue('country')}
+                            onSelect={(value) => {
+                              form.setFieldsValue({ country: value });
+                            }}
+                            placeholder="Search countries..."
+                          />
+                        </>
+                      ) : (
+                        <Select
+                          showSearch
+                          placeholder="Select your country"
+                          options={countryOptions}
+                          disabled={loading}
+                          filterOption={filterFromStart}
+                          style={{ height: 48 }}
+                        />
+                      )}
                     </Form.Item>
 
                     {/* Email */}
@@ -609,35 +653,100 @@ export default function RegisterPage() {
                       required
                       style={{ marginBottom: isMobile ? token.marginSM : token.marginMD }}
                     >
-                      <Space.Compact style={{ width: '100%' }}>
-                        <Form.Item name="phoneCountryCode" noStyle rules={[{ required: true }]}>
-                          <Select
-                            showSearch
-                            style={{ width: '35%' }}
+                      {isMobile ? (
+                        <div style={{ display: 'flex', gap: token.marginXS }}>
+                          <Form.Item name="phoneCountryCode" noStyle rules={[{ required: true }]}>
+                            <div
+                              onClick={() => !loading && setPhoneCodeDrawerOpen(true)}
+                              style={{
+                                width: '38%',
+                                height: 44,
+                                padding: `0 ${token.paddingXS}px`,
+                                borderRadius: token.borderRadius,
+                                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.15)' : '#d9d9d9'}`,
+                                backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : token.colorBgContainer,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                cursor: loading ? 'not-allowed' : 'pointer',
+                                opacity: loading ? 0.5 : 1,
+                              }}
+                            >
+                              <span style={{ 
+                                color: selectedPhoneCode ? token.colorText : token.colorTextPlaceholder,
+                                fontSize: token.fontSizeSM,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}>
+                                {selectedPhoneCode
+                                  ? phoneCodeOptions.find(c => c.value === selectedPhoneCode)?.label || 'Select'
+                                  : 'Select'}
+                              </span>
+                              <span style={{ color: token.colorTextSecondary, marginLeft: 4 }}>▼</span>
+                            </div>
+                          </Form.Item>
+                          <Form.Item
+                            name="phone"
+                            noStyle
+                            rules={[
+                              { required: true, message: 'Please enter your phone number' },
+                              { pattern: /^\d{7,15}$/, message: 'Enter valid phone number' },
+                            ]}
+                          >
+                            <Input
+                              style={{ flex: 1, height: 44 }}
+                              placeholder="Phone number"
+                              autoComplete="new-phone-number"
+                              inputMode="tel"
+                              name="phone_number_field"
+                              disabled={loading}
+                            />
+                          </Form.Item>
+                          <MobileSelectDrawer
+                            open={phoneCodeDrawerOpen}
+                            onClose={() => setPhoneCodeDrawerOpen(false)}
+                            title="Select Phone Code"
                             options={phoneCodeOptions}
-                            disabled={loading}
-                            filterOption={filterFromStart}
-                            popupMatchSelectWidth={280}
+                            value={selectedPhoneCode}
+                            onSelect={(value) => {
+                              form.setFieldsValue({ phoneCountryCode: value });
+                              setSelectedPhoneCode(value);
+                            }}
+                            placeholder="Search country or code..."
                           />
-                        </Form.Item>
-                        <Form.Item
-                          name="phone"
-                          noStyle
-                          rules={[
-                            { required: true, message: 'Please enter your phone number' },
-                            { pattern: /^\d{7,15}$/, message: 'Enter valid phone number' },
-                          ]}
-                        >
-                          <Input
-                            style={{ width: '65%', height: isMobile ? 44 : 48 }}
-                            placeholder="Phone number"
-                            autoComplete="new-phone-number"
-                            inputMode="tel"
-                            name="phone_number_field"
-                            disabled={loading}
-                          />
-                        </Form.Item>
-                      </Space.Compact>
+                        </div>
+                      ) : (
+                        <Space.Compact style={{ width: '100%' }}>
+                          <Form.Item name="phoneCountryCode" noStyle rules={[{ required: true }]}>
+                            <Select
+                              showSearch
+                              style={{ width: '35%' }}
+                              options={phoneCodeOptions}
+                              disabled={loading}
+                              filterOption={filterFromStart}
+                              popupMatchSelectWidth={280}
+                            />
+                          </Form.Item>
+                          <Form.Item
+                            name="phone"
+                            noStyle
+                            rules={[
+                              { required: true, message: 'Please enter your phone number' },
+                              { pattern: /^\d{7,15}$/, message: 'Enter valid phone number' },
+                            ]}
+                          >
+                            <Input
+                              style={{ width: '65%', height: 48 }}
+                              placeholder="Phone number"
+                              autoComplete="new-phone-number"
+                              inputMode="tel"
+                              name="phone_number_field"
+                              disabled={loading}
+                            />
+                          </Form.Item>
+                        </Space.Compact>
+                      )}
                     </Form.Item>
 
                     {/* Password & Confirm Password - Same Row */}
@@ -898,6 +1007,11 @@ export default function RegisterPage() {
       </div>
 
       <style jsx global>{`
+        /* Fix iOS password dots being too large */
+        input[type="password"] {
+          font-family: Verdana, sans-serif;
+          font-size: 15px;
+        }
         @media (max-width: 767px) {
           .ant-select-selector {
             height: 44px !important;

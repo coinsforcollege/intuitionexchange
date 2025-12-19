@@ -40,7 +40,8 @@ export default function AddressPage() {
   
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
-  const [selectedCountry, setSelectedCountry] = useState<string>(user?.country || 'US');
+  const [selectedCountry, setSelectedCountry] = useState<string>(user?.country || '');
+  const [selectedRegion, setSelectedRegion] = useState<string>('');
 
   // Get all countries
   const countryOptions = useMemo(() => {
@@ -75,7 +76,7 @@ export default function AddressPage() {
         const details = await getKycDetails();
         if (details?.address) {
           const { street1, street2, city, region, postalCode, country } = details.address;
-          const countryValue = country || user?.country || 'US';
+          const countryValue = country || user?.country || '';
           form.setFieldsValue({
             street1: street1 || '',
             street2: street2 || '',
@@ -85,13 +86,14 @@ export default function AddressPage() {
             country: countryValue,
           });
           setSelectedCountry(countryValue);
+          setSelectedRegion(region || '');
         } else {
-          const userCountry = user?.country || 'US';
+          const userCountry = user?.country || '';
           form.setFieldsValue({ country: userCountry });
           setSelectedCountry(userCountry);
         }
       } catch {
-        const userCountry = user?.country || 'US';
+        const userCountry = user?.country || '';
         form.setFieldsValue({ country: userCountry });
         setSelectedCountry(userCountry);
       } finally {
@@ -126,6 +128,7 @@ export default function AddressPage() {
 
   const handleCountryChange = (value: string) => {
     setSelectedCountry(value);
+    setSelectedRegion('');
     form.setFieldValue('region', undefined);
   };
 
@@ -309,7 +312,7 @@ export default function AddressPage() {
             onFinish={handleSubmit}
             requiredMark={false}
             size="large"
-            initialValues={{ country: user?.country || 'US' }}
+            initialValues={{  }}
             className="onboarding-form"
           >
             {/* Street Address - full width */}
@@ -350,18 +353,48 @@ export default function AddressPage() {
                 <Form.Item
                   name="country"
                   label={<span style={getLabelStyle()}>Country</span>}
-                  rules={[{ required: true, message: 'Required' }]}
+                  rules={[{ required: true, message: 'Required', validator: (_, value) => value ? Promise.resolve() : Promise.reject('Required') }]}
                   style={{ marginBottom: token.marginMD }}
                 >
-                  <Select
-                    showSearch
-                    placeholder="Select"
-                    options={countryOptions}
-                    disabled={loading}
-                    onChange={handleCountryChange}
-                    optionFilterProp="searchValue"
-                    filterOption={filterOption}
-                  />
+                  {isMobile ? (
+                    <select
+                      style={{
+                        ...getInputStyle(),
+                        width: '100%',
+                        padding: '0 12px',
+                        appearance: 'none',
+                        WebkitAppearance: 'none',
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                        backgroundRepeat: 'no-repeat',
+                        backgroundPosition: 'right 12px center',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        opacity: loading ? 0.5 : 1,
+                        color: selectedCountry ? (isDark ? '#ffffff' : '#1a1a2e') : 'rgba(255,255,255,0.4)',
+                      }}
+                      value={selectedCountry}
+                      disabled={loading}
+                      onChange={(e) => {
+                        form.setFieldsValue({ country: e.target.value, region: undefined });
+                        setSelectedCountry(e.target.value);
+                        setSelectedRegion('');
+                      }}
+                    >
+                      <option value="">Select</option>
+                      {countryOptions.map(c => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <Select
+                      showSearch
+                      placeholder="Select"
+                      options={countryOptions}
+                      disabled={loading}
+                      onChange={handleCountryChange}
+                      optionFilterProp="searchValue"
+                      filterOption={filterOption}
+                    />
+                  )}
                 </Form.Item>
               </Col>
               <Col xs={12}>
@@ -389,17 +422,46 @@ export default function AddressPage() {
                 <Form.Item
                   name="region"
                   label={<span style={getLabelStyle()}>{getRegionLabel()}</span>}
-                  rules={[{ required: true, message: 'Required' }]}
+                  rules={[{ required: true, message: 'Required', validator: (_, value) => value ? Promise.resolve() : Promise.reject('Required') }]}
                   style={{ marginBottom: token.marginLG }}
                 >
                   {hasStates ? (
-                    <Select
-                      showSearch
-                      placeholder="Select"
-                      options={stateOptions}
-                      disabled={loading}
-                      filterOption={filterOption}
-                    />
+                    isMobile ? (
+                      <select
+                        style={{
+                          ...getInputStyle(),
+                          width: '100%',
+                          padding: '0 12px',
+                          appearance: 'none',
+                          WebkitAppearance: 'none',
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                          backgroundRepeat: 'no-repeat',
+                          backgroundPosition: 'right 12px center',
+                          cursor: loading ? 'not-allowed' : 'pointer',
+                          opacity: loading ? 0.5 : 1,
+                          color: selectedRegion ? (isDark ? '#ffffff' : '#1a1a2e') : 'rgba(255,255,255,0.4)',
+                        }}
+                        value={selectedRegion}
+                        disabled={loading}
+                        onChange={(e) => {
+                          form.setFieldsValue({ region: e.target.value });
+                          setSelectedRegion(e.target.value);
+                        }}
+                      >
+                        <option value="">Select</option>
+                        {stateOptions.map(s => (
+                          <option key={s.value} value={s.value}>{s.label}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <Select
+                        showSearch
+                        placeholder="Select"
+                        options={stateOptions}
+                        disabled={loading}
+                        filterOption={filterOption}
+                      />
+                    )
                   ) : (
                     <Input
                       placeholder={getRegionLabel()}

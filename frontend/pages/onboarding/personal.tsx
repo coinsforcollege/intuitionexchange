@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { Form, Input, DatePicker, Button, message, theme, Grid, Skeleton } from 'antd';
+import { Form, Input, Select, Button, message, theme, Grid, Skeleton } from 'antd';
 import { UserOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { motion } from 'motion/react';
-import dayjs from 'dayjs';
 import OnboardingLayout from '@/components/onboarding/OnboardingLayout';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
@@ -27,6 +26,34 @@ const warmColors = {
   coral: '#E07A5F',
 };
 
+// Date of Birth options
+const MONTHS = [
+  { value: '01', label: 'January' },
+  { value: '02', label: 'February' },
+  { value: '03', label: 'March' },
+  { value: '04', label: 'April' },
+  { value: '05', label: 'May' },
+  { value: '06', label: 'June' },
+  { value: '07', label: 'July' },
+  { value: '08', label: 'August' },
+  { value: '09', label: 'September' },
+  { value: '10', label: 'October' },
+  { value: '11', label: 'November' },
+  { value: '12', label: 'December' },
+];
+
+const DAYS = Array.from({ length: 31 }, (_, i) => ({
+  value: String(i + 1).padStart(2, '0'),
+  label: String(i + 1),
+}));
+
+// Years from current year - 18 to current year - 100 (must be 18+)
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: 82 }, (_, i) => ({
+  value: String(currentYear - 18 - i),
+  label: String(currentYear - 18 - i),
+}));
+
 export default function PersonalDetailsPage() {
   const router = useRouter();
   const { token } = useToken();
@@ -39,6 +66,11 @@ export default function PersonalDetailsPage() {
 
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+  
+  // Date of birth state for controlled native selects
+  const [birthMonth, setBirthMonth] = useState<string>('');
+  const [birthDay, setBirthDay] = useState<string>('');
+  const [birthYear, setBirthYear] = useState<string>('');
 
   useEffect(() => {
     if (!user) {
@@ -52,12 +84,31 @@ export default function PersonalDetailsPage() {
         const details = await getKycDetails();
         if (details?.personalDetails) {
           const { firstName, middleName, lastName, dateOfBirth } = details.personalDetails;
+          
+          // Parse existing date of birth if present (format: YYYY-MM-DD)
+          let month = '', day = '', year = '';
+          if (dateOfBirth) {
+            const parts = dateOfBirth.split('-');
+            if (parts.length === 3) {
+              year = parts[0];
+              month = parts[1];
+              day = parts[2];
+            }
+          }
+          
           form.setFieldsValue({
             firstName: firstName || '',
             middleName: middleName || '',
             lastName: lastName || '',
-            dateOfBirth: dateOfBirth ? dayjs(dateOfBirth) : null,
+            birthMonth: month,
+            birthDay: day,
+            birthYear: year,
           });
+          
+          // Update state for native selects
+          setBirthMonth(month);
+          setBirthDay(day);
+          setBirthYear(year);
         }
       } catch {
         // Continue with empty form
@@ -69,14 +120,17 @@ export default function PersonalDetailsPage() {
     loadData();
   }, [user, router, form]);
 
-  const handleSubmit = async (values: PersonalDetailsData & { dateOfBirth: dayjs.Dayjs }) => {
+  const handleSubmit = async (values: PersonalDetailsData & { birthMonth: string; birthDay: string; birthYear: string }) => {
     setLoading(true);
     try {
+      // Construct date in YYYY-MM-DD format
+      const dateOfBirth = `${values.birthYear}-${values.birthMonth}-${values.birthDay}`;
+      
       await savePersonalDetails({
         firstName: values.firstName,
         middleName: values.middleName || undefined,
         lastName: values.lastName,
-        dateOfBirth: values.dateOfBirth.format('YYYY-MM-DD'),
+        dateOfBirth,
       });
 
       message.success('Personal details saved');
@@ -249,36 +303,152 @@ export default function PersonalDetailsPage() {
               />
             </Form.Item>
 
-            {/* Date of Birth */}
-            <Form.Item
-              name="dateOfBirth"
-              label={<span style={getLabelStyle()}>Date of Birth</span>}
-              rules={[
-                { required: true, message: 'Please select your date of birth' },
-                {
-                  validator: (_, value) => {
-                    if (!value) return Promise.resolve();
-                    const age = dayjs().diff(value, 'year');
-                    if (age < 18) {
-                      return Promise.reject(new Error('You must be at least 18 years old'));
-                    }
-                    if (age > 120) {
-                      return Promise.reject(new Error('Please enter a valid date of birth'));
-                    }
-                    return Promise.resolve();
-                  },
-                },
-              ]}
-              style={{ marginBottom: token.marginXL }}
-            >
-              <DatePicker
-                placeholder="Select date"
-                style={{ ...getInputStyle(), width: '100%' }}
-                format="MMMM D, YYYY"
-                disabledDate={(current) => current && current > dayjs().subtract(18, 'year')}
-                disabled={loading}
-              />
-            </Form.Item>
+            {/* Date of Birth - 3 separate dropdowns */}
+            <div style={{ marginBottom: token.marginXL }}>
+              <span style={{ ...getLabelStyle(), display: 'block', marginBottom: 8 }}>
+                Date of Birth
+              </span>
+              <div style={{ display: 'flex', gap: token.marginSM }}>
+                {/* Month */}
+                <Form.Item
+                  name="birthMonth"
+                  rules={[{ required: true, message: 'Month', validator: (_, value) => value ? Promise.resolve() : Promise.reject('Month') }]}
+                  style={{ flex: 1.5, marginBottom: 0 }}
+                >
+                  {isMobile ? (
+                    <select
+                      style={{
+                        ...getInputStyle(),
+                        width: '100%',
+                        padding: '0 12px',
+                        appearance: 'none',
+                        WebkitAppearance: 'none',
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                        backgroundRepeat: 'no-repeat',
+                        backgroundPosition: 'right 12px center',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        opacity: loading ? 0.5 : 1,
+                        color: birthMonth ? (isDark ? '#ffffff' : '#1a1a2e') : 'rgba(255,255,255,0.4)',
+                      }}
+                      value={birthMonth}
+                      disabled={loading}
+                      onChange={(e) => {
+                        form.setFieldsValue({ birthMonth: e.target.value });
+                        setBirthMonth(e.target.value);
+                      }}
+                    >
+                      <option value="">Month</option>
+                      {MONTHS.map(m => (
+                        <option key={m.value} value={m.value}>{m.label}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <Select
+                      placeholder="Month"
+                      options={MONTHS}
+                      style={getInputStyle()}
+                      disabled={loading}
+                    />
+                  )}
+                </Form.Item>
+
+                {/* Day */}
+                <Form.Item
+                  name="birthDay"
+                  rules={[{ required: true, message: 'Day', validator: (_, value) => value ? Promise.resolve() : Promise.reject('Day') }]}
+                  style={{ flex: 1, marginBottom: 0 }}
+                >
+                  {isMobile ? (
+                    <select
+                      style={{
+                        ...getInputStyle(),
+                        width: '100%',
+                        padding: '0 12px',
+                        appearance: 'none',
+                        WebkitAppearance: 'none',
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                        backgroundRepeat: 'no-repeat',
+                        backgroundPosition: 'right 12px center',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        opacity: loading ? 0.5 : 1,
+                        color: birthDay ? (isDark ? '#ffffff' : '#1a1a2e') : 'rgba(255,255,255,0.4)',
+                      }}
+                      value={birthDay}
+                      disabled={loading}
+                      onChange={(e) => {
+                        form.setFieldsValue({ birthDay: e.target.value });
+                        setBirthDay(e.target.value);
+                      }}
+                    >
+                      <option value="">Day</option>
+                      {DAYS.map(d => (
+                        <option key={d.value} value={d.value}>{d.label}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <Select
+                      placeholder="Day"
+                      options={DAYS}
+                      style={getInputStyle()}
+                      disabled={loading}
+                    />
+                  )}
+                </Form.Item>
+
+                {/* Year */}
+                <Form.Item
+                  name="birthYear"
+                  rules={[{ required: true, message: 'Year', validator: (_, value) => value ? Promise.resolve() : Promise.reject('Year') }]}
+                  style={{ flex: 1.2, marginBottom: 0 }}
+                >
+                  {isMobile ? (
+                    <select
+                      style={{
+                        ...getInputStyle(),
+                        width: '100%',
+                        padding: '0 12px',
+                        appearance: 'none',
+                        WebkitAppearance: 'none',
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                        backgroundRepeat: 'no-repeat',
+                        backgroundPosition: 'right 12px center',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        opacity: loading ? 0.5 : 1,
+                        color: birthYear ? (isDark ? '#ffffff' : '#1a1a2e') : 'rgba(255,255,255,0.4)',
+                      }}
+                      value={birthYear}
+                      disabled={loading}
+                      onChange={(e) => {
+                        form.setFieldsValue({ birthYear: e.target.value });
+                        setBirthYear(e.target.value);
+                      }}
+                    >
+                      <option value="">Year</option>
+                      {YEARS.map(y => (
+                        <option key={y.value} value={y.value}>{y.label}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <Select
+                      placeholder="Year"
+                      options={YEARS}
+                      style={getInputStyle()}
+                      disabled={loading}
+                      showSearch
+                      optionFilterProp="label"
+                    />
+                  )}
+                </Form.Item>
+              </div>
+              <div style={{ 
+                fontSize: token.fontSizeSM, 
+                color: 'rgba(255,255,255,0.6)', 
+                marginTop: token.marginXS,
+                textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+              }}>
+                You must be at least 18 years old
+              </div>
+            </div>
 
             {/* Submit Button */}
             <Form.Item style={{ marginBottom: 0 }}>

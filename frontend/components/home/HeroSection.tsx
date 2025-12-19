@@ -290,6 +290,36 @@ export default function HeroSection() {
 
       </div>
 
+      {/* Scrim gradient for text contrast on mobile/tablet */}
+      {isTablet && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 4,
+            pointerEvents: "none",
+            background: isDark
+              ? `linear-gradient(
+                  to bottom,
+                  rgba(10, 15, 26, 0.98) 0%,
+                  rgba(10, 15, 26, 0.92) 30%,
+                  rgba(10, 15, 26, 0.65) 50%,
+                  transparent 70%
+                )`
+              : `linear-gradient(
+                  to bottom,
+                  rgba(248, 250, 252, 0.98) 0%,
+                  rgba(248, 250, 252, 0.92) 30%,
+                  rgba(248, 250, 252, 0.65) 50%,
+                  transparent 70%
+                )`,
+          }}
+        />
+      )}
+
       {/* Hand with phone emerging from bottom edge - positioned to section */}
       <img
         src="/images/hero/layer01.png"

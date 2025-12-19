@@ -24,12 +24,31 @@ export const countries: CountryData[] = allCountries.map((country: ICountry) => 
 }));
 
 // Get country options for Select component (for residence)
-export const getCountryOptions = () =>
-  countries.map((c) => ({
-    value: c.code,
-    label: `${c.flag} ${c.name}`,
-    searchValue: `${c.name} ${c.code}`,
-  }));
+// Priority countries appear first (US, UK, India, China)
+export const getCountryOptions = () => {
+  const priorityCodes = ['US', 'GB', 'IN', 'CN'];
+  
+  return [...countries]
+    .sort((a, b) => {
+      // Priority countries first
+      const aPriority = priorityCodes.indexOf(a.code);
+      const bPriority = priorityCodes.indexOf(b.code);
+      
+      if (aPriority !== -1 && bPriority !== -1) {
+        return aPriority - bPriority;
+      }
+      if (aPriority !== -1) return -1;
+      if (bPriority !== -1) return 1;
+      
+      // Then sort alphabetically by country name
+      return a.name.localeCompare(b.name);
+    })
+    .map((c) => ({
+      value: c.code,
+      label: `${c.flag} ${c.name}`,
+      searchValue: `${c.name} ${c.code}`,
+    }));
+};
 
 // Get phone code options for Select component
 export const getPhoneCodeOptions = () => {
