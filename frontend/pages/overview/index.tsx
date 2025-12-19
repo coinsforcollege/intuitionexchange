@@ -413,8 +413,12 @@ export default function DashboardPage() {
   }, [orders]);
 
   // Stable callbacks
-  const handleNavigateToExchange = useCallback(() => {
-    router.push('/trade');
+  const handleNavigateToExchange = useCallback((pairSymbol?: string) => {
+    if (pairSymbol) {
+      router.push(`/trade?pair=${pairSymbol}`);
+    } else {
+      router.push('/trade');
+    }
   }, [router]);
 
   const handleNavigateToWatchlist = useCallback((tab: 'watchlist' | 'browse' = 'watchlist') => {
@@ -853,7 +857,7 @@ export default function DashboardPage() {
                         iconUrl={pair.iconUrl}
                         price={pair.price}
                         change={pair.change}
-                        onRowClick={handleNavigateToExchange}
+                        onRowClick={() => handleNavigateToExchange(pair.symbol)}
                         isMobile={isMobile}
                       />
                     ))}
@@ -871,7 +875,7 @@ export default function DashboardPage() {
                         iconUrl={pair.iconUrl}
                         price={pair.price}
                         change={pair.change}
-                        onRowClick={handleNavigateToExchange}
+                        onRowClick={() => handleNavigateToExchange(pair.symbol)}
                         isMobile={isMobile}
                       />
                     ))}
@@ -933,7 +937,7 @@ export default function DashboardPage() {
                     {marketMovers.gainers.map((pair, index) => (
                       <div
                         key={pair.baseCurrency}
-                        onClick={handleNavigateToExchange}
+                        onClick={() => handleNavigateToExchange(pair.symbol)}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -1020,7 +1024,7 @@ export default function DashboardPage() {
                     {marketMovers.losers.map((pair, index) => (
                       <div
                         key={pair.baseCurrency}
-                        onClick={handleNavigateToExchange}
+                        onClick={() => handleNavigateToExchange(pair.symbol)}
                         style={{
                           display: 'flex',
                           alignItems: 'center',

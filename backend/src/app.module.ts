@@ -18,6 +18,7 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { LearnerModule } from './modules/learner/learner.module';
 import { CollegeCoinsModule } from './modules/college-coins/college-coins.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 
 @Module({
   imports: [
@@ -55,6 +56,8 @@ import { AdminModule } from './modules/admin/admin.module';
     CollegeCoinsModule,
     // Admin panel module
     AdminModule,
+    // Public file serving for uploads
+    UploadsModule,
   ],
   controllers: [AppController, TestController],
   providers: [AppService, PrismaService, EmailService],

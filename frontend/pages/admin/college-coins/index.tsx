@@ -10,12 +10,16 @@ import {
   Card,
   Image,
   Switch,
+  Upload,
+  Alert,
 } from 'antd';
 import {
   PlusOutlined,
   ReloadOutlined,
   EditOutlined,
   DeleteOutlined,
+  ImportOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -24,15 +28,30 @@ import {
   getCollegeCoins,
   deleteCollegeCoin,
   updateCollegeCoin,
+  importCollegeCoins,
   DemoCollegeCoin,
 } from '../../../services/api/admin';
+import { resolveUploadUrl } from '../../../services/api/college-coins';
 
 const { Text } = Typography;
+
+// CSV template for download
+const CSV_TEMPLATE = `ticker,name,peggedToAsset,peggedPercentage,iconUrl,description,website,whitepaper,twitter,discord,categories,genesisDate,isActive
+MIT,MIT Coin,ETH,10,/api/uploads/media/mit-icon.png,MIT University Token,https://mit.edu,,,MIT|Education|University,2024-01-01,true
+STANFORD,Stanford Token,BTC,5,,Stanford University Token,https://stanford.edu,,,Stanford|Education,2024-01-01,true`;
 
 export default function AdminCollegeCoinsPage() {
   const router = useRouter();
   const [coins, setCoins] = useState<DemoCollegeCoin[]>([]);
   const [loading, setLoading] = useState(true);
+  const [importModalVisible, setImportModalVisible] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{
+    total: number;
+    created: number;
+    failed: number;
+    errors: { row: number; ticker: string; error: string }[];
+  } | null>(null);
 
   const fetchCoins = useCallback(async () => {
     setLoading(true);
@@ -78,6 +97,37 @@ export default function AdminCollegeCoinsPage() {
     }
   };
 
+  const handleImport = async (file: File) => {
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const response = await importCollegeCoins(file);
+      setImportResult(response.results);
+      if (response.results.created > 0) {
+        message.success(response.message);
+        fetchCoins();
+      } else if (response.results.failed > 0) {
+        message.warning('No coins were imported. Check the errors below.');
+      }
+    } catch (error: any) {
+      message.error(error.message || 'Failed to import');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const downloadTemplate = () => {
+    const blob = new Blob([CSV_TEMPLATE], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'college-coins-template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const formatPrice = (price?: number) => {
     if (!price) return '-';
     if (price < 0.01) return `$${price.toFixed(6)}`;
@@ -94,7 +144,7 @@ export default function AdminCollegeCoinsPage() {
       render: (url: string | null, record: DemoCollegeCoin) =>
         url ? (
           <Image
-            src={url}
+            src={resolveUploadUrl(url)}
             alt={record.ticker}
             width={32}
             height={32}
@@ -224,17 +274,103 @@ export default function AdminCollegeCoinsPage() {
       </Card>
 
       <Card size="small" style={{ marginBottom: 16 }}>
-        <Space>
+        <Space wrap>
           <Link href="/admin/college-coins/new">
             <Button type="primary" icon={<PlusOutlined />}>
               Add Demo Token
             </Button>
           </Link>
+          <Button icon={<ImportOutlined />} onClick={() => setImportModalVisible(true)}>
+            Import CSV
+          </Button>
           <Button icon={<ReloadOutlined />} onClick={fetchCoins}>
             Refresh
           </Button>
         </Space>
       </Card>
+
+      {/* Import Modal */}
+      <Modal
+        title="Import Demo College Coins from CSV"
+        open={importModalVisible}
+        onCancel={() => {
+          setImportModalVisible(false);
+          setImportResult(null);
+        }}
+        footer={[
+          <Button key="template" icon={<DownloadOutlined />} onClick={downloadTemplate}>
+            Download Template
+          </Button>,
+          <Button key="close" onClick={() => {
+            setImportModalVisible(false);
+            setImportResult(null);
+          }}>
+            Close
+          </Button>,
+        ]}
+        width={600}
+      >
+        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          <Alert
+            type="info"
+            showIcon
+            message="CSV Format"
+            description={
+              <div>
+                <p style={{ margin: '8px 0 4px' }}>Required columns: <strong>ticker, name, peggedToAsset, peggedPercentage</strong></p>
+                <p style={{ margin: '4px 0' }}>Optional columns: iconUrl, description, website, whitepaper, twitter, discord, categories, genesisDate, isActive</p>
+                <p style={{ margin: '4px 0' }}>Use <code>|</code> to separate multiple categories (e.g., <code>Education|University</code>)</p>
+              </div>
+            }
+          />
+
+          <Upload.Dragger
+            accept=".csv"
+            showUploadList={false}
+            disabled={importing}
+            beforeUpload={(file) => {
+              handleImport(file);
+              return false;
+            }}
+          >
+            <p className="ant-upload-drag-icon">
+              <ImportOutlined style={{ fontSize: 40, color: '#1890ff' }} />
+            </p>
+            <p className="ant-upload-text">Click or drag CSV file to import</p>
+            <p className="ant-upload-hint">Only .csv files are accepted</p>
+          </Upload.Dragger>
+
+          {importing && (
+            <Alert type="info" message="Importing..." showIcon />
+          )}
+
+          {importResult && (
+            <div>
+              <Alert
+                type={importResult.failed === 0 ? 'success' : importResult.created > 0 ? 'warning' : 'error'}
+                message={`Imported ${importResult.created} of ${importResult.total} coins`}
+                description={
+                  importResult.failed > 0 ? (
+                    <div style={{ maxHeight: 200, overflow: 'auto', marginTop: 8 }}>
+                      <Text strong>Errors ({importResult.failed}):</Text>
+                      <ul style={{ margin: '8px 0', paddingLeft: 20 }}>
+                        {importResult.errors.map((err, i) => (
+                          <li key={i}>
+                            <Text type="danger">
+                              Row {err.row} ({err.ticker}): {err.error}
+                            </Text>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : undefined
+                }
+                showIcon
+              />
+            </div>
+          )}
+        </Space>
+      </Modal>
 
       <Table
         columns={columns}

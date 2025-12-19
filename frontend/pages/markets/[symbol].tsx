@@ -36,7 +36,7 @@ import {
   formatLargeNumber,
   formatSupply,
 } from '@/services/api/coingecko';
-import { getDemoCollegeCoin, DemoCollegeCoin } from '@/services/api/college-coins';
+import { getDemoCollegeCoin, DemoCollegeCoin, resolveUploadUrl } from '@/services/api/college-coins';
 
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
@@ -424,7 +424,7 @@ export default function TokenDetailsPage() {
                   marginBottom: themeToken.marginLG,
                 }}>
                   <img
-                    src={collegeCoinData.iconUrl || `https://ui-avatars.com/api/?name=${collegeCoinData.ticker}&size=72&background=8E2DE2&color=fff`}
+                    src={resolveUploadUrl(collegeCoinData.iconUrl) || `https://ui-avatars.com/api/?name=${collegeCoinData.ticker}&size=72&background=8E2DE2&color=fff`}
                     alt={collegeCoinData.name}
                     width={isMobile ? 56 : 72}
                     height={isMobile ? 56 : 72}

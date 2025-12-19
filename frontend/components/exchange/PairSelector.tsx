@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { theme, Input, Drawer } from 'antd';
 import { SearchOutlined, SwapOutlined, CaretUpOutlined, CaretDownOutlined } from '@ant-design/icons';
 import { fontWeights } from '@/theme/themeConfig';
@@ -74,11 +74,32 @@ const PairSelector: React.FC<PairSelectorProps> = ({
   const isLearnerMode = user?.appMode === 'LEARNER';
   const [activeQuote, setActiveQuote] = useState(isLearnerMode ? 'Colleges' : 'USD');
   const [hoveredPair, setHoveredPair] = useState<string | null>(null);
+  const selectedItemRef = useRef<HTMLDivElement>(null);
 
   // Get available currencies based on app mode
   const availableCurrencies = useMemo(() => {
     return isLearnerMode ? LEARNER_CURRENCIES : INVESTOR_CURRENCIES;
   }, [isLearnerMode]);
+
+  // Auto-switch to the correct tab when selectedPair changes (e.g., from URL)
+  useEffect(() => {
+    const currentPair = pairs.find(p => p.symbol === selectedPair);
+    if (!currentPair) return;
+
+    if (isLearnerMode) {
+      // In learner mode, switch between 'Colleges' and 'Popular'
+      if (currentPair.isCollegeCoin) {
+        setActiveQuote('Colleges');
+      } else {
+        setActiveQuote('Popular');
+      }
+    } else {
+      // In investor mode, switch to the pair's quote currency
+      if (INVESTOR_CURRENCIES.includes(currentPair.quote)) {
+        setActiveQuote(currentPair.quote);
+      }
+    }
+  }, [selectedPair, pairs, isLearnerMode]);
 
   const filteredPairs = useMemo(() => {
     return pairs.filter(pair => {
@@ -104,6 +125,20 @@ const PairSelector: React.FC<PairSelectorProps> = ({
     });
   }, [pairs, activeQuote, search, isLearnerMode]);
 
+  // Scroll to the selected pair when it changes or when the active tab changes
+  useEffect(() => {
+    // Small delay to ensure the DOM has updated after tab switch
+    const timer = setTimeout(() => {
+      if (selectedItemRef.current) {
+        selectedItemRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [selectedPair, activeQuote, filteredPairs]);
+
   const formatPrice = (price: number, quote: string) => {
     if (quote === 'ETH') return price.toFixed(4);
     if (price >= 1000) return price.toLocaleString('en-US', { maximumFractionDigits: 2 });
@@ -124,6 +159,7 @@ const PairSelector: React.FC<PairSelectorProps> = ({
     return (
       <div
         key={pair.symbol}
+        ref={isSelected ? selectedItemRef : null}
         onClick={() => handlePairClick(pair.symbol)}
         onMouseEnter={() => setHoveredPair(pair.symbol)}
         onMouseLeave={() => setHoveredPair(null)}

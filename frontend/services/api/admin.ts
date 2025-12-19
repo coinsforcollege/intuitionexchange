@@ -289,3 +289,97 @@ export async function deleteCollegeCoin(id: string): Promise<{
   });
 }
 
+/**
+ * Import demo college coins from CSV
+ */
+export async function importCollegeCoins(file: File): Promise<{
+  success: boolean;
+  message: string;
+  results: {
+    total: number;
+    created: number;
+    failed: number;
+    errors: { row: number; ticker: string; error: string }[];
+  };
+}> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  return adminApiCall('/admin/college-coins/import', {
+    method: 'POST',
+    body: formData,
+  });
+}
+
+// ============================================
+// MEDIA MANAGER
+// ============================================
+
+export interface MediaFile {
+  filename: string;
+  type: 'image' | 'video' | 'audio' | 'document' | 'file';
+  size: number;
+  url: string;
+  createdAt: string;
+  modifiedAt?: string;
+  originalName?: string;
+  mimetype?: string;
+  uploadedAt?: string;
+}
+
+/**
+ * Upload multiple files to media manager
+ */
+export async function uploadMedia(files: File[]): Promise<{
+  success: boolean;
+  message: string;
+  files: MediaFile[];
+}> {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append('files', file);
+  });
+
+  return adminApiCall('/admin/media/upload', {
+    method: 'POST',
+    body: formData,
+  });
+}
+
+/**
+ * List all files in media manager
+ */
+export async function listMedia(): Promise<{
+  success: boolean;
+  files: MediaFile[];
+  total: number;
+}> {
+  return adminApiCall('/admin/media', {
+    method: 'GET',
+  });
+}
+
+/**
+ * Get single file details
+ */
+export async function getMediaFile(filename: string): Promise<{
+  success: boolean;
+  file: MediaFile;
+}> {
+  return adminApiCall(`/admin/media/${encodeURIComponent(filename)}`, {
+    method: 'GET',
+  });
+}
+
+/**
+ * Delete a file from media manager
+ */
+export async function deleteMediaFile(filename: string): Promise<{
+  success: boolean;
+  message: string;
+}> {
+  return adminApiCall(`/admin/media/${encodeURIComponent(filename)}`, {
+    method: 'DELETE',
+  });
+}
+

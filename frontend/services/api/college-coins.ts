@@ -4,6 +4,20 @@
  */
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_BASE = API_BASE_URL.replace('/api', '');
+
+/**
+ * Resolve upload URLs - prepends API base for /api/uploads/ paths
+ */
+export function resolveUploadUrl(url: string | null | undefined): string {
+  if (!url) return '';
+  // If it's already an absolute URL, return as-is
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  // If it's an API upload path, prepend API base
+  if (url.startsWith('/api/uploads/')) return `${API_BASE}${url}`;
+  // For other paths, return as-is
+  return url;
+}
 
 export interface DemoCollegeCoin {
   id: string;

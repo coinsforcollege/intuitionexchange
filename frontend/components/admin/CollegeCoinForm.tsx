@@ -20,6 +20,7 @@ import { UploadOutlined, SaveOutlined, ArrowLeftOutlined } from '@ant-design/ico
 import { useRouter } from 'next/router';
 import dayjs from 'dayjs';
 import { DemoCollegeCoin, ReferenceToken } from '../../services/api/admin';
+import { resolveUploadUrl } from '../../services/api/college-coins';
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -43,7 +44,7 @@ export const CollegeCoinForm: React.FC<CollegeCoinFormProps> = ({
   const [form] = Form.useForm();
   const [iconFile, setIconFile] = useState<File | null>(null);
   const [iconPreview, setIconPreview] = useState<string | null>(
-    initialData?.iconUrl || null
+    initialData?.iconUrl ? resolveUploadUrl(initialData.iconUrl) : null
   );
 
   useEffect(() => {
@@ -53,6 +54,10 @@ export const CollegeCoinForm: React.FC<CollegeCoinFormProps> = ({
         genesisDate: initialData.genesisDate ? dayjs(initialData.genesisDate) : null,
         categories: initialData.categories?.join(', ') || '',
       });
+      // Update icon preview with resolved URL
+      if (initialData.iconUrl) {
+        setIconPreview(resolveUploadUrl(initialData.iconUrl));
+      }
     }
   }, [initialData, form]);
 

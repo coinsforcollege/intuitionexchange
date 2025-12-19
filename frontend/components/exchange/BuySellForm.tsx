@@ -177,7 +177,6 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
     refreshOrders,
     appMode,
     executeTrade,
-    setSelectedPair,
   } = useExchange();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -385,11 +384,9 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
           completedAt: new Date().toISOString(),
         });
       } else {
-        // Set selected pair in context for executeTrade to use
-        setSelectedPair(productId);
-        
         // Use executeTrade from context - handles both learner and investor mode
-        const result = await executeTrade(side, amountNum, cashAmountNum);
+        // Pass productId directly to avoid race condition with async state updates
+        const result = await executeTrade(side, amountNum, cashAmountNum, productId);
         
         if (result.success && result.order) {
           // Update with actual order data

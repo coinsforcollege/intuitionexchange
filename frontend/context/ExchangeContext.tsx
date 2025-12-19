@@ -24,6 +24,20 @@ import { useAuth } from '@/context/AuthContext';
 // This is used for quote calculations. Actual fees are returned in order responses.
 const COINBASE_FEE_RATE = 0.005; // 0.5%
 
+// API base URL for resolving upload paths
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:8000';
+
+// Helper to resolve upload URLs (prepend API base for /api/ paths)
+const resolveUploadUrl = (url: string | null | undefined): string => {
+  if (!url) return '';
+  // If it's already an absolute URL, return as-is
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  // If it's an API upload path, prepend API base
+  if (url.startsWith('/api/uploads/')) return `${API_BASE}${url}`;
+  // For other paths (like external URLs or legacy paths), return as-is
+  return url;
+};
+
 // WebSocket URL - use environment variable or default to localhost
 // Only connect if explicitly configured or in development
 const WS_URL = typeof window !== 'undefined' 
@@ -99,7 +113,7 @@ interface ExchangeContextType {
   isLoadingOrderBook: boolean;
   
   // Trading
-  executeTrade: (side: 'BUY' | 'SELL', amount: number, total: number) => Promise<{ success: boolean; order?: InternalOrder; isSimulatedFailure?: boolean }>;
+  executeTrade: (side: 'BUY' | 'SELL', amount: number, total: number, pairOverride?: string) => Promise<{ success: boolean; order?: InternalOrder; isSimulatedFailure?: boolean }>;
   isTrading: boolean;
   
   // Refresh functions
@@ -378,7 +392,7 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           quote: 'USD',
           baseCurrency: coin.ticker,
           quoteCurrency: 'USD',
-          iconUrl: coin.iconUrl || `https://ui-avatars.com/api/?name=${coin.ticker}&size=64&background=667eea&color=ffffff&bold=true`,
+          iconUrl: resolveUploadUrl(coin.iconUrl) || `https://ui-avatars.com/api/?name=${coin.ticker}&size=64&background=667eea&color=ffffff&bold=true`,
           isCollegeCoin: true,
           peggedToAsset: coin.peggedToAsset,
           peggedPercentage: coin.peggedPercentage,
@@ -788,17 +802,25 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Execute trade
   // In learner mode: simulates trade with virtual balances
   // In investor mode: executes real trade on Coinbase
+  // pairOverride: optional pair to use instead of selectedPair (for BuySell form)
   const executeTrade = useCallback(async (
     side: 'BUY' | 'SELL',
     amount: number,
     total: number,
+    pairOverride?: string,
   ): Promise<{ success: boolean; order?: InternalOrder; isSimulatedFailure?: boolean }> => {
-    if (!currentPairData) return { success: false };
+    // Use pairOverride if provided, otherwise fall back to selectedPair
+    const tradingPair = pairOverride || selectedPair;
+    const tradingPairData = pairOverride 
+      ? pairsRef.current.find(p => p.symbol === pairOverride) 
+      : currentPairData;
+    
+    if (!tradingPairData) return { success: false };
     
     try {
       setIsTrading(true);
       
-      const [baseAsset, quoteAsset] = selectedPair.split('-');
+      const [baseAsset, quoteAsset] = tradingPair.split('-');
       const currentPairs = pairsRef.current;
       
       // ============ LEARNER MODE ============
@@ -808,11 +830,11 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         await new Promise(resolve => setTimeout(resolve, delay));
         
         // Use current real price for the simulation
-        const currentPrice = currentPairData.price;
+        const currentPrice = tradingPairData.price;
         
         // Execute learner trade
         const result = await placeLearnerTrade(
-          selectedPair,
+          tradingPair,
           side,
           side === 'BUY' ? total : amount,
           currentPrice,
@@ -1024,7 +1046,7 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const orderAmount = side === 'BUY' ? total : amount;
         
         const result = await placeOrder(
-          selectedPair,
+          tradingPair,
           side,
           orderAmount,
         );

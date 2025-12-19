@@ -3,3 +3,13 @@ node_modules
 .env
 
 /generated/prisma
+
+# Uploads folder - contents ignored but structure preserved
+/uploads/*
+!/uploads/.gitkeep
+!/uploads/college-coins/
+!/uploads/media/
+/uploads/college-coins/*
+!/uploads/college-coins/.gitkeep
+/uploads/media/*
+!/uploads/media/.gitkeep

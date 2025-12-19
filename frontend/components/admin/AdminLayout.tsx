@@ -5,6 +5,7 @@ import {
   ThunderboltOutlined,
   LogoutOutlined,
   HomeOutlined,
+  FolderOutlined,
 } from '@ant-design/icons';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
@@ -64,6 +65,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       key: 'college-coins',
       icon: <ThunderboltOutlined />,
       label: <Link href="/admin/college-coins">Demo College Coins</Link>,
+    },
+    {
+      key: 'media',
+      icon: <FolderOutlined />,
+      label: <Link href="/admin/media">Media Manager</Link>,
     },
   ];
 
@@ -150,6 +156,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           <Title level={4} style={{ margin: 0, color: token.colorText }}>
             {selectedKey === 'users' && 'User Management'}
             {selectedKey === 'college-coins' && 'Demo College Coins (Learner Mode)'}
+            {selectedKey === 'media' && 'Media Manager'}
           </Title>
         </Header>
 
