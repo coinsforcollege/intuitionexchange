@@ -17,6 +17,7 @@ import {
 } from '@ant-design/icons';
 import { motion } from 'motion/react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
+import WelcomeModal from '@/components/dashboard/WelcomeModal';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
 import { useExchange } from '@/context/ExchangeContext';
@@ -294,6 +295,7 @@ const DashboardPage: NextPageWithLayout = () => {
   const [pageLoading, setPageLoading] = useState(true);
   const [watchlistAssets, setWatchlistAssets] = useState<string[]>([]);
   const [loadingWatchlist, setLoadingWatchlist] = useState(true);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   const isDark = mode === 'dark';
   const isMobile = mounted ? !screens.md : false;  // < 768px
@@ -341,6 +343,29 @@ const DashboardPage: NextPageWithLayout = () => {
       fetchData();
     }
   }, [pageLoading, user]);
+
+  // Show welcome modal for first-time learner mode users
+  useEffect(() => {
+    if (!pageLoading && user && isLearnerMode && balances.length > 0 && pairs.length > 0) {
+      // Check localStorage for first-time flag
+      const welcomeShownKey = `learnerWelcomeShown_${user.id}`;
+      const hasSeenWelcome = localStorage.getItem(welcomeShownKey);
+      
+      if (!hasSeenWelcome) {
+        // Show welcome modal
+        setShowWelcomeModal(true);
+      }
+    }
+  }, [pageLoading, user, isLearnerMode, balances.length, pairs.length]);
+
+  const handleWelcomeModalClose = useCallback(() => {
+    if (user) {
+      // Mark as seen in localStorage
+      const welcomeShownKey = `learnerWelcomeShown_${user.id}`;
+      localStorage.setItem(welcomeShownKey, 'true');
+    }
+    setShowWelcomeModal(false);
+  }, [user]);
 
   // Calculate total portfolio value - memoized
   const portfolioData = useMemo(() => {
@@ -1145,6 +1170,20 @@ const DashboardPage: NextPageWithLayout = () => {
             )}
           </Section>
         )}
+
+        {/* Welcome Modal for first-time learner mode users */}
+        <WelcomeModal
+          visible={showWelcomeModal}
+          onClose={handleWelcomeModalClose}
+          balances={balances}
+          pairs={pairs.map(p => ({
+            baseCurrency: p.baseCurrency,
+            name: p.name,
+            iconUrl: p.iconUrl,
+            price: p.price,
+            isCollegeCoin: p.isCollegeCoin,
+          }))}
+        />
     </>
   );
 };
