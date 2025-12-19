@@ -104,7 +104,7 @@ const WatchlistRow = memo(({
         padding: isMobile ? `${token.paddingSM}px 0` : `${token.paddingSM}px ${token.paddingMD}px`,
         background: isMobile ? 'transparent' : token.colorBgContainer,
         borderRadius: isMobile ? 0 : token.borderRadius,
-        borderBottom: isMobile ? `1px solid ${token.colorBorderSecondary}` : 'none',
+        borderBottom: isMobile ? `1px solid ${token.colorBorder}` : 'none',
       }}
     >
       <img
@@ -225,7 +225,7 @@ const TokenRow = memo(({
         padding: isMobile ? `${token.paddingSM}px 0` : `${token.paddingSM}px ${token.paddingMD}px`,
         background: isMobile ? 'transparent' : token.colorBgContainer,
         borderRadius: isMobile ? 0 : token.borderRadius,
-        borderBottom: isMobile ? `1px solid ${token.colorBorderSecondary}` : 'none',
+        borderBottom: isMobile ? `1px solid ${token.colorBorder}` : 'none',
         cursor: 'pointer',
         transition: 'background-color 0.2s',
       }}
