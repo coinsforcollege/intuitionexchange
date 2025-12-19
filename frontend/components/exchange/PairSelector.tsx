@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useRouter } from 'next/router';
 import { theme, Input, Drawer } from 'antd';
 import { SearchOutlined, SwapOutlined, CaretUpOutlined, CaretDownOutlined } from '@ant-design/icons';
 import { fontWeights } from '@/theme/themeConfig';
@@ -72,34 +73,52 @@ const PairSelector: React.FC<PairSelectorProps> = ({
   const [drawerOpen, setDrawerOpen] = useState(false);
   // Default to 'Colleges' in learner mode, 'USD' in investor mode
   const isLearnerMode = user?.appMode === 'LEARNER';
+  const router = useRouter();
   const [activeQuote, setActiveQuote] = useState(isLearnerMode ? 'Colleges' : 'USD');
   const [hoveredPair, setHoveredPair] = useState<string | null>(null);
   const selectedItemRef = useRef<HTMLDivElement>(null);
+  
+  // Track if we've done the initial tab switch (to avoid switching when user manually browses)
+  const hasInitializedTabRef = useRef(false);
+  const lastUrlPairRef = useRef<string | null>(null);
 
   // Get available currencies based on app mode
   const availableCurrencies = useMemo(() => {
     return isLearnerMode ? LEARNER_CURRENCIES : INVESTOR_CURRENCIES;
   }, [isLearnerMode]);
 
-  // Auto-switch to the correct tab when selectedPair changes (e.g., from URL)
+  // Auto-switch to the correct tab ONLY when:
+  // 1. Initially mounting with a URL pair parameter
+  // 2. When URL pair parameter changes (navigating from another page)
+  // This prevents the tab from switching when user is manually browsing
   useEffect(() => {
-    const currentPair = pairs.find(p => p.symbol === selectedPair);
-    if (!currentPair) return;
-
-    if (isLearnerMode) {
-      // In learner mode, switch between 'Colleges' and 'Popular'
-      if (currentPair.isCollegeCoin) {
-        setActiveQuote('Colleges');
-      } else {
-        setActiveQuote('Popular');
+    const urlPair = router.query.pair as string | undefined;
+    
+    // Only auto-switch if:
+    // - There's a URL pair parameter AND
+    // - Either we haven't initialized OR the URL pair changed
+    if (urlPair && (!hasInitializedTabRef.current || urlPair !== lastUrlPairRef.current)) {
+      const currentPair = pairs.find(p => p.symbol === urlPair.toUpperCase());
+      if (currentPair) {
+        if (isLearnerMode) {
+          if (currentPair.isCollegeCoin) {
+            setActiveQuote('Colleges');
+          } else {
+            setActiveQuote('Popular');
+          }
+        } else {
+          if (INVESTOR_CURRENCIES.includes(currentPair.quote)) {
+            setActiveQuote(currentPair.quote);
+          }
+        }
+        lastUrlPairRef.current = urlPair;
       }
-    } else {
-      // In investor mode, switch to the pair's quote currency
-      if (INVESTOR_CURRENCIES.includes(currentPair.quote)) {
-        setActiveQuote(currentPair.quote);
-      }
+      hasInitializedTabRef.current = true;
+    } else if (!hasInitializedTabRef.current && pairs.length > 0) {
+      // No URL pair - just mark as initialized without switching
+      hasInitializedTabRef.current = true;
     }
-  }, [selectedPair, pairs, isLearnerMode]);
+  }, [router.query.pair, pairs, isLearnerMode]);
 
   const filteredPairs = useMemo(() => {
     return pairs.filter(pair => {
@@ -125,19 +144,26 @@ const PairSelector: React.FC<PairSelectorProps> = ({
     });
   }, [pairs, activeQuote, search, isLearnerMode]);
 
-  // Scroll to the selected pair when it changes or when the active tab changes
+  // Scroll to the selected pair only when navigating from URL (not on every selection)
+  const hasScrolledRef = useRef(false);
   useEffect(() => {
-    // Small delay to ensure the DOM has updated after tab switch
-    const timer = setTimeout(() => {
-      if (selectedItemRef.current) {
-        selectedItemRef.current.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        });
-      }
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [selectedPair, activeQuote, filteredPairs]);
+    const urlPair = router.query.pair as string | undefined;
+    
+    // Only scroll if there's a URL pair and we haven't scrolled yet
+    if (urlPair && !hasScrolledRef.current && selectedItemRef.current) {
+      // Small delay to ensure the DOM has updated after tab switch
+      const timer = setTimeout(() => {
+        if (selectedItemRef.current) {
+          selectedItemRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+          hasScrolledRef.current = true;
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [router.query.pair, filteredPairs]);
 
   const formatPrice = (price: number, quote: string) => {
     if (quote === 'ETH') return price.toFixed(4);

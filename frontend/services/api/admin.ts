@@ -5,7 +5,10 @@
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
-// Types
+// ============================================
+// TYPES
+// ============================================
+
 export interface AdminUser {
   id: string;
   email: string;
@@ -21,6 +24,114 @@ export interface AdminUser {
   updatedAt: string;
   firstName: string | null;
   lastName: string | null;
+}
+
+export interface AdminUserKyc {
+  id: string;
+  firstName: string | null;
+  middleName: string | null;
+  lastName: string | null;
+  dateOfBirth: string | null;
+  street1: string | null;
+  street2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  country: string | null;
+  currentStep: number;
+  status: string;
+  veriffSessionId: string | null;
+  veriffStatus: string | null;
+  veriffReason: string | null;
+  reviewNotes: string | null;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminUserNotificationPreferences {
+  emailMarketing: boolean;
+  emailSecurityAlerts: boolean;
+  emailTransactions: boolean;
+  emailPriceAlerts: boolean;
+  emailNewsUpdates: boolean;
+  pushEnabled: boolean;
+  pushSecurityAlerts: boolean;
+  pushTransactions: boolean;
+  pushPriceAlerts: boolean;
+  pushNewsUpdates: boolean;
+  smsEnabled: boolean;
+  smsSecurityAlerts: boolean;
+  smsTransactions: boolean;
+}
+
+export interface AdminUserBankAccount {
+  id: string;
+  accountName: string;
+  accountType: string;
+  accountNumber: string;
+  isVerified: boolean;
+  createdAt: string;
+}
+
+export interface FullAdminUser extends AdminUser {
+  kyc: AdminUserKyc | null;
+  notificationPreferences: AdminUserNotificationPreferences | null;
+  bankAccounts: AdminUserBankAccount[];
+  _count: {
+    trades: number;
+    fiatTransactions: number;
+    cryptoTransactions: number;
+    learnerTrades: number;
+  };
+}
+
+export interface BalanceItem {
+  asset: string;
+  balance: number;
+  availableBalance: number;
+  lockedBalance: number;
+}
+
+export interface UserBalances {
+  live: BalanceItem[];
+  learner: {
+    fiat: BalanceItem | null;
+    crypto: BalanceItem[];
+  };
+}
+
+export interface TransactionItem {
+  id: string;
+  transactionId: string | null;
+  type: string;
+  method: string;
+  amount: number;
+  status: string;
+  reference: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TradeItem {
+  id: string;
+  transactionId: string | null;
+  productId: string;
+  asset: string;
+  quote: string;
+  side: string;
+  requestedAmount: number;
+  filledAmount: number;
+  price: number;
+  totalValue: number;
+  platformFee: number;
+  exchangeFee: number;
+  status: string;
+  coinbaseOrderId: string | null;
+  createdAt: string;
+  completedAt: string | null;
+  isSimulated?: boolean;
 }
 
 export interface DemoCollegeCoin {
@@ -48,6 +159,22 @@ export interface ReferenceToken {
   symbol: string;
   name: string;
 }
+
+export interface MediaFile {
+  filename: string;
+  type: 'image' | 'video' | 'audio' | 'document' | 'file';
+  size: number;
+  url: string;
+  createdAt: string;
+  modifiedAt?: string;
+  originalName?: string;
+  mimetype?: string;
+  uploadedAt?: string;
+}
+
+// ============================================
+// API HELPER
+// ============================================
 
 async function adminApiCall<T>(
   endpoint: string,
@@ -98,6 +225,7 @@ export async function getUsers(options?: {
   limit?: number;
   search?: string;
   role?: string;
+  kycStatus?: string;
 }): Promise<{
   success: boolean;
   users: AdminUser[];
@@ -110,6 +238,7 @@ export async function getUsers(options?: {
   if (options?.limit) params.append('limit', options.limit.toString());
   if (options?.search) params.append('search', options.search);
   if (options?.role) params.append('role', options.role);
+  if (options?.kycStatus) params.append('kycStatus', options.kycStatus);
 
   const queryString = params.toString();
   return adminApiCall(`/admin/users${queryString ? `?${queryString}` : ''}`, {
@@ -118,11 +247,11 @@ export async function getUsers(options?: {
 }
 
 /**
- * Get single user details
+ * Get single user full details
  */
 export async function getUser(id: string): Promise<{
   success: boolean;
-  user: AdminUser;
+  user: FullAdminUser;
 }> {
   return adminApiCall(`/admin/users/${id}`, {
     method: 'GET',
@@ -143,6 +272,210 @@ export async function updateUserRole(
   return adminApiCall(`/admin/users/${id}/role`, {
     method: 'PATCH',
     body: JSON.stringify({ role }),
+  });
+}
+
+/**
+ * Update user fields
+ */
+export async function updateUser(
+  id: string,
+  data: {
+    emailVerified?: boolean;
+    phoneVerified?: boolean;
+    appMode?: 'LEARNER' | 'INVESTOR';
+    role?: 'USER' | 'ADMIN';
+  },
+): Promise<{
+  success: boolean;
+  user: AdminUser;
+  message: string;
+}> {
+  return adminApiCall(`/admin/users/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Delete user
+ */
+export async function deleteUser(id: string): Promise<{
+  success: boolean;
+  message: string;
+}> {
+  return adminApiCall(`/admin/users/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+// ============================================
+// USER BALANCES
+// ============================================
+
+/**
+ * Get user balances (live + learner)
+ */
+export async function getUserBalances(userId: string): Promise<{
+  success: boolean;
+  balances: UserBalances;
+}> {
+  return adminApiCall(`/admin/users/${userId}/balances`, {
+    method: 'GET',
+  });
+}
+
+/**
+ * Adjust user balance
+ */
+export async function adjustUserBalance(
+  userId: string,
+  data: {
+    asset: string;
+    amount: number;
+    reason: string;
+    mode: 'live' | 'learner';
+  },
+): Promise<{
+  success: boolean;
+  newBalance: BalanceItem;
+  message: string;
+}> {
+  return adminApiCall(`/admin/users/${userId}/balance-adjustment`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// ============================================
+// USER TRANSACTIONS
+// ============================================
+
+/**
+ * Get user transactions
+ */
+export async function getUserTransactions(
+  userId: string,
+  options?: {
+    page?: number;
+    limit?: number;
+    type?: 'DEPOSIT' | 'WITHDRAWAL';
+    status?: string;
+  },
+): Promise<{
+  success: boolean;
+  transactions: TransactionItem[];
+  total: number;
+  page: number;
+  limit: number;
+}> {
+  const params = new URLSearchParams();
+  if (options?.page) params.append('page', options.page.toString());
+  if (options?.limit) params.append('limit', options.limit.toString());
+  if (options?.type) params.append('type', options.type);
+  if (options?.status) params.append('status', options.status);
+
+  const queryString = params.toString();
+  return adminApiCall(`/admin/users/${userId}/transactions${queryString ? `?${queryString}` : ''}`, {
+    method: 'GET',
+  });
+}
+
+/**
+ * Update transaction status
+ */
+export async function updateTransactionStatus(
+  userId: string,
+  transactionId: string,
+  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED',
+): Promise<{
+  success: boolean;
+  transaction: TransactionItem;
+  message: string;
+}> {
+  return adminApiCall(`/admin/users/${userId}/transactions/${transactionId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+}
+
+// ============================================
+// USER TRADES
+// ============================================
+
+/**
+ * Get user trades
+ */
+export async function getUserTrades(
+  userId: string,
+  options?: {
+    page?: number;
+    limit?: number;
+    mode?: 'live' | 'learner' | 'all';
+    status?: string;
+  },
+): Promise<{
+  success: boolean;
+  trades: TradeItem[];
+  total: number;
+  page: number;
+  limit: number;
+}> {
+  const params = new URLSearchParams();
+  if (options?.page) params.append('page', options.page.toString());
+  if (options?.limit) params.append('limit', options.limit.toString());
+  if (options?.mode) params.append('mode', options.mode);
+  if (options?.status) params.append('status', options.status);
+
+  const queryString = params.toString();
+  return adminApiCall(`/admin/users/${userId}/trades${queryString ? `?${queryString}` : ''}`, {
+    method: 'GET',
+  });
+}
+
+// ============================================
+// KYC MANAGEMENT
+// ============================================
+
+/**
+ * Update KYC status
+ */
+export async function updateKycStatus(
+  userId: string,
+  data: {
+    status: 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'REJECTED';
+    reviewNotes?: string;
+  },
+): Promise<{
+  success: boolean;
+  kyc: {
+    id: string;
+    status: string;
+    reviewNotes: string | null;
+    reviewedAt: string | null;
+    reviewedBy: string | null;
+  };
+  message: string;
+}> {
+  return adminApiCall(`/admin/users/${userId}/kyc`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+// ============================================
+// LEARNER ACCOUNT
+// ============================================
+
+/**
+ * Reset learner account
+ */
+export async function resetLearnerAccount(userId: string): Promise<{
+  success: boolean;
+  message: string;
+}> {
+  return adminApiCall(`/admin/users/${userId}/learner/reset`, {
+    method: 'POST',
   });
 }
 
@@ -315,18 +648,6 @@ export async function importCollegeCoins(file: File): Promise<{
 // MEDIA MANAGER
 // ============================================
 
-export interface MediaFile {
-  filename: string;
-  type: 'image' | 'video' | 'audio' | 'document' | 'file';
-  size: number;
-  url: string;
-  createdAt: string;
-  modifiedAt?: string;
-  originalName?: string;
-  mimetype?: string;
-  uploadedAt?: string;
-}
-
 /**
  * Upload multiple files to media manager
  */
@@ -382,4 +703,3 @@ export async function deleteMediaFile(filename: string): Promise<{
     method: 'DELETE',
   });
 }
-

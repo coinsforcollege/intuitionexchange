@@ -9,7 +9,6 @@ import {
   Upload,
   Button,
   Space,
-  Card,
   Typography,
   Row,
   Col,
@@ -54,7 +53,6 @@ export const CollegeCoinForm: React.FC<CollegeCoinFormProps> = ({
         genesisDate: initialData.genesisDate ? dayjs(initialData.genesisDate) : null,
         categories: initialData.categories?.join(', ') || '',
       });
-      // Update icon preview with resolved URL
       if (initialData.iconUrl) {
         setIconPreview(resolveUploadUrl(initialData.iconUrl));
       }
@@ -65,33 +63,24 @@ export const CollegeCoinForm: React.FC<CollegeCoinFormProps> = ({
     const file = info.file.originFileObj || info.file;
     if (file) {
       setIconFile(file);
-      // Create preview URL
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setIconPreview(e.target?.result as string);
-      };
+      reader.onload = (e) => setIconPreview(e.target?.result as string);
       reader.readAsDataURL(file);
     }
-    return false; // Prevent auto upload
+    return false;
   };
 
   const handleSubmit = async (values: any) => {
-    // Parse categories from comma-separated string
     const categories = values.categories
-      ? values.categories
-          .split(',')
-          .map((c: string) => c.trim())
-          .filter((c: string) => c)
+      ? values.categories.split(',').map((c: string) => c.trim()).filter((c: string) => c)
       : [];
 
-    const data = {
+    await onSubmit({
       ...values,
       categories,
       genesisDate: values.genesisDate?.toISOString() || null,
       icon: iconFile || undefined,
-    };
-
-    await onSubmit(data);
+    });
   };
 
   return (
@@ -99,176 +88,112 @@ export const CollegeCoinForm: React.FC<CollegeCoinFormProps> = ({
       form={form}
       layout="vertical"
       onFinish={handleSubmit}
-      initialValues={{
-        isActive: true,
-        peggedPercentage: 10,
-      }}
+      initialValues={{ isActive: true, peggedPercentage: 10 }}
     >
-      <Row gutter={24}>
-        {/* Left Column - Core Details */}
+      <Row gutter={48}>
         <Col xs={24} lg={12}>
-          <Card title="Token Details" size="small">
-            <Form.Item
-              name="ticker"
-              label="Ticker Symbol"
-              rules={[
-                { required: true, message: 'Ticker is required' },
-                { max: 10, message: 'Max 10 characters' },
-                {
-                  pattern: /^[A-Z0-9]+$/i,
-                  message: 'Only letters and numbers allowed',
-                },
-              ]}
-            >
-              <Input
-                placeholder="MIT"
-                style={{ textTransform: 'uppercase' }}
-                disabled={isEdit}
-              />
-            </Form.Item>
+          <Divider orientation="left">Token Details</Divider>
+          
+          <Form.Item
+            name="ticker"
+            label="Ticker Symbol"
+            rules={[
+              { required: true, message: 'Required' },
+              { max: 10, message: 'Max 10 chars' },
+              { pattern: /^[A-Z0-9]+$/i, message: 'Letters/numbers only' },
+            ]}
+          >
+            <Input placeholder="MIT" style={{ textTransform: 'uppercase' }} disabled={isEdit} />
+          </Form.Item>
 
-            <Form.Item
-              name="name"
-              label="Token Name"
-              rules={[{ required: true, message: 'Name is required' }]}
-            >
-              <Input placeholder="MIT Coin" />
-            </Form.Item>
+          <Form.Item name="name" label="Token Name" rules={[{ required: true, message: 'Required' }]}>
+            <Input placeholder="MIT Coin" />
+          </Form.Item>
 
-            <Form.Item label="Icon">
-              <Space direction="vertical" size={8} style={{ width: '100%' }}>
-                {iconPreview && (
-                  <Image
-                    src={iconPreview}
-                    alt="Icon preview"
-                    width={64}
-                    height={64}
-                    style={{ borderRadius: 8, objectFit: 'cover' }}
-                  />
-                )}
-                <Upload
-                  accept="image/*"
-                  showUploadList={false}
-                  beforeUpload={() => false}
-                  onChange={handleIconChange}
-                >
-                  <Button icon={<UploadOutlined />}>
-                    {iconPreview ? 'Change Icon' : 'Upload Icon'}
-                  </Button>
-                </Upload>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  PNG, JPG, SVG. Max 2MB.
-                </Text>
-              </Space>
-            </Form.Item>
+          <Form.Item label="Icon">
+            <Space>
+              {iconPreview && (
+                <Image src={iconPreview} alt="Icon" width={48} height={48} style={{ borderRadius: 6, objectFit: 'cover' }} />
+              )}
+              <Upload accept="image/*" showUploadList={false} beforeUpload={() => false} onChange={handleIconChange}>
+                <Button icon={<UploadOutlined />}>{iconPreview ? 'Change' : 'Upload'}</Button>
+              </Upload>
+            </Space>
+          </Form.Item>
 
-            <Form.Item
-              name="isActive"
-              label="Active"
-              valuePropName="checked"
-            >
-              <Switch />
-            </Form.Item>
-          </Card>
+          <Form.Item name="isActive" label="Active" valuePropName="checked">
+            <Switch />
+          </Form.Item>
 
-          <Card title="Price Pegging" size="small" style={{ marginTop: 16 }}>
-            <Form.Item
-              name="peggedToAsset"
-              label="Reference Token"
-              rules={[{ required: true, message: 'Reference token is required' }]}
-            >
-              <Select
-                placeholder="Select reference token"
-                showSearch
-                optionFilterProp="label"
-                options={referenceTokens.map((t) => ({
-                  value: t.symbol,
-                  label: `${t.symbol} - ${t.name}`,
-                }))}
-              />
-            </Form.Item>
+          <Divider orientation="left">Price Pegging</Divider>
 
-            <Form.Item
-              name="peggedPercentage"
-              label="Price Percentage"
-              rules={[
-                { required: true, message: 'Percentage is required' },
-              ]}
-              extra="Token price = Reference token price × (percentage / 100)"
-            >
-              <InputNumber
-                min={0.0001}
-                max={1000}
-                step={0.1}
-                precision={4}
-                style={{ width: '100%' }}
-                addonAfter="%"
-              />
-            </Form.Item>
-          </Card>
+          <Form.Item name="peggedToAsset" label="Reference Token" rules={[{ required: true, message: 'Required' }]}>
+            <Select
+              placeholder="Select token"
+              showSearch
+              optionFilterProp="label"
+              options={referenceTokens.map((t) => ({ value: t.symbol, label: `${t.symbol} - ${t.name}` }))}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="peggedPercentage"
+            label="Price Percentage"
+            rules={[{ required: true, message: 'Required' }]}
+            extra="Token price = Reference × (percentage / 100)"
+          >
+            <InputNumber min={0.0001} max={1000} step={0.1} precision={4} style={{ width: '100%' }} addonAfter="%" />
+          </Form.Item>
         </Col>
 
-        {/* Right Column - Additional Info */}
         <Col xs={24} lg={12}>
-          <Card title="Marketing Info (Optional)" size="small">
-            <Form.Item name="description" label="Description">
-              <TextArea
-                rows={4}
-                placeholder="Enter token description..."
-                maxLength={2000}
-                showCount
-              />
-            </Form.Item>
+          <Divider orientation="left">Marketing (Optional)</Divider>
 
-            <Form.Item
-              name="categories"
-              label="Categories"
-              extra="Comma-separated (e.g., Education, College, DeFi)"
-            >
-              <Input placeholder="Education, College, DeFi" />
-            </Form.Item>
+          <Form.Item name="description" label="Description">
+            <TextArea rows={3} placeholder="Token description..." maxLength={2000} showCount />
+          </Form.Item>
 
-            <Form.Item name="genesisDate" label="Genesis Date">
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
-          </Card>
+          <Form.Item name="categories" label="Categories" extra="Comma-separated">
+            <Input placeholder="Education, College, DeFi" />
+          </Form.Item>
 
-          <Card title="Links (Optional)" size="small" style={{ marginTop: 16 }}>
-            <Form.Item name="website" label="Website">
-              <Input placeholder="https://example.edu" />
-            </Form.Item>
+          <Form.Item name="genesisDate" label="Genesis Date">
+            <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
 
-            <Form.Item name="whitepaper" label="Whitepaper URL">
-              <Input placeholder="https://example.edu/whitepaper.pdf" />
-            </Form.Item>
+          <Divider orientation="left">Links (Optional)</Divider>
 
-            <Form.Item name="twitter" label="Twitter">
-              <Input placeholder="https://twitter.com/example" />
-            </Form.Item>
+          <Form.Item name="website" label="Website">
+            <Input placeholder="https://example.edu" />
+          </Form.Item>
 
-            <Form.Item name="discord" label="Discord">
-              <Input placeholder="https://discord.gg/example" />
-            </Form.Item>
-          </Card>
+          <Form.Item name="whitepaper" label="Whitepaper">
+            <Input placeholder="https://example.edu/whitepaper.pdf" />
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="twitter" label="Twitter">
+                <Input placeholder="@handle" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="discord" label="Discord">
+                <Input placeholder="discord.gg/..." />
+              </Form.Item>
+            </Col>
+          </Row>
         </Col>
       </Row>
 
       <Divider />
 
       <Space>
-        <Button onClick={() => router.back()} icon={<ArrowLeftOutlined />}>
-          Cancel
-        </Button>
-        <Button
-          type="primary"
-          htmlType="submit"
-          loading={loading}
-          icon={<SaveOutlined />}
-        >
+        <Button onClick={() => router.back()} icon={<ArrowLeftOutlined />}>Cancel</Button>
+        <Button type="primary" htmlType="submit" loading={loading} icon={<SaveOutlined />}>
           {isEdit ? 'Save Changes' : 'Create Token'}
         </Button>
       </Space>
     </Form>
   );
 };
-

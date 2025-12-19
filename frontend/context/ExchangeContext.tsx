@@ -1078,18 +1078,29 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     refreshProducts();
   }, [refreshProducts]);
 
+  // Track if we've done the initial auto-select (to avoid overriding URL navigation)
+  const hasAutoSelectedRef = useRef(false);
+  
   // Auto-select first college coin in learner mode when pairs load
+  // Only runs ONCE on initial load, and only if there's no URL pair parameter
   useEffect(() => {
-    if (!isLoadingPairs && pairs.length > 0 && appMode === 'learner') {
-      // Only auto-select if current pair is the default BTC-USD
-      if (selectedPair === 'BTC-USD') {
+    if (!isLoadingPairs && pairs.length > 0 && appMode === 'learner' && !hasAutoSelectedRef.current) {
+      // Check if there's a URL pair parameter - don't override if user navigated with a specific pair
+      const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const urlPair = urlParams?.get('pair');
+      
+      // Only auto-select if:
+      // 1. Current pair is the default BTC-USD AND
+      // 2. There's no URL pair parameter
+      if (selectedPair === 'BTC-USD' && !urlPair) {
         const firstCollegeCoin = pairs.find(p => p.isCollegeCoin);
         if (firstCollegeCoin) {
           setSelectedPair(firstCollegeCoin.symbol);
         }
       }
+      hasAutoSelectedRef.current = true;
     }
-  }, [isLoadingPairs, pairs, appMode]);
+  }, [isLoadingPairs, pairs, appMode, selectedPair]);
 
   // Fetch balances and orders when logged in or when app mode changes
   // Clear on logout

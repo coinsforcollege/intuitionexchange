@@ -19,11 +19,15 @@ const { useToken } = theme;
 interface AdminLayoutProps {
   children: React.ReactNode;
   selectedKey?: string;
+  title?: string;
+  hideHeader?: boolean;
 }
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({
   children,
   selectedKey = 'users',
+  title,
+  hideHeader = false,
 }) => {
   const router = useRouter();
   const { user, isLoading, logout } = useAuth();
@@ -146,19 +150,25 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       </Sider>
 
       <Layout style={{ marginLeft: 240, background: isDark ? token.colorBgLayout : '#f5f5f5' }}>
-        <Header style={{ 
-          padding: '0 24px', 
-          background: token.colorBgContainer,
-          borderBottom: `1px solid ${token.colorBorderSecondary}`,
-          display: 'flex',
-          alignItems: 'center',
-        }}>
-          <Title level={4} style={{ margin: 0, color: token.colorText }}>
-            {selectedKey === 'users' && 'User Management'}
-            {selectedKey === 'college-coins' && 'Demo College Coins (Learner Mode)'}
-            {selectedKey === 'media' && 'Media Manager'}
-          </Title>
-        </Header>
+        {!hideHeader && (
+          <Header style={{ 
+            padding: '0 24px', 
+            background: token.colorBgContainer,
+            borderBottom: `1px solid ${token.colorBorderSecondary}`,
+            display: 'flex',
+            alignItems: 'center',
+          }}>
+            <Title level={4} style={{ margin: 0, color: token.colorText }}>
+              {title || (
+                <>
+                  {selectedKey === 'users' && 'User Management'}
+                  {selectedKey === 'college-coins' && 'Demo College Coins (Learner Mode)'}
+                  {selectedKey === 'media' && 'Media Manager'}
+                </>
+              )}
+            </Title>
+          </Header>
+        )}
 
         <Content style={{ 
           margin: '24px', 

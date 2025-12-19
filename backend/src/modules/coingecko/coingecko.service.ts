@@ -1,9 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 /**
  * CoinGecko API Service
  * Provides rich token metadata including descriptions, market data, and links
- * Free tier: 10-50 calls/minute, no API key required for basic endpoints
+ * Uses Demo API key for higher rate limits
  */
 
 const COINGECKO_API_URL = 'https://api.coingecko.com/api/v3';
@@ -215,11 +216,34 @@ interface CacheEntry<T> {
 @Injectable()
 export class CoinGeckoService {
   private readonly logger = new Logger(CoinGeckoService.name);
+  private readonly apiKey: string | undefined;
   
   // In-memory cache
   private tokenCache = new Map<string, CacheEntry<TokenMarketData>>();
   private marketsCache: CacheEntry<MarketListItem[]> | null = null;
   private coinListCache: CacheEntry<Array<{ id: string; symbol: string; name: string }>> | null = null;
+
+  constructor(private configService: ConfigService) {
+    this.apiKey = this.configService.get<string>('COINGECKO_API_KEY');
+    if (this.apiKey) {
+      this.logger.log('✅ CoinGecko API key configured');
+    } else {
+      this.logger.warn('⚠️ CoinGecko API key not configured - using free tier');
+    }
+  }
+
+  /**
+   * Get headers for CoinGecko API requests
+   */
+  private getHeaders(): HeadersInit {
+    const headers: HeadersInit = {
+      'Accept': 'application/json',
+    };
+    if (this.apiKey) {
+      headers['x-cg-demo-api-key'] = this.apiKey;
+    }
+    return headers;
+  }
 
   /**
    * Convert symbol to CoinGecko ID
@@ -259,7 +283,9 @@ export class CoinGeckoService {
     }
 
     try {
-      const response = await fetch(`${COINGECKO_API_URL}/coins/list`);
+      const response = await fetch(`${COINGECKO_API_URL}/coins/list`, {
+        headers: this.getHeaders(),
+      });
       if (!response.ok) {
         throw new Error(`CoinGecko API error: ${response.status}`);
       }
@@ -291,6 +317,7 @@ export class CoinGeckoService {
     try {
       const response = await fetch(
         `${COINGECKO_API_URL}/coins/${id}?localization=false&tickers=false&market_data=true&community_data=true&developer_data=true&sparkline=false`,
+        { headers: this.getHeaders() },
       );
 
       if (!response.ok) {
@@ -425,7 +452,9 @@ export class CoinGeckoService {
       url.searchParams.set('sparkline', sparkline.toString());
       url.searchParams.set('price_change_percentage', '7d');
 
-      const response = await fetch(url.toString());
+      const response = await fetch(url.toString(), {
+        headers: this.getHeaders(),
+      });
 
       if (!response.ok) {
         if (response.status === 429) {
@@ -473,7 +502,9 @@ export class CoinGeckoService {
       url.searchParams.set('vs_currencies', 'usd');
       url.searchParams.set('include_24hr_change', 'true');
 
-      const response = await fetch(url.toString());
+      const response = await fetch(url.toString(), {
+        headers: this.getHeaders(),
+      });
 
       if (!response.ok) {
         throw new Error(`CoinGecko API error: ${response.status}`);
@@ -514,7 +545,9 @@ export class CoinGeckoService {
     }>
   > {
     try {
-      const response = await fetch(`${COINGECKO_API_URL}/search/trending`);
+      const response = await fetch(`${COINGECKO_API_URL}/search/trending`, {
+        headers: this.getHeaders(),
+      });
 
       if (!response.ok) {
         throw new Error(`CoinGecko API error: ${response.status}`);
@@ -547,7 +580,9 @@ export class CoinGeckoService {
     market_cap_change_percentage_24h_usd: number;
   } | null> {
     try {
-      const response = await fetch(`${COINGECKO_API_URL}/global`);
+      const response = await fetch(`${COINGECKO_API_URL}/global`, {
+        headers: this.getHeaders(),
+      });
 
       if (!response.ok) {
         throw new Error(`CoinGecko API error: ${response.status}`);

@@ -9,9 +9,9 @@ import {
   message,
   Modal,
   Typography,
-  Card,
 } from 'antd';
-import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { ReloadOutlined, EyeOutlined } from '@ant-design/icons';
+import Link from 'next/link';
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { getUsers, updateUserRole, AdminUser } from '../../services/api/admin';
 
@@ -26,11 +26,12 @@ export default function AdminUsersPage() {
   const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string | undefined>();
+  const [kycFilter, setKycFilter] = useState<string | undefined>();
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await getUsers({ page, limit, search, role: roleFilter });
+      const response = await getUsers({ page, limit, search, role: roleFilter, kycStatus: kycFilter });
       setUsers(response.users);
       setTotal(response.total);
     } catch (error: any) {
@@ -38,7 +39,7 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, search, roleFilter]);
+  }, [page, limit, search, roleFilter, kycFilter]);
 
   useEffect(() => {
     fetchUsers();
@@ -89,10 +90,12 @@ export default function AdminUsersPage() {
       title: 'Role',
       dataIndex: 'role',
       key: 'role',
+      width: 110,
       render: (role: string, record: AdminUser) => (
         <Select
           value={role}
-          style={{ width: 100 }}
+          size="small"
+          style={{ width: 90 }}
           onChange={(value) => handleRoleChange(record.id, value as 'USER' | 'ADMIN')}
           options={[
             { value: 'USER', label: 'User' },
@@ -102,25 +105,25 @@ export default function AdminUsersPage() {
       ),
     },
     {
-      title: 'App Mode',
+      title: 'Mode',
       dataIndex: 'appMode',
       key: 'appMode',
+      width: 90,
       render: (mode: string) => (
-        <Tag color={mode === 'LEARNER' ? 'blue' : 'green'}>
-          {mode}
-        </Tag>
+        <Tag color={mode === 'LEARNER' ? 'blue' : 'green'}>{mode}</Tag>
       ),
     },
     {
-      title: 'KYC Status',
+      title: 'KYC',
       dataIndex: 'kycStatus',
       key: 'kycStatus',
+      width: 100,
       render: (status: string) => {
         const colors: Record<string, string> = {
           PENDING: 'orange',
+          SUBMITTED: 'blue',
           APPROVED: 'green',
           REJECTED: 'red',
-          NOT_STARTED: 'default',
         };
         return <Tag color={colors[status] || 'default'}>{status}</Tag>;
       },
@@ -128,13 +131,12 @@ export default function AdminUsersPage() {
     {
       title: 'Verified',
       key: 'verified',
+      width: 120,
       render: (_: any, record: AdminUser) => (
-        <Space>
+        <Space size={4}>
           {record.emailVerified && <Tag color="green">Email</Tag>}
           {record.phoneVerified && <Tag color="green">Phone</Tag>}
-          {!record.emailVerified && !record.phoneVerified && (
-            <Tag color="default">None</Tag>
-          )}
+          {!record.emailVerified && !record.phoneVerified && <Tag>None</Tag>}
         </Space>
       ),
     },
@@ -142,60 +144,74 @@ export default function AdminUsersPage() {
       title: 'Joined',
       dataIndex: 'createdAt',
       key: 'createdAt',
+      width: 100,
       render: (date: string) => new Date(date).toLocaleDateString(),
+    },
+    {
+      title: '',
+      key: 'actions',
+      fixed: 'right' as const,
+      width: 80,
+      render: (_: any, record: AdminUser) => (
+        <Link href={`/admin/users/${record.id}`}>
+          <Button type="link" size="small" icon={<EyeOutlined />}>View</Button>
+        </Link>
+      ),
     },
   ];
 
   return (
     <AdminLayout selectedKey="users">
-      <Card size="small" style={{ marginBottom: 16 }}>
-        <Space>
-          <Search
-            placeholder="Search by email, name, phone..."
-            style={{ width: 300 }}
-            onSearch={(value) => {
-              setSearch(value);
-              setPage(1);
-            }}
-            allowClear
-          />
-          <Select
-            placeholder="Filter by role"
-            style={{ width: 120 }}
-            allowClear
-            onChange={(value) => {
-              setRoleFilter(value);
-              setPage(1);
-            }}
-            options={[
-              { value: 'USER', label: 'User' },
-              { value: 'ADMIN', label: 'Admin' },
-            ]}
-          />
-          <Button icon={<ReloadOutlined />} onClick={fetchUsers}>
-            Refresh
-          </Button>
-        </Space>
-      </Card>
+      <Space style={{ marginBottom: 16 }}>
+        <Search
+          placeholder="Search email, name, phone..."
+          style={{ width: 280 }}
+          onSearch={(value) => { setSearch(value); setPage(1); }}
+          allowClear
+        />
+        <Select
+          placeholder="Role"
+          style={{ width: 100 }}
+          allowClear
+          onChange={(value) => { setRoleFilter(value); setPage(1); }}
+          options={[
+            { value: 'USER', label: 'User' },
+            { value: 'ADMIN', label: 'Admin' },
+          ]}
+        />
+        <Select
+          placeholder="KYC"
+          style={{ width: 110 }}
+          allowClear
+          onChange={(value) => { setKycFilter(value); setPage(1); }}
+          options={[
+            { value: 'PENDING', label: 'Pending' },
+            { value: 'SUBMITTED', label: 'Submitted' },
+            { value: 'APPROVED', label: 'Approved' },
+            { value: 'REJECTED', label: 'Rejected' },
+          ]}
+        />
+        <Button icon={<ReloadOutlined />} onClick={fetchUsers} loading={loading}>
+          Refresh
+        </Button>
+      </Space>
 
       <Table
         columns={columns}
         dataSource={users}
         loading={loading}
         rowKey="id"
+        size="small"
+        scroll={{ x: 1000 }}
         pagination={{
           current: page,
           pageSize: limit,
           total,
           showSizeChanger: true,
-          showTotal: (t) => `Total ${t} users`,
-          onChange: (p, l) => {
-            setPage(p);
-            setLimit(l);
-          },
+          showTotal: (t) => `${t} users`,
+          onChange: (p, l) => { setPage(p); setLimit(l); },
         }}
       />
     </AdminLayout>
   );
 }
-

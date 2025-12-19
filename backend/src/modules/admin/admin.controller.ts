@@ -13,21 +13,22 @@ import {
   UploadedFiles,
   BadRequestException,
   Res,
+  Req,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join, basename } from 'path';
 import { existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from 'fs';
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminGuard } from './admin.guard';
-import { AdminService } from './admin.service';
+import { AdminService, UpdateUserDto, UpdateKycStatusDto, BalanceAdjustmentDto } from './admin.service';
 import {
   CollegeCoinsService,
   CreateDemoCollegeCoinDto,
   UpdateDemoCollegeCoinDto,
 } from '../college-coins/college-coins.service';
-import { UserRole } from '@prisma/client';
+import { UserRole, KycStatus, TransactionStatus, TradeStatus } from '@prisma/client';
 import * as csv from 'csv-parse/sync';
 
 // All uploads go to backend/uploads folder (attach persistent disk here on Render)
@@ -152,6 +153,192 @@ export class AdminController {
       success: true,
       user,
       message: `User role updated to ${role}`,
+    };
+  }
+
+  /**
+   * Update user fields (emailVerified, phoneVerified, appMode, role)
+   */
+  @Patch('users/:id')
+  async updateUser(
+    @Param('id') id: string,
+    @Body() body: UpdateUserDto,
+    @Req() req: Request,
+  ) {
+    const adminId = (req as any).user?.id || 'unknown';
+    const user = await this.adminService.updateUser(id, body, adminId);
+    return {
+      success: true,
+      user,
+      message: 'User updated successfully',
+    };
+  }
+
+  /**
+   * Get user balances (live + learner)
+   */
+  @Get('users/:id/balances')
+  async getUserBalances(@Param('id') id: string) {
+    const balances = await this.adminService.getUserBalances(id);
+    return {
+      success: true,
+      balances,
+    };
+  }
+
+  /**
+   * Adjust user balance
+   */
+  @Post('users/:id/balance-adjustment')
+  async adjustUserBalance(
+    @Param('id') id: string,
+    @Body() body: BalanceAdjustmentDto,
+    @Req() req: Request,
+  ) {
+    if (!body.asset || body.amount === undefined || !body.reason || !body.mode) {
+      throw new BadRequestException('Missing required fields: asset, amount, reason, mode');
+    }
+
+    if (!['live', 'learner'].includes(body.mode)) {
+      throw new BadRequestException('Mode must be "live" or "learner"');
+    }
+
+    const adminId = (req as any).user?.id || 'unknown';
+    const result = await this.adminService.adjustBalance(id, body, adminId);
+    return {
+      ...result,
+      success: true,
+      message: `Balance adjusted: ${body.amount > 0 ? '+' : ''}${body.amount} ${body.asset}`,
+    };
+  }
+
+  /**
+   * Get user transactions (deposits/withdrawals)
+   */
+  @Get('users/:id/transactions')
+  async getUserTransactions(
+    @Param('id') id: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('type') type?: string,
+    @Query('status') status?: string,
+  ) {
+    const result = await this.adminService.getUserTransactions(id, {
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 20,
+      type: type as 'DEPOSIT' | 'WITHDRAWAL' | undefined,
+      status: status as TransactionStatus | undefined,
+    });
+
+    return {
+      success: true,
+      ...result,
+    };
+  }
+
+  /**
+   * Update transaction status
+   */
+  @Patch('users/:id/transactions/:txId')
+  async updateTransactionStatus(
+    @Param('id') userId: string,
+    @Param('txId') txId: string,
+    @Body('status') status: TransactionStatus,
+    @Req() req: Request,
+  ) {
+    if (!status || !['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'CANCELLED'].includes(status)) {
+      throw new BadRequestException('Invalid status');
+    }
+
+    const adminId = (req as any).user?.id || 'unknown';
+    const transaction = await this.adminService.updateTransactionStatus(userId, txId, status, adminId);
+    return {
+      success: true,
+      transaction,
+      message: `Transaction status updated to ${status}`,
+    };
+  }
+
+  /**
+   * Get user trades (live + learner)
+   */
+  @Get('users/:id/trades')
+  async getUserTrades(
+    @Param('id') id: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('mode') mode?: string,
+    @Query('status') status?: string,
+  ) {
+    const result = await this.adminService.getUserTrades(id, {
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 20,
+      mode: mode as 'live' | 'learner' | 'all' | undefined,
+      status: status as TradeStatus | undefined,
+    });
+
+    return {
+      success: true,
+      ...result,
+    };
+  }
+
+  /**
+   * Update KYC status (approve/reject)
+   */
+  @Patch('users/:id/kyc')
+  async updateKycStatus(
+    @Param('id') id: string,
+    @Body() body: { status: KycStatus; reviewNotes?: string },
+    @Req() req: Request,
+  ) {
+    if (!body.status || !['PENDING', 'SUBMITTED', 'APPROVED', 'REJECTED'].includes(body.status)) {
+      throw new BadRequestException('Invalid KYC status');
+    }
+
+    const adminId = (req as any).user?.id || 'unknown';
+    const result = await this.adminService.updateKycStatus(id, {
+      status: body.status,
+      reviewNotes: body.reviewNotes,
+      reviewedBy: adminId,
+    });
+
+    return {
+      ...result,
+      success: true,
+      message: `KYC status updated to ${body.status}`,
+    };
+  }
+
+  /**
+   * Reset learner account
+   */
+  @Post('users/:id/learner/reset')
+  async resetLearnerAccount(
+    @Param('id') id: string,
+    @Req() req: Request,
+  ) {
+    const adminId = (req as any).user?.id || 'unknown';
+    const result = await this.adminService.resetLearnerAccount(id, adminId);
+    return {
+      success: true,
+      ...result,
+    };
+  }
+
+  /**
+   * Delete user
+   */
+  @Delete('users/:id')
+  async deleteUser(
+    @Param('id') id: string,
+    @Req() req: Request,
+  ) {
+    const adminId = (req as any).user?.id || 'unknown';
+    const result = await this.adminService.deleteUser(id, adminId);
+    return {
+      success: true,
+      ...result,
     };
   }
 
