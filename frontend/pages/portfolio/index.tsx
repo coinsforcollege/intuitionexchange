@@ -13,6 +13,7 @@ import {
   CheckCircleOutlined,
   BankOutlined,
   LineChartOutlined,
+  StopOutlined,
 } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'motion/react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
@@ -631,8 +632,8 @@ const WalletPage: NextPageWithLayout = () => {
               >
                 <BankOutlined /> Bank Accounts
               </Button>
-              <Button style={buttonStyle}>
-                <QrcodeOutlined /> Crypto Deposit
+              <Button style={{ ...buttonStyle, opacity: 0.4 }} disabled>
+                <StopOutlined /> Crypto Deposit
               </Button>
             </div>
           </motion.div>
@@ -677,9 +678,11 @@ const WalletPage: NextPageWithLayout = () => {
                   backgroundColor: token.colorWarningBg,
                   color: token.colorWarning,
                   border: `1px solid ${token.colorWarning}40`,
+                  opacity: 0.4,
                 }}
+                disabled
               >
-                <QrcodeOutlined />
+                <StopOutlined />
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>Crypto</span>
               </Button>
             </div>
@@ -713,6 +716,7 @@ const WalletPage: NextPageWithLayout = () => {
                     change={asset.change}
                     color={asset.color}
                     iconUrl={asset.iconUrl}
+                    disabledActions
                     onSend={() => {
                       // TODO: Implement send functionality
                       console.log('Send', asset.symbol);

@@ -53,7 +53,11 @@ function generateLearnerTransactionId(): string {
 export class LearnerService {
   private readonly logger = new Logger(LearnerService.name);
   private readonly PLATFORM_FEE_PERCENT = 0.5; // 0.5% platform fee (same as live)
-  private readonly INITIAL_BALANCE = 10000; // $10,000 starting balance
+  
+  // Initial balance configuration
+  private readonly CASH_BALANCE = 4000; // $4,000 starting cash
+  private readonly COLLEGE_COIN_VALUE_EACH = 1500; // $1,500 worth of each college coin
+  private readonly MAX_COLLEGE_COINS = 4; // Maximum 4 college coins to give
 
   constructor(
     private prisma: PrismaService,
@@ -68,7 +72,7 @@ export class LearnerService {
 
   /**
    * Initialize learner account for a new user
-   * Creates $10,000 USD balance
+   * Creates $4,000 USD balance + $1,500 worth of up to 4 college coins
    */
   async initializeLearnerAccount(userId: string): Promise<void> {
     // Check if already initialized
@@ -81,38 +85,98 @@ export class LearnerService {
       return;
     }
 
-    // Create initial fiat balance with $10,000
+    // Create initial fiat balance with $4,000
     await this.prisma.client.learnerFiatBalance.create({
       data: {
         userId,
         currency: 'USD',
-        balance: this.INITIAL_BALANCE,
-        availableBalance: this.INITIAL_BALANCE,
+        balance: this.CASH_BALANCE,
+        availableBalance: this.CASH_BALANCE,
         lockedBalance: 0,
       },
     });
+
+    // Track crypto value for portfolio snapshot
+    let totalCryptoValue = 0;
+    const coinsGiven: string[] = [];
+
+    // Get active college coins
+    const allCollegeCoins = await this.collegeCoinsService.findAll(false);
+
+    if (allCollegeCoins.length > 0) {
+      // Determine which coins to give
+      let selectedCoins = allCollegeCoins;
+
+      if (allCollegeCoins.length > this.MAX_COLLEGE_COINS) {
+        // Randomly select 4 coins by shuffling and taking first 4
+        selectedCoins = [...allCollegeCoins]
+          .sort(() => Math.random() - 0.5)
+          .slice(0, this.MAX_COLLEGE_COINS);
+      }
+
+      // Give $1,500 worth of each selected coin
+      for (const coin of selectedCoins) {
+        try {
+          // Calculate the current price of the college coin
+          const priceData = await this.collegeCoinsService.calculatePrice(coin.ticker);
+
+          if (!priceData) {
+            this.logger.warn(`Could not get price for college coin ${coin.ticker}, skipping`);
+            continue;
+          }
+
+          // Calculate quantity: $1,500 / price
+          const quantity = this.COLLEGE_COIN_VALUE_EACH / priceData.collegeCoinPrice;
+
+          // Create crypto balance for this college coin
+          await this.prisma.client.learnerCryptoBalance.create({
+            data: {
+              userId,
+              asset: coin.ticker,
+              balance: quantity,
+              availableBalance: quantity,
+              lockedBalance: 0,
+            },
+          });
+
+          totalCryptoValue += this.COLLEGE_COIN_VALUE_EACH;
+          coinsGiven.push(`${coin.ticker} (${quantity.toFixed(8)} @ $${priceData.collegeCoinPrice.toFixed(2)})`);
+
+          this.logger.log(`Gave user ${userId} $${this.COLLEGE_COIN_VALUE_EACH} worth of ${coin.ticker}: ${quantity.toFixed(8)} coins`);
+        } catch (error) {
+          this.logger.error(`Failed to give college coin ${coin.ticker} to user ${userId}:`, error);
+          // Continue with other coins
+        }
+      }
+    }
 
     // Create initial portfolio snapshot
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    const totalValue = this.CASH_BALANCE + totalCryptoValue;
+
     await this.prisma.client.learnerPortfolioSnapshot.create({
       data: {
         userId,
-        totalValue: this.INITIAL_BALANCE,
-        investedValue: this.INITIAL_BALANCE, // Starting capital counts as "invested"
-        cashBalance: this.INITIAL_BALANCE,
-        cryptoValue: 0,
+        totalValue,
+        investedValue: totalValue, // Starting capital counts as "invested"
+        cashBalance: this.CASH_BALANCE,
+        cryptoValue: totalCryptoValue,
         snapshotDate: today,
       },
     });
 
-    this.logger.log(`Initialized learner account for user ${userId} with $${this.INITIAL_BALANCE}`);
+    if (coinsGiven.length > 0) {
+      this.logger.log(`Initialized learner account for user ${userId} with $${this.CASH_BALANCE} cash + ${coinsGiven.length} college coins: ${coinsGiven.join(', ')}`);
+    } else {
+      this.logger.log(`Initialized learner account for user ${userId} with $${this.CASH_BALANCE} cash (no college coins available)`);
+    }
   }
 
   /**
    * Reset learner account back to initial state
-   * Deletes all trades and balances, reinitializes with $10,000
+   * Deletes all trades and balances, reinitializes with $4,000 + college coins
    */
   async resetLearnerAccount(userId: string): Promise<{ message: string }> {
     // Delete all learner trades
@@ -135,11 +199,22 @@ export class LearnerService {
       where: { userId },
     });
 
-    // Reinitialize
+    // Reinitialize with new $4,000 + college coins distribution
     await this.initializeLearnerAccount(userId);
 
+    // Get the balances to build a dynamic message
+    const balances = await this.getLearnerBalances(userId);
+    const cryptoCount = balances.filter(b => b.asset !== 'USD').length;
+    
+    let message = `Learner account reset successfully. You now have $${this.CASH_BALANCE.toLocaleString()} in cash`;
+    if (cryptoCount > 0) {
+      message += ` plus $${(this.COLLEGE_COIN_VALUE_EACH * cryptoCount).toLocaleString()} worth of ${cryptoCount} college coin${cryptoCount > 1 ? 's' : ''} to practice with.`;
+    } else {
+      message += ' to practice with.';
+    }
+
     this.logger.log(`Reset learner account for user ${userId}`);
-    return { message: 'Learner account reset successfully. You now have $10,000 to practice with.' };
+    return { message };
   }
 
   /**
@@ -555,6 +630,19 @@ export class LearnerService {
 
     const totalValue = cashBalance + cryptoValue;
 
+    // Get the initial investedValue from the first snapshot for this user
+    // This preserves the original starting capital they received
+    const firstSnapshot = await this.prisma.client.learnerPortfolioSnapshot.findFirst({
+      where: { userId },
+      orderBy: { snapshotDate: 'asc' },
+      select: { investedValue: true },
+    });
+
+    // Use the original invested value, or calculate based on current balances if no prior snapshot
+    const investedValue = firstSnapshot 
+      ? parseFloat(firstSnapshot.investedValue.toString())
+      : this.CASH_BALANCE + (balances.filter(b => b.asset !== 'USD').length * this.COLLEGE_COIN_VALUE_EACH);
+
     // Upsert snapshot (update if exists for today, create otherwise)
     await this.prisma.client.learnerPortfolioSnapshot.upsert({
       where: {
@@ -566,14 +654,14 @@ export class LearnerService {
       create: {
         userId,
         totalValue,
-        investedValue: this.INITIAL_BALANCE, // Always $10,000 for learner mode
+        investedValue,
         cashBalance,
         cryptoValue,
         snapshotDate: today,
       },
       update: {
         totalValue,
-        investedValue: this.INITIAL_BALANCE,
+        investedValue,
         cashBalance,
         cryptoValue,
       },

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { theme, Grid } from 'antd';
-import { ExportOutlined, ImportOutlined } from '@ant-design/icons';
+import { ExportOutlined, ImportOutlined, StopOutlined } from '@ant-design/icons';
 import { fontWeights } from '@/theme/themeConfig';
 
 const { useToken } = theme;
@@ -20,6 +20,7 @@ interface AssetCardProps {
   onClick?: () => void;
   onSend?: () => void;
   onReceive?: () => void;
+  disabledActions?: boolean;
 }
 
 const AssetCard: React.FC<AssetCardProps> = ({
@@ -34,6 +35,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
   onClick,
   onSend,
   onReceive,
+  disabledActions = false,
 }) => {
   const { token } = useToken();
   const screens = useBreakpoint();
@@ -164,6 +166,8 @@ const AssetCard: React.FC<AssetCardProps> = ({
     ...buttonBaseStyle,
     backgroundColor: isBelowLg ? 'transparent' : token.colorPrimaryBg,
     color: token.colorPrimary,
+    opacity: disabledActions ? 0.4 : 1,
+    cursor: disabledActions ? 'not-allowed' : 'pointer',
   };
 
   const receiveButtonStyle: React.CSSProperties = {
@@ -171,6 +175,8 @@ const AssetCard: React.FC<AssetCardProps> = ({
     backgroundColor: isBelowLg ? 'transparent' : token.colorSuccessBg,
     color: token.colorSuccess,
     marginLeft: isBelowLg ? 4 : 0,
+    opacity: disabledActions ? 0.4 : 1,
+    cursor: disabledActions ? 'not-allowed' : 'pointer',
   };
 
   return (
@@ -243,17 +249,12 @@ const AssetCard: React.FC<AssetCardProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onSend();
+                if (!disabledActions) onSend();
               }}
               style={sendButtonStyle}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.opacity = '0.8';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.opacity = '1';
-              }}
+              disabled={disabledActions}
             >
-              <ExportOutlined />
+              {disabledActions ? <StopOutlined /> : <ExportOutlined />}
               <span>Send</span>
             </button>
           )}
@@ -261,17 +262,12 @@ const AssetCard: React.FC<AssetCardProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onReceive();
+                if (!disabledActions) onReceive();
               }}
               style={receiveButtonStyle}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.opacity = '0.8';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.opacity = '1';
-              }}
+              disabled={disabledActions}
             >
-              <ImportOutlined />
+              {disabledActions ? <StopOutlined /> : <ImportOutlined />}
               <span>Receive</span>
             </button>
           )}

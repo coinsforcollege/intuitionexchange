@@ -1,6 +1,7 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { UserRole, KycStatus, TransactionStatus, AppMode, TradeStatus } from '@prisma/client';
+import { LearnerService } from '../learner/learner.service';
 
 // ============================================
 // INTERFACES
@@ -149,7 +150,11 @@ export interface BalanceAdjustmentDto {
 export class AdminService {
   private readonly logger = new Logger(AdminService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => LearnerService))
+    private learnerService: LearnerService,
+  ) {}
 
   // ============================================
   // USER LISTING
@@ -903,6 +908,8 @@ export class AdminService {
 
   /**
    * Reset learner account
+   * Delegates to LearnerService to use the same initialization logic
+   * ($4,000 cash + $1,500 worth of up to 4 college coins)
    */
   async resetLearnerAccount(userId: string, adminId: string): Promise<{ message: string }> {
     const user = await this.prisma.client.user.findUnique({
@@ -913,56 +920,12 @@ export class AdminService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    // Delete all learner trades
-    await this.prisma.client.learnerTrade.deleteMany({
-      where: { userId },
-    });
-
-    // Delete all learner crypto balances
-    await this.prisma.client.learnerCryptoBalance.deleteMany({
-      where: { userId },
-    });
-
-    // Delete all learner portfolio snapshots
-    await this.prisma.client.learnerPortfolioSnapshot.deleteMany({
-      where: { userId },
-    });
-
-    // Reset or create learner fiat balance with $10,000
-    await this.prisma.client.learnerFiatBalance.upsert({
-      where: { userId },
-      create: {
-        userId,
-        currency: 'USD',
-        balance: 10000,
-        availableBalance: 10000,
-        lockedBalance: 0,
-      },
-      update: {
-        balance: 10000,
-        availableBalance: 10000,
-        lockedBalance: 0,
-      },
-    });
-
-    // Create initial portfolio snapshot
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    await this.prisma.client.learnerPortfolioSnapshot.create({
-      data: {
-        userId,
-        totalValue: 10000,
-        investedValue: 10000,
-        cashBalance: 10000,
-        cryptoValue: 0,
-        snapshotDate: today,
-      },
-    });
+    // Use LearnerService to reset the account with the new distribution logic
+    const result = await this.learnerService.resetLearnerAccount(userId);
 
     this.logger.log(`Admin ${adminId} reset learner account for user ${userId}`);
 
-    return { message: 'Learner account reset successfully. User now has $10,000 to practice with.' };
+    return result;
   }
 
   // ============================================
