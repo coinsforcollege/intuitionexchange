@@ -276,7 +276,7 @@ export default function Header() {
         </div>
 
         {/* Nav Items */}
-        <div style={{ padding: token.paddingMD }}>
+        <div style={{ padding: `${token.paddingSM}px ${token.paddingMD}px` }}>
           {navItems.map((item, index) => (
             <Link
               key={item.key}
@@ -289,8 +289,8 @@ export default function Header() {
                   display: "flex",
                   alignItems: "center",
                   gap: token.marginMD,
-                  padding: `${token.paddingSM}px 0`,
-                  marginBottom: token.marginXS,
+                  padding: `${token.paddingXS + 2}px 0`,
+                  marginBottom: 2,
                   transition: "all 0.2s",
                 }}
               >
@@ -337,13 +337,13 @@ export default function Header() {
         <div
           style={{
             height: 1,
-            margin: `0 ${token.paddingMD}px`,
+            margin: `${token.paddingXS}px ${token.paddingMD}px`,
             background: mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)",
           }}
         />
 
         {/* Auth Section */}
-        <div style={{ padding: token.paddingMD }}>
+        <div style={{ padding: `${token.paddingSM}px ${token.paddingMD}px` }}>
           {isLoggedIn ? (
             <Link href="/overview" style={{ textDecoration: "none" }} onClick={() => setMobileMenuOpen(false)}>
               <div
@@ -425,8 +425,8 @@ export default function Header() {
         {/* Theme Toggle */}
         <div
           style={{
-            margin: token.paddingMD,
-            padding: token.paddingMD,
+            margin: `${token.paddingSM}px ${token.paddingMD}px`,
+            padding: token.paddingSM,
             borderRadius: 14,
             display: "flex",
             alignItems: "center",
