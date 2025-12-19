@@ -154,10 +154,31 @@ const PairSelector: React.FC<PairSelectorProps> = ({
       // Small delay to ensure the DOM has updated after tab switch
       const timer = setTimeout(() => {
         if (selectedItemRef.current) {
-          selectedItemRef.current.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-          });
+          // Find the scrollable parent container (the one with overflowY: auto)
+          const findScrollableParent = (element: HTMLElement | null): HTMLElement | null => {
+            while (element && element !== document.body) {
+              const style = window.getComputedStyle(element);
+              if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
+                return element;
+              }
+              element = element.parentElement;
+            }
+            return null;
+          };
+          
+          const scrollContainer = findScrollableParent(selectedItemRef.current.parentElement);
+          if (scrollContainer) {
+            // Calculate scroll position to center the item in the container
+            const itemOffsetTop = selectedItemRef.current.offsetTop;
+            const containerHeight = scrollContainer.clientHeight;
+            const itemHeight = selectedItemRef.current.clientHeight;
+            const scrollTarget = itemOffsetTop - (containerHeight / 2) + (itemHeight / 2);
+            
+            scrollContainer.scrollTo({
+              top: Math.max(0, scrollTarget),
+              behavior: 'smooth',
+            });
+          }
           hasScrolledRef.current = true;
         }
       }, 150);
