@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ReactElement } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { theme, Grid, Progress } from 'antd';
@@ -15,6 +15,7 @@ import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeMode } from '@/context/ThemeContext';
+import type { NextPageWithLayout } from '../_app';
 
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
@@ -123,7 +124,7 @@ const learningModules: LearningModule[] = [
   },
 ];
 
-export default function TuitionCenterPage() {
+const TuitionCenterPage: NextPageWithLayout = () => {
   const router = useRouter();
   const { token } = useToken();
   const { user, isLoading } = useAuth();
@@ -160,9 +161,8 @@ export default function TuitionCenterPage() {
         <meta name="description" content="Learn about investing and finance in a fun way!" />
       </Head>
 
-      <DashboardLayout activeKey="tuition-center">
-        {/* Page Header */}
-        <div
+      {/* Page Header */}
+      <div
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -504,8 +504,13 @@ export default function TuitionCenterPage() {
           );
           })}
         </div>
-
-      </DashboardLayout>
     </>
   );
-}
+};
+
+// Persistent layout - keeps DashboardLayout mounted across page navigations
+TuitionCenterPage.getLayout = (page: ReactElement) => (
+  <DashboardLayout>{page}</DashboardLayout>
+);
+
+export default TuitionCenterPage;

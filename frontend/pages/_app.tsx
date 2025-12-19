@@ -2,6 +2,8 @@ import "@/styles/globals.css";
 import "antd/dist/reset.css";
 import { ConfigProvider, theme as antdTheme } from "antd";
 import type { AppProps } from "next/app";
+import type { ReactElement, ReactNode } from "react";
+import type { NextPage } from "next";
 import { Inter } from "next/font/google";
 import Head from "next/head";
 import { useEffect } from "react";
@@ -11,16 +13,29 @@ import { ThemeProvider, useThemeMode } from "@/context/ThemeContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { ExchangeProvider } from "@/context/ExchangeContext";
 import { SidebarProvider } from "@/context/SidebarContext";
+import { LayoutProvider } from "@/context/LayoutContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
+
+// Support for persistent layouts
+export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
+  getLayout?: (page: ReactElement) => ReactNode;
+};
+
+type AppPropsWithLayout = AppProps & {
+  Component: NextPageWithLayout;
+};
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
 });
 
-function ThemedApp({ Component, pageProps }: AppProps) {
+function ThemedApp({ Component, pageProps }: AppPropsWithLayout) {
   const { mode } = useThemeMode();
   const router = useRouter();
+  
+  // Use page-level layout if available, otherwise render page directly
+  const getLayout = Component.getLayout ?? ((page) => page);
 
   const darkModeTokens = mode === "dark" ? {
     // Slightly colored dark background (dark navy/indigo tint)
@@ -99,12 +114,12 @@ function ThemedApp({ Component, pageProps }: AppProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
         <title>InTuition Exchange - Sandbox</title>
       </Head>
-      <Component {...pageProps} />
+      {getLayout(<Component {...pageProps} />)}
     </ConfigProvider>
   );
 }
 
-export default function App(props: AppProps) {
+export default function App(props: AppPropsWithLayout) {
   return (
     <ErrorBoundary>
       <main className={inter.className}>
@@ -112,7 +127,9 @@ export default function App(props: AppProps) {
           <AuthProvider>
             <ExchangeProvider>
               <SidebarProvider>
-                <ThemedApp {...props} />
+                <LayoutProvider>
+                  <ThemedApp {...props} />
+                </LayoutProvider>
               </SidebarProvider>
             </ExchangeProvider>
           </AuthProvider>

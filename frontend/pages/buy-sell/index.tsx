@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, ReactElement } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { theme, Grid, Skeleton } from 'antd';
@@ -7,11 +7,12 @@ import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import BuySellForm from '@/components/exchange/BuySellForm';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeMode } from '@/context/ThemeContext';
+import type { NextPageWithLayout } from '../_app';
 
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
 
-export default function BuySellPage() {
+const BuySellPage: NextPageWithLayout = () => {
   const router = useRouter();
   const { asset } = router.query;
   const { token } = useToken();
@@ -53,19 +54,17 @@ export default function BuySellPage() {
         <Head>
           <title>Buy & Sell - InTuition Exchange</title>
         </Head>
-        <DashboardLayout activeKey="buy-sell">
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: 'calc(100vh - 200px)',
-            padding: token.paddingLG,
-          }}>
-            <div style={{ width: '100%', maxWidth: 420 }}>
-              <Skeleton active paragraph={{ rows: 12 }} />
-            </div>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: 'calc(100vh - 200px)',
+          padding: token.paddingLG,
+        }}>
+          <div style={{ width: '100%', maxWidth: 420 }}>
+            <Skeleton active paragraph={{ rows: 12 }} />
           </div>
-        </DashboardLayout>
+        </div>
       </>
     );
   }
@@ -77,9 +76,8 @@ export default function BuySellPage() {
         <meta name="description" content="Buy and sell cryptocurrency instantly with USD" />
       </Head>
 
-      <DashboardLayout activeKey="buy-sell">
-        {/* Background Pattern */}
-        <div style={{
+      {/* Background Pattern */}
+      <div style={{
           position: 'fixed',
           inset: 0,
           pointerEvents: 'none',
@@ -165,7 +163,13 @@ export default function BuySellPage() {
             </motion.div>
           )}
         </motion.div>
-      </DashboardLayout>
     </>
   );
-}
+};
+
+// Persistent layout - keeps DashboardLayout mounted across page navigations
+BuySellPage.getLayout = (page: ReactElement) => (
+  <DashboardLayout>{page}</DashboardLayout>
+);
+
+export default BuySellPage;

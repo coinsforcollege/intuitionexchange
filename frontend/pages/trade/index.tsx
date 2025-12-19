@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, ReactElement } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { theme, Grid, Skeleton, message } from 'antd';
@@ -10,7 +10,9 @@ import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
 import { useExchange } from '@/context/ExchangeContext';
 import { useThemeMode } from '@/context/ThemeContext';
+import { useLayoutOptions } from '@/context/LayoutContext';
 import { InternalOrder } from '@/services/api/coinbase';
+import type { NextPageWithLayout } from '../_app';
 
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
@@ -56,6 +58,35 @@ function ExchangePageContent() {
     refreshBalances,
   } = useExchange();
 
+  // Set up layout options - fullWidth always true, hideMobileNav on mobile
+  const { setHideMobileNav, setExchangeData } = useLayoutOptions({
+    fullWidth: true,
+    hideMobileNav: false, // Will be updated based on mount state
+  });
+
+  const isMobile = mounted ? !screens.md : false;
+
+  // Update hideMobileNav based on mobile state
+  useEffect(() => {
+    if (mounted) {
+      setHideMobileNav(isMobile);
+    }
+  }, [mounted, isMobile, setHideMobileNav]);
+
+  // Update exchange header data when pair changes
+  useEffect(() => {
+    if (selectedPair && currentPrice !== undefined && priceChange !== undefined) {
+      setExchangeData({
+        pair: selectedPair,
+        price: currentPrice,
+        change: priceChange,
+        volume: formatVolume(currentUsdVolume),
+        iconUrl: currentPairData?.iconUrl,
+        baseAsset: currentPairData?.baseCurrency,
+      });
+    }
+  }, [selectedPair, currentPrice, priceChange, currentUsdVolume, currentPairData, setExchangeData]);
+
   // Format USD volume for display
   const formatVolume = (volume: number): string => {
     if (isNaN(volume) || volume <= 0) return '$0';
@@ -67,7 +98,6 @@ function ExchangePageContent() {
 
   const formattedUsdVolume = formatVolume(currentUsdVolume);
 
-  const isMobile = mounted ? !screens.md : false;
   const isTablet = mounted ? (screens.md && !screens.lg) : false;
   
   const [baseAsset, quoteAsset] = selectedPair.split('-');
@@ -234,8 +264,57 @@ function ExchangePageContent() {
     return null;
   }
 
-  // Loading skeleton that matches 3-column layout
+  // Loading state
   if (pageLoading || isLoadingPairs) {
+    // Mobile: Clean, minimal loading state
+    if (isMobile) {
+      return (
+        <>
+          <Head>
+            <title>Trade - InTuition Exchange</title>
+          </Head>
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '60vh',
+            gap: token.marginLG,
+            padding: token.paddingLG,
+          }}>
+            <div style={{
+              width: 64,
+              height: 64,
+              borderRadius: '50%',
+              background: `linear-gradient(135deg, ${token.colorPrimary}20, ${token.colorPrimary}40)`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <LineChartOutlined style={{ fontSize: 28, color: token.colorPrimary }} />
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ 
+                fontSize: token.fontSizeLG, 
+                fontWeight: fontWeights.semibold,
+                color: token.colorText,
+                marginBottom: token.marginXS,
+              }}>
+                Loading Markets
+              </div>
+              <div style={{ 
+                fontSize: token.fontSizeSM, 
+                color: token.colorTextSecondary,
+              }}>
+                Fetching latest prices...
+              </div>
+            </div>
+          </div>
+        </>
+      );
+    }
+
+    // Desktop: 3-column skeleton
     const PAIR_WIDTH = 300;
     const TRADE_WIDTH = 400;
     return (
@@ -243,8 +322,7 @@ function ExchangePageContent() {
         <Head>
           <title>Trade - InTuition Exchange</title>
         </Head>
-        <DashboardLayout activeKey="trade" fullWidth>
-          <div style={{ display: 'flex', width: '100%' }}>
+        <div style={{ display: 'flex', width: '100%' }}>
             {/* Left - Markets skeleton */}
             <div style={{ 
               width: PAIR_WIDTH, 
@@ -300,8 +378,7 @@ function ExchangePageContent() {
               </div>
               <Skeleton.Button active block size="large" />
             </div>
-          </div>
-        </DashboardLayout>
+        </div>
       </>
     );
   }
@@ -313,8 +390,7 @@ function ExchangePageContent() {
         <Head>
           <title>Trade {selectedPair} - InTuition Exchange</title>
         </Head>
-        <DashboardLayout activeKey="trade" fullWidth hideMobileNav>
-          <MobileTradePage
+        <MobileTradePage
             pairs={pairs}
             selectedPair={selectedPair}
             onSelectPair={setSelectedPair}
@@ -338,7 +414,6 @@ function ExchangePageContent() {
             onTrade={handleTrade}
             isTrading={isTrading}
           />
-        </DashboardLayout>
         
         {/* Order Status Modal */}
         <OrderStatusModal
@@ -365,19 +440,7 @@ function ExchangePageContent() {
       <Head>
         <title>Trade {selectedPair} - InTuition Exchange</title>
       </Head>
-      <DashboardLayout 
-        activeKey="trade" 
-        fullWidth
-        exchangeData={{
-          pair: selectedPair,
-          price: currentPrice,
-          change: priceChange,
-          volume: formattedUsdVolume,
-          iconUrl: currentPairData?.iconUrl || `https://assets.coincap.io/assets/icons/${baseAsset.toLowerCase()}@2x.png`,
-          baseAsset: baseAsset,
-        }}
-      >
-        <div style={{ 
+      <div style={{ 
           display: 'flex', 
           width: '100%', 
           height: '100%',
@@ -544,7 +607,6 @@ function ExchangePageContent() {
             />
           </div>
         </div>
-      </DashboardLayout>
       
       {/* Order Status Modal */}
       <OrderStatusModal
@@ -963,6 +1025,13 @@ function OrderBookCompact({ orderBook, isLoading }: { orderBook: any; isLoading:
 }
 
 // Main page component
-export default function ExchangePage() {
+const ExchangePage: NextPageWithLayout = () => {
   return <ExchangePageContent />;
-}
+};
+
+// Persistent layout - keeps DashboardLayout mounted across page navigations
+ExchangePage.getLayout = (page: ReactElement) => (
+  <DashboardLayout>{page}</DashboardLayout>
+);
+
+export default ExchangePage;

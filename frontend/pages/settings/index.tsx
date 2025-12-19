@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, ReactElement } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -50,6 +50,7 @@ import { motion } from 'motion/react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
+import type { NextPageWithLayout } from '../_app';
 import {
   getUserSettings,
   requestPasswordChange,
@@ -205,7 +206,7 @@ const NotificationToggle: React.FC<{
   );
 };
 
-export default function SettingsPage() {
+const SettingsPage: NextPageWithLayout = () => {
   const router = useRouter();
   const { token } = useToken();
   const screens = useBreakpoint();
@@ -460,9 +461,7 @@ export default function SettingsPage() {
         <Head>
           <title>Settings - InTuition Exchange</title>
         </Head>
-        <DashboardLayout activeKey="settings">
-          <Skeleton active paragraph={{ rows: 12 }} />
-        </DashboardLayout>
+        <Skeleton active paragraph={{ rows: 12 }} />
       </>
     );
   }
@@ -474,8 +473,7 @@ export default function SettingsPage() {
         <meta name="description" content="Manage your account settings" />
       </Head>
 
-      <DashboardLayout activeKey="settings">
-        <div
+      <div
           style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
@@ -1331,8 +1329,14 @@ export default function SettingsPage() {
             </div>
           )}
         </Modal>
-      </DashboardLayout>
     </>
   );
-}
+};
+
+// Persistent layout - keeps DashboardLayout mounted across page navigations
+SettingsPage.getLayout = (page: ReactElement) => (
+  <DashboardLayout>{page}</DashboardLayout>
+);
+
+export default SettingsPage;
 

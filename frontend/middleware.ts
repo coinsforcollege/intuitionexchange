@@ -20,7 +20,7 @@ const authRoutes = ['/login', '/register', '/reset'];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Check for auth token in cookies or authorization header
+  // Check for auth token in cookies
   const token = request.cookies.get('authToken')?.value;
   
   // Check if the path starts with any protected route
@@ -37,12 +37,20 @@ export function middleware(request: NextRequest) {
   if (isProtectedRoute && !token) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
+    const response = NextResponse.redirect(loginUrl);
+    // Prevent caching of redirect responses (fixes prefetch cache poisoning after login)
+    response.headers.set('Cache-Control', 'no-store, must-revalidate');
+    response.headers.set('x-middleware-cache', 'no-cache');
+    return response;
   }
 
   // If trying to access auth routes while logged in, redirect to dashboard
   if (isAuthRoute && token) {
-    return NextResponse.redirect(new URL('/overview', request.url));
+    const response = NextResponse.redirect(new URL('/overview', request.url));
+    // Prevent caching of redirect responses
+    response.headers.set('Cache-Control', 'no-store, must-revalidate');
+    response.headers.set('x-middleware-cache', 'no-cache');
+    return response;
   }
 
   return NextResponse.next();

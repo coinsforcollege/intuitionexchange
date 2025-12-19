@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef, memo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef, memo, ReactElement } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { theme, Grid, Skeleton, Empty, Tag } from 'antd';
@@ -22,6 +22,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useExchange } from '@/context/ExchangeContext';
 import { useThemeMode } from '@/context/ThemeContext';
 import { getWatchlist, toggleWatchlist } from '@/services/api/watchlist';
+import type { NextPageWithLayout } from '../_app';
 
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
@@ -273,7 +274,7 @@ const TokenRow = memo(({
 });
 TokenRow.displayName = 'TokenRow';
 
-export default function DashboardPage() {
+const DashboardPage: NextPageWithLayout = () => {
   const router = useRouter();
   const { token } = useToken();
   const { user, isLoading } = useAuth();
@@ -454,9 +455,7 @@ export default function DashboardPage() {
         <Head>
           <title>Overview - InTuition Exchange</title>
         </Head>
-        <DashboardLayout activeKey="overview">
-          <Skeleton active paragraph={{ rows: 12 }} />
-        </DashboardLayout>
+        <Skeleton active paragraph={{ rows: 12 }} />
       </>
     );
   }
@@ -468,15 +467,14 @@ export default function DashboardPage() {
         <meta name="description" content="Your InTuition Exchange overview" />
       </Head>
 
-      <DashboardLayout activeKey="overview">
-        {/* Desktop: 2-column layout */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr' : '7fr 3fr',
-            gap: token.marginLG,
-          }}
-        >
+      {/* Desktop: 2-column layout */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr' : '7fr 3fr',
+          gap: token.marginLG,
+        }}
+      >
           {/* Main Column */}
           <div style={{ minWidth: 0 }}>
             {/* Portfolio Summary Card */}
@@ -1147,7 +1145,13 @@ export default function DashboardPage() {
             )}
           </Section>
         )}
-      </DashboardLayout>
     </>
   );
-}
+};
+
+// Persistent layout - keeps DashboardLayout mounted across page navigations
+DashboardPage.getLayout = (page: ReactElement) => (
+  <DashboardLayout>{page}</DashboardLayout>
+);
+
+export default DashboardPage;

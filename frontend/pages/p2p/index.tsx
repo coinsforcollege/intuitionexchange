@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ReactElement } from 'react';
 import Head from 'next/head';
 import { theme, Grid, Input, Button, message } from 'antd';
 import {
@@ -15,6 +15,7 @@ import { motion } from 'motion/react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { fontWeights } from '@/theme/themeConfig';
 import { useThemeMode } from '@/context/ThemeContext';
+import type { NextPageWithLayout } from '../_app';
 
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
@@ -90,7 +91,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
   </motion.div>
 );
 
-const P2PComingSoon: React.FC = () => {
+const P2PComingSoon: NextPageWithLayout = () => {
   const { token } = useToken();
   const { mode } = useThemeMode();
   const screens = useBreakpoint();
@@ -158,8 +159,7 @@ const P2PComingSoon: React.FC = () => {
         <meta name="description" content="Trade crypto directly with other users. Secure, fast, and fee-free P2P trading coming soon to InTuition." />
       </Head>
 
-      <DashboardLayout activeKey="p2p">
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           {/* Hero Section */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -394,10 +394,14 @@ const P2PComingSoon: React.FC = () => {
             }
           }
         `}</style>
-      </DashboardLayout>
     </>
   );
 };
+
+// Persistent layout - keeps DashboardLayout mounted across page navigations
+P2PComingSoon.getLayout = (page: ReactElement) => (
+  <DashboardLayout>{page}</DashboardLayout>
+);
 
 export default P2PComingSoon;
 

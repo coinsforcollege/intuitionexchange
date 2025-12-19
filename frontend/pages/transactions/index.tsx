@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback, memo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, memo, ReactElement } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { theme, Grid, Skeleton, Empty, message, Select, Tag } from 'antd';
@@ -26,6 +26,7 @@ import { useThemeMode } from '@/context/ThemeContext';
 import { getFiatTransactions, FiatTransaction } from '@/services/api/fiat';
 import { getOrders, InternalOrder } from '@/services/api/coinbase';
 import { getLearnerOrders, LearnerOrder } from '@/services/api/learner';
+import type { NextPageWithLayout } from '../_app';
 
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
@@ -772,7 +773,7 @@ const Pagination = memo(({
 });
 Pagination.displayName = 'Pagination';
 
-export default function TransactionsPage() {
+const TransactionsPage: NextPageWithLayout = () => {
   const router = useRouter();
   const { token } = useToken();
   const { user, isLoading } = useAuth();
@@ -1028,9 +1029,7 @@ export default function TransactionsPage() {
     return (
       <>
         <Head><title>Transactions - InTuition Exchange</title></Head>
-        <DashboardLayout activeKey="transactions">
-          <Skeleton active paragraph={{ rows: 12 }} />
-        </DashboardLayout>
+        <Skeleton active paragraph={{ rows: 12 }} />
       </>
     );
   }
@@ -1042,9 +1041,8 @@ export default function TransactionsPage() {
         <meta name="description" content="View your transaction history" />
       </Head>
 
-      <DashboardLayout activeKey="transactions">
-        {/* Header with filters */}
-        <motion.div
+      {/* Header with filters */}
+      <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           style={{ marginBottom: token.marginLG }}
@@ -1369,7 +1367,13 @@ export default function TransactionsPage() {
             </div>
           </motion.div>
         )}
-      </DashboardLayout>
     </>
   );
-}
+};
+
+// Persistent layout - keeps DashboardLayout mounted across page navigations
+TransactionsPage.getLayout = (page: ReactElement) => (
+  <DashboardLayout>{page}</DashboardLayout>
+);
+
+export default TransactionsPage;

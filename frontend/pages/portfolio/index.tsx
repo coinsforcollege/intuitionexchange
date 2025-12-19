@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useMemo, useRef, ReactElement } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { theme, Grid, Skeleton, Row, Col, Button, Table, Tag, Empty, Modal, Typography, Card } from 'antd';
@@ -26,12 +26,13 @@ import DepositModal from '@/components/wallet/DepositModal';
 import WithdrawModal from '@/components/wallet/WithdrawModal';
 import { getFiatTransactions, syncPaymentStatus } from '@/services/api/fiat';
 import { createPortfolioSnapshot } from '@/services/api/learner';
+import type { NextPageWithLayout } from '../_app';
 
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
 const { Title, Text } = Typography;
 
-export default function WalletPage() {
+const WalletPage: NextPageWithLayout = () => {
   const router = useRouter();
   const { token } = useToken();
   const { user, isLoading } = useAuth();
@@ -468,9 +469,7 @@ export default function WalletPage() {
         <Head>
           <title>Wallet - InTuition Exchange</title>
         </Head>
-        <DashboardLayout activeKey="portfolio">
-          <Skeleton active paragraph={{ rows: 12 }} />
-        </DashboardLayout>
+        <Skeleton active paragraph={{ rows: 12 }} />
       </>
     );
   }
@@ -482,9 +481,8 @@ export default function WalletPage() {
         <meta name="description" content="Manage your crypto assets" />
       </Head>
 
-      <DashboardLayout activeKey="portfolio">
-        {/* Balance Stats */}
-        <motion.div
+      {/* Balance Stats */}
+      <motion.div
           style={sectionStyle}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -915,7 +913,13 @@ export default function WalletPage() {
             </Modal>
           )}
         </AnimatePresence>
-      </DashboardLayout>
     </>
   );
-}
+};
+
+// Persistent layout - keeps DashboardLayout mounted across page navigations
+WalletPage.getLayout = (page: ReactElement) => (
+  <DashboardLayout>{page}</DashboardLayout>
+);
+
+export default WalletPage;

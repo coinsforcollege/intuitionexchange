@@ -164,7 +164,7 @@ const MobileSelectDrawer: React.FC<MobileSelectDrawerProps> = ({
                   <span
                     style={{
                       fontSize: token.fontSize,
-                      fontWeight: isSelected ? fontWeights.semibold : fontWeights.regular,
+                      fontWeight: isSelected ? fontWeights.semibold : fontWeights.normal,
                       color: isSelected ? token.colorPrimary : token.colorText,
                     }}
                   >

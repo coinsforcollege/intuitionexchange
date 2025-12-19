@@ -33,6 +33,7 @@ import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeMode } from '@/context/ThemeContext';
 import { useSidebar } from '@/context/SidebarContext';
+import { useLayout } from '@/context/LayoutContext';
 import MobileBottomNav from '@/components/layout/MobileBottomNav';
 
 const { useToken } = theme;
@@ -49,7 +50,7 @@ interface NavItem {
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  activeKey?: string;
+  activeKey?: string; // Optional override, otherwise derived from route
   fullWidth?: boolean;
   hideMobileNav?: boolean; // Hide mobile bottom nav (e.g., for trade page)
   exchangeData?: {
@@ -62,14 +63,39 @@ interface DashboardLayoutProps {
   };
 }
 
+// Derive active key from pathname
+const getActiveKeyFromPath = (pathname: string): string => {
+  if (pathname.startsWith('/overview')) return 'overview';
+  if (pathname.startsWith('/trade')) return 'trade';
+  if (pathname.startsWith('/buy-sell')) return 'buy-sell';
+  if (pathname.startsWith('/p2p')) return 'p2p';
+  if (pathname.startsWith('/markets')) return 'markets';
+  if (pathname.startsWith('/portfolio')) return 'portfolio';
+  if (pathname.startsWith('/transactions')) return 'transactions';
+  if (pathname.startsWith('/tuition-center')) return 'tuition-center';
+  if (pathname.startsWith('/settings')) return 'settings';
+  return 'overview';
+};
+
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ 
   children, 
-  activeKey = 'dashboard',
-  fullWidth = false,
-  hideMobileNav = false,
-  exchangeData,
+  activeKey: activeKeyProp,
+  fullWidth: fullWidthProp,
+  hideMobileNav: hideMobileNavProp,
+  exchangeData: exchangeDataProp,
 }) => {
   const router = useRouter();
+  
+  // Get layout options from context (set by pages dynamically)
+  const { options: layoutOptions } = useLayout();
+  
+  // Merge props with context - props take precedence
+  const fullWidth = fullWidthProp ?? layoutOptions.fullWidth;
+  const hideMobileNav = hideMobileNavProp ?? layoutOptions.hideMobileNav;
+  const exchangeData = exchangeDataProp ?? layoutOptions.exchangeData;
+  
+  // Derive activeKey from route, or use prop override if provided
+  const activeKey = activeKeyProp ?? getActiveKeyFromPath(router.pathname);
   const { token } = useToken();
   const { user, logout } = useAuth();
   const { mode, toggleMode } = useThemeMode();
