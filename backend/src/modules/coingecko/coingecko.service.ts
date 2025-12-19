@@ -221,6 +221,7 @@ export class CoinGeckoService {
   // In-memory cache
   private tokenCache = new Map<string, CacheEntry<TokenMarketData>>();
   private marketsCache: CacheEntry<MarketListItem[]> | null = null;
+  private marketsSparklineCache: CacheEntry<MarketListItem[]> | null = null;
   private coinListCache: CacheEntry<Array<{ id: string; symbol: string; name: string }>> | null = null;
 
   constructor(private configService: ConfigService) {
@@ -433,14 +434,25 @@ export class CoinGeckoService {
     perPage = 100,
     sparkline = false,
   ): Promise<MarketListItem[]> {
-    // Check cache (only for first page without sparkline)
-    if (
-      page === 1 &&
-      !sparkline &&
-      this.marketsCache &&
-      Date.now() - this.marketsCache.timestamp < PRICE_CACHE_DURATION
-    ) {
-      return this.marketsCache.data;
+    // Check cache (only for first page)
+    if (page === 1) {
+      if (sparkline) {
+        // Check sparkline cache
+        if (
+          this.marketsSparklineCache &&
+          Date.now() - this.marketsSparklineCache.timestamp < PRICE_CACHE_DURATION
+        ) {
+          return this.marketsSparklineCache.data;
+        }
+      } else {
+        // Check regular cache
+        if (
+          this.marketsCache &&
+          Date.now() - this.marketsCache.timestamp < PRICE_CACHE_DURATION
+        ) {
+          return this.marketsCache.data;
+        }
+      }
     }
 
     try {
@@ -459,22 +471,30 @@ export class CoinGeckoService {
       if (!response.ok) {
         if (response.status === 429) {
           this.logger.warn('CoinGecko rate limit hit');
-          if (this.marketsCache) return this.marketsCache.data;
+          // Return appropriate cache based on sparkline param
+          const fallbackCache = sparkline ? this.marketsSparklineCache : this.marketsCache;
+          if (fallbackCache) return fallbackCache.data;
         }
         throw new Error(`CoinGecko API error: ${response.status}`);
       }
 
       const data: MarketListItem[] = await response.json();
 
-      // Cache first page
-      if (page === 1 && !sparkline) {
-        this.marketsCache = { data, timestamp: Date.now() };
+      // Cache first page (separate caches for sparkline vs non-sparkline)
+      if (page === 1) {
+        if (sparkline) {
+          this.marketsSparklineCache = { data, timestamp: Date.now() };
+        } else {
+          this.marketsCache = { data, timestamp: Date.now() };
+        }
       }
 
       return data;
     } catch (error) {
       this.logger.error('Failed to fetch markets list', error);
-      if (this.marketsCache) return this.marketsCache.data;
+      // Return appropriate cache based on sparkline param
+      const fallbackCache = sparkline ? this.marketsSparklineCache : this.marketsCache;
+      if (fallbackCache) return fallbackCache.data;
       throw error;
     }
   }

@@ -147,42 +147,8 @@ const MiniPriceChart: React.FC<MiniPriceChartProps> = ({
     };
   }, [prices, lineColor, topColor, bottomColor, dimensions.width, dimensions.height]);
 
-  if (isLoading) {
-    return (
-      <div
-        style={{
-          width: '100%',
-          height: '100%',
-          minHeight: 100,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Spin size="small" />
-      </div>
-    );
-  }
-
-  if (!prices || prices.length === 0) {
-    return (
-      <div
-        style={{
-          width: '100%',
-          height: '100%',
-          minHeight: 100,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: token.colorTextTertiary,
-          fontSize: token.fontSizeSM,
-        }}
-      >
-        No chart data
-      </div>
-    );
-  }
-
+  // Always render the container so ref is attached and ResizeObserver works
+  // Overlay loading/empty states on top
   return (
     <div
       ref={chartContainerRef}
@@ -190,8 +156,41 @@ const MiniPriceChart: React.FC<MiniPriceChartProps> = ({
         width: '100%',
         height: '100%',
         minHeight: 100,
+        position: 'relative',
       }}
-    />
+    >
+      {isLoading && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'inherit',
+            zIndex: 1,
+          }}
+        >
+          <Spin size="small" />
+        </div>
+      )}
+      {!isLoading && (!prices || prices.length === 0) && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: token.colorTextTertiary,
+            fontSize: token.fontSizeSM,
+            zIndex: 1,
+          }}
+        >
+          No chart data
+        </div>
+      )}
+    </div>
   );
 };
 
