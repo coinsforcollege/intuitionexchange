@@ -20,7 +20,8 @@ export default function WatchlistPage() {
   const router = useRouter();
   const { token } = useToken();
   const { user, isLoading } = useAuth();
-  const { pairs, isLoadingPairs } = useExchange();
+  const { pairs, isLoadingPairs, appMode } = useExchange();
+  const isLearnerMode = appMode === 'learner';
   const { mode } = useThemeMode();
   const screens = useBreakpoint();
   const [mounted, setMounted] = useState(false);
@@ -80,10 +81,17 @@ export default function WatchlistPage() {
   }, [pageLoading, user, fetchWatchlist]);
 
   // Filter to USD pairs only, then extract unique base currencies
+  // In investor mode: hide college coins completely
+  // In learner mode: show college coins first, then regular tokens
   const usdTokens = useMemo(() => {
-    const usdPairs = pairs.filter((pair) => pair.quote === 'USD');
+    let usdPairs = pairs.filter((pair) => pair.quote === 'USD');
     
-    // Deduplicate by base currency and sort by volume
+    // In investor mode, filter out college coins
+    if (!isLearnerMode) {
+      usdPairs = usdPairs.filter((pair) => !pair.isCollegeCoin);
+    }
+    
+    // Deduplicate by base currency
     const uniqueTokens = new Map<string, typeof usdPairs[0]>();
     usdPairs.forEach((pair) => {
       if (!uniqueTokens.has(pair.baseCurrency)) {
@@ -92,15 +100,39 @@ export default function WatchlistPage() {
     });
 
     return Array.from(uniqueTokens.values()).sort((a, b) => {
+      // In learner mode: college coins first, then alphabetical
+      if (isLearnerMode) {
+        const aIsCollege = a.isCollegeCoin ? 1 : 0;
+        const bIsCollege = b.isCollegeCoin ? 1 : 0;
+        if (aIsCollege !== bIsCollege) {
+          return bIsCollege - aIsCollege; // College coins first
+        }
+      }
       // Sort by name alphabetically
       return a.name.localeCompare(b.name);
     });
-  }, [pairs]);
+  }, [pairs, isLearnerMode]);
 
   // Get watchlisted tokens only
+  // In learner mode: college coins first
+  // In investor mode: college coins already filtered out from usdTokens
   const watchlistedTokens = useMemo(() => {
-    return usdTokens.filter((token) => watchlistItems.includes(token.baseCurrency));
-  }, [usdTokens, watchlistItems]);
+    const filtered = usdTokens.filter((token) => watchlistItems.includes(token.baseCurrency));
+    
+    // In learner mode, sort with college coins first
+    if (isLearnerMode) {
+      return filtered.sort((a, b) => {
+        const aIsCollege = a.isCollegeCoin ? 1 : 0;
+        const bIsCollege = b.isCollegeCoin ? 1 : 0;
+        if (aIsCollege !== bIsCollege) {
+          return bIsCollege - aIsCollege; // College coins first
+        }
+        return a.name.localeCompare(b.name);
+      });
+    }
+    
+    return filtered;
+  }, [usdTokens, watchlistItems, isLearnerMode]);
 
   // Filter tokens by search query and active tab
   const filteredTokens = useMemo(() => {
@@ -218,7 +250,7 @@ export default function WatchlistPage() {
               }}
             >
               {activeTab === 'watchlist' 
-                ? `${watchlistItems.length} tokens in your watchlist`
+                ? `${watchlistedTokens.length} tokens in your watchlist`
                 : `${usdTokens.length} tokens available`}
             </p>
           </div>
@@ -264,7 +296,7 @@ export default function WatchlistPage() {
             }}
           >
             <StarFilled style={{ fontSize: token.fontSizeSM }} />
-            My Watchlist ({watchlistItems.length})
+            My Watchlist ({watchlistedTokens.length})
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.98 }}
@@ -498,7 +530,7 @@ export default function WatchlistPage() {
                 color: token.colorTextSecondary,
               }}
             >
-              {activeTab === 'watchlist' && watchlistItems.length === 0 ? (
+              {activeTab === 'watchlist' && watchlistedTokens.length === 0 ? (
                 <>
                   <StarOutlined style={{ fontSize: 48, opacity: 0.3, marginBottom: token.marginMD }} />
                   <div style={{ fontSize: token.fontSizeLG, marginBottom: token.marginXS }}>Your watchlist is empty</div>

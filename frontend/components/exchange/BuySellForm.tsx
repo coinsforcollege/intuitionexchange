@@ -197,10 +197,14 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
         return false;
       })
       .sort((a, b) => {
-        // Sort college coins last, then by volume
         const aIsCollege = (a as TradingPair).isCollegeCoin ? 1 : 0;
         const bIsCollege = (b as TradingPair).isCollegeCoin ? 1 : 0;
-        if (aIsCollege !== bIsCollege) return aIsCollege - bIsCollege;
+        
+        // In learner mode: college coins FIRST, then by volume
+        // In investor mode: college coins hidden anyway, just sort by volume
+        if (isLearnerMode && aIsCollege !== bIsCollege) {
+          return bIsCollege - aIsCollege; // College coins first (1 > 0)
+        }
         
         const aVol = (a as any)._usdVolume || 0;
         const bVol = (b as any)._usdVolume || 0;
@@ -219,11 +223,18 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
   const [currentOrder, setCurrentOrder] = useState<InternalOrder | null>(null);
   
   // Update selected asset when initialAsset prop changes (e.g., from URL query)
+  // Or when in learner mode, default to first college coin once pairs load
   useEffect(() => {
     if (initialAsset && initialAsset !== selectedAsset) {
       setSelectedAsset(initialAsset);
+    } else if (!initialAsset && isLearnerMode && pairs.length > 0) {
+      // Default to first college coin in learner mode
+      const firstCollegeCoin = pairs.find(p => (p as TradingPair).isCollegeCoin && p.quote === 'USD');
+      if (firstCollegeCoin && selectedAsset === 'BTC') {
+        setSelectedAsset(firstCollegeCoin.baseCurrency);
+      }
     }
-  }, [initialAsset]);
+  }, [initialAsset, isLearnerMode, pairs]);
   
   const loading = isLoading || isTrading || isSubmitting;
   const isBuy = side === 'BUY';

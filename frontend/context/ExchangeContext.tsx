@@ -1056,6 +1056,19 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     refreshProducts();
   }, [refreshProducts]);
 
+  // Auto-select first college coin in learner mode when pairs load
+  useEffect(() => {
+    if (!isLoadingPairs && pairs.length > 0 && appMode === 'learner') {
+      // Only auto-select if current pair is the default BTC-USD
+      if (selectedPair === 'BTC-USD') {
+        const firstCollegeCoin = pairs.find(p => p.isCollegeCoin);
+        if (firstCollegeCoin) {
+          setSelectedPair(firstCollegeCoin.symbol);
+        }
+      }
+    }
+  }, [isLoadingPairs, pairs, appMode]);
+
   // Fetch balances and orders when logged in or when app mode changes
   // Clear on logout
   useEffect(() => {

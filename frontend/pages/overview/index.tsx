@@ -367,15 +367,22 @@ export default function DashboardPage() {
   }, [balances, pairs]);
 
   // Get USD pairs for market data - memoized
+  // In investor mode: exclude college coins
   const usdPairs = useMemo(() => {
-    return pairs.filter((p) => p.quote === 'USD');
-  }, [pairs]);
+    let filtered = pairs.filter((p) => p.quote === 'USD');
+    if (!isLearnerMode) {
+      filtered = filtered.filter((p) => !p.isCollegeCoin);
+    }
+    return filtered;
+  }, [pairs, isLearnerMode]);
 
   // Watchlist tokens with price data - memoized
+  // In investor mode: exclude college coins even if in watchlist
   const watchlistTokens = useMemo(() => {
     return watchlistAssets
       .map((asset) => {
         const pair = usdPairs.find((p) => p.baseCurrency === asset);
+        // In investor mode, usdPairs already filters out college coins
         return pair ? { ...pair, asset } : null;
       })
       .filter(Boolean) as typeof usdPairs;
