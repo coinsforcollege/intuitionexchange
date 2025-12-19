@@ -119,6 +119,26 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const isDark = mode === 'dark';
   const isLearnerMode = appMode === 'learner';
 
+  // Prefetch all dashboard pages on mount for instant navigation
+  React.useEffect(() => {
+    const dashboardRoutes = [
+      '/overview',
+      '/trade',
+      '/buy-sell',
+      '/portfolio',
+      '/transactions',
+      '/settings',
+      '/p2p',
+      '/tuition-center',
+      '/markets',
+    ];
+    
+    // Prefetch all routes immediately
+    dashboardRoutes.forEach(route => {
+      router.prefetch(route);
+    });
+  }, [router]);
+
   // Set mounted, greeting, and load app mode on client side
   React.useEffect(() => {
     setMounted(true);
