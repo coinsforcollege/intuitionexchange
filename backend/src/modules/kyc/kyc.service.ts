@@ -121,16 +121,6 @@ export class KycService {
       throw new BadRequestException('Please complete address details first');
     }
 
-    // Check if there's already an active session
-    if (kyc.veriffSessionId && kyc.veriffStatus !== 'declined' && kyc.veriffStatus !== 'expired') {
-      // Return existing session (they may need to resume)
-      // In production, you might want to check if session is still valid
-      return {
-        sessionId: kyc.veriffSessionId,
-        message: 'Existing session found',
-      };
-    }
-
     // Format date of birth for Veriff (YYYY-MM-DD)
     const dob = kyc.dateOfBirth ? kyc.dateOfBirth.toISOString().split('T')[0] : '';
 

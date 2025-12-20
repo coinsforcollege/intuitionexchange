@@ -1135,8 +1135,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
       {/* Main */}
       <main style={mainStyle}>
-        {/* KYC Banner - Show when user is not verified */}
-        {mounted && user && user.kycStatus !== 'APPROVED' && !kycBannerDismissed && (
+        {/* KYC Banner - Show when user needs to complete or retry verification (not when submitted/pending) */}
+        {mounted && user && (user.kycStatus === 'PENDING' || user.kycStatus === 'REJECTED') && !kycBannerDismissed && (
           <div
             style={{
               background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
@@ -1171,42 +1171,38 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM, flex: 1, paddingRight: isMobile ? 24 : 0 }}>
               <span style={{ fontSize: 18 }}>⚠️</span>
               <span style={{ fontWeight: fontWeights.medium, fontSize: token.fontSize }}>
-                {user.kycStatus === 'SUBMITTED'
-                  ? 'Your identity verification is in progress.'
+                {user.kycStatus === 'REJECTED'
+                  ? 'Your verification was unsuccessful. Please try again.'
                   : 'Complete identity verification to unlock real trading and deposits.'}
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM, justifyContent: isMobile ? 'flex-start' : 'flex-end' }}>
-              {user.kycStatus !== 'SUBMITTED' && (
-                <>
-                  <Button
-                    size="small"
-                    onClick={() => router.push('/tuition-center')}
-                    style={{
-                      background: 'transparent',
-                      color: '#fff',
-                      border: '1px solid rgba(255,255,255,0.5)',
-                      fontWeight: fontWeights.medium,
-                    }}
-                  >
-                    Practice KYC
-                  </Button>
-                  <Button
-                    type="primary"
-                    size="small"
-                    onClick={() => router.push('/onboarding')}
-                    style={{
-                      background: '#fff',
-                      color: '#DC2626',
-                      border: 'none',
-                      fontWeight: fontWeights.semibold,
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                    }}
-                  >
-                    Complete Verification
-                  </Button>
-                </>
-              )}
+              <Button
+                size="small"
+                onClick={() => router.push('/tuition-center')}
+                style={{
+                  background: 'transparent',
+                  color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.5)',
+                  fontWeight: fontWeights.medium,
+                }}
+              >
+                Practice KYC
+              </Button>
+              <Button
+                type="primary"
+                size="small"
+                onClick={() => router.push('/onboarding')}
+                style={{
+                  background: '#fff',
+                  color: '#DC2626',
+                  border: 'none',
+                  fontWeight: fontWeights.semibold,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                }}
+              >
+                {user.kycStatus === 'REJECTED' ? 'Try Again' : 'Complete Verification'}
+              </Button>
               {/* Close button - inline on desktop */}
               {!isMobile && (
                 <CloseOutlined 
