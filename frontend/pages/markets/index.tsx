@@ -450,9 +450,10 @@ export default function MarketsPage() {
   // Use compact filter pills on mobile and small-medium screens
   const useCompactFilters = isMobile || isSmall || isMedium;
 
-  // Check if user is authenticated (for conditional layout and features)
+  // Check if user is authenticated (for conditional layout)
+  // Note: Layout is based only on authentication, not KYC status
+  // KYC-incomplete users still see dashboard layout (with KYC banner in DashboardLayout)
   const isAuthenticated = !!user;
-  const needsOnboarding = user && user.kycStatus !== 'APPROVED' && user.kycStatus !== 'PENDING';
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -465,7 +466,7 @@ export default function MarketsPage() {
 
   // Fetch watchlist only for authenticated users
   useEffect(() => {
-    if (!pageLoading && isAuthenticated && !needsOnboarding) {
+    if (!pageLoading && isAuthenticated) {
       const fetchWatchlist = async () => {
         try {
           setLoadingWatchlist(true);
@@ -481,7 +482,7 @@ export default function MarketsPage() {
     } else if (!isAuthenticated) {
       setLoadingWatchlist(false);
     }
-  }, [pageLoading, isAuthenticated, needsOnboarding]);
+  }, [pageLoading, isAuthenticated]);
 
   // Filter to USD pairs, separating college coins
   const usdPairs = useMemo(() => pairs.filter((p) => p.quote === 'USD' && !(p as TradingPairExtended).isCollegeCoin), [pairs]);
@@ -532,11 +533,6 @@ export default function MarketsPage() {
       router.push(`/login?redirect=/markets`);
       return;
     }
-    if (needsOnboarding) {
-      message.info('Please complete onboarding first');
-      router.push('/onboarding');
-      return;
-    }
     try {
       await toggleWatchlist(asset);
       setWatchlistAssets((prev) =>
@@ -545,7 +541,7 @@ export default function MarketsPage() {
     } catch (error) {
       console.error('Failed to toggle watchlist:', error);
     }
-  }, [isAuthenticated, needsOnboarding, router]);
+  }, [isAuthenticated, router]);
 
   // Navigate to token detail page - public access
   const handleNavigateToToken = useCallback((symbol: string) => {
@@ -569,7 +565,7 @@ export default function MarketsPage() {
     return (
       <>
         <Head><title>Markets - InTuition Exchange</title></Head>
-        {isAuthenticated && !needsOnboarding ? (
+        {isAuthenticated ? (
           <DashboardLayout activeKey="markets">
             <Skeleton active paragraph={{ rows: 12 }} />
           </DashboardLayout>
@@ -642,7 +638,7 @@ export default function MarketsPage() {
                 All
               </FilterPill>
               {/* Watchlist only available for authenticated users */}
-              {isAuthenticated && !needsOnboarding && (
+              {isAuthenticated && (
                 <FilterPill
                   active={activeTab === 'watchlist'}
                   onClick={() => setActiveTab('watchlist')}
@@ -859,7 +855,7 @@ export default function MarketsPage() {
         <meta name="description" content="Explore crypto markets on InTuition Exchange" />
       </Head>
 
-      {isAuthenticated && !needsOnboarding ? (
+      {isAuthenticated ? (
         <DashboardLayout activeKey="markets">
           {marketContent}
         </DashboardLayout>

@@ -29,6 +29,7 @@ function ExchangePageContent() {
   const [showOrderBook, setShowOrderBook] = useState(true);
   const [orderStatusModalVisible, setOrderStatusModalVisible] = useState(false);
   const [currentOrder, setCurrentOrder] = useState<InternalOrder | null>(null);
+  const [isSimulatedFailure, setIsSimulatedFailure] = useState(false);
   
   const isDark = mode === 'dark';
   
@@ -48,6 +49,7 @@ function ExchangePageContent() {
     getBalance,
     orders,
     isLoadingOrders,
+    appMode,
     publicTrades,
     isLoadingTrades,
     orderBook,
@@ -154,6 +156,7 @@ function ExchangePageContent() {
     
     // Show modal immediately with pending order
     setCurrentOrder(pendingOrder);
+    setIsSimulatedFailure(false); // Reset simulated failure flag
     setOrderStatusModalVisible(true);
     
     // Execute trade in background
@@ -193,7 +196,13 @@ function ExchangePageContent() {
         ...pendingOrder,
         status: 'FAILED',
       });
-      message.error('Unable to process trade at this time. Please try again later.');
+      
+      // Track if this is a simulated failure in learner mode
+      if (result.isSimulatedFailure) {
+        setIsSimulatedFailure(true);
+      } else {
+        message.error('Unable to process trade at this time. Please try again later.');
+      }
     }
   };
 
@@ -422,10 +431,13 @@ function ExchangePageContent() {
           onClose={() => {
             setOrderStatusModalVisible(false);
             setCurrentOrder(null);
+            setIsSimulatedFailure(false);
           }}
           onStatusUpdate={(updatedOrder) => {
             setCurrentOrder(updatedOrder);
           }}
+          isLearnerMode={appMode === 'learner'}
+          isSimulatedFailure={isSimulatedFailure}
         />
       </>
     );
@@ -615,10 +627,13 @@ function ExchangePageContent() {
         onClose={() => {
           setOrderStatusModalVisible(false);
           setCurrentOrder(null);
+          setIsSimulatedFailure(false);
         }}
         onStatusUpdate={(updatedOrder) => {
           setCurrentOrder(updatedOrder);
         }}
+        isLearnerMode={appMode === 'learner'}
+        isSimulatedFailure={isSimulatedFailure}
       />
     </>
   );

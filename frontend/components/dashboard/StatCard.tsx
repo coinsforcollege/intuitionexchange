@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { theme, Grid } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { fontWeights } from '@/theme/themeConfig';
+import { useThemeMode } from '@/context/ThemeContext';
 
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
@@ -35,9 +36,11 @@ const StatCard: React.FC<StatCardProps> = ({
   showDepositButton = false,
 }) => {
   const { token } = useToken();
+  const { mode } = useThemeMode();
   const screens = useBreakpoint();
   const [mounted, setMounted] = useState(false);
   const bgColor = color || token.colorPrimary;
+  const isDark = mode === 'dark';
 
   // Wait for client-side mount to avoid hydration mismatch
   useEffect(() => {
@@ -82,13 +85,78 @@ const StatCard: React.FC<StatCardProps> = ({
     ? token.fontSizeHeading3 * 0.9   // 21.6px
     : token.fontSizeHeading3;        // 24px
   
-  // Default gradient for total balance card
-  const defaultGradient = gradient || `linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)`;
+  // Gradient definitions for light/dark mode
+  // Light mode: vibrant purple-pink gradient
+  // Dark mode: sophisticated dark design with subtle depth and accent glow
+  const lightModeGradient = 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)';
+  // Dark mode: deep charcoal with subtle indigo undertones - rich but easy on eyes
+  const darkModeGradient = 'linear-gradient(135deg, #1e1b2e 0%, #2d2640 40%, #352f4a 100%)';
   
-  // For other cards, use color-based gradient if no gradient provided
-  const cardGradient = gradient || (color 
-    ? `linear-gradient(135deg, ${bgColor} 0%, ${bgColor}dd 100%)`
-    : defaultGradient);
+  // Dark mode color-based gradients - sophisticated dark backgrounds with subtle color accents
+  const getDarkModeColorGradient = (baseColor: string) => {
+    // Map common colors to dark mode variants
+    // Success (green) -> dark teal undertones
+    if (baseColor.includes('52c41a') || baseColor === token.colorSuccess) {
+      return 'linear-gradient(135deg, #1a2e1e 0%, #1e3a24 40%, #234a2a 100%)';
+    }
+    // Warning (yellow/orange) -> dark amber undertones
+    if (baseColor.includes('faad14') || baseColor === token.colorWarning) {
+      return 'linear-gradient(135deg, #2e2a1a 0%, #3a3520 40%, #4a4226 100%)';
+    }
+    // Error (red) -> dark crimson undertones
+    if (baseColor.includes('ff4d4f') || baseColor === token.colorError) {
+      return 'linear-gradient(135deg, #2e1a1a 0%, #3a1e1e 40%, #4a2424 100%)';
+    }
+    // Primary (blue/indigo) -> dark indigo undertones
+    if (baseColor.includes('1677ff') || baseColor === token.colorPrimary) {
+      return 'linear-gradient(135deg, #1a1e2e 0%, #1e243a 40%, #242c4a 100%)';
+    }
+    // Default dark gradient
+    return darkModeGradient;
+  };
+  
+  // Determine the card gradient
+  const getCardGradient = () => {
+    if (gradient) {
+      // If the standard light gradient is passed, convert to dark mode version
+      if (isDark && gradient.includes('#667eea') && gradient.includes('#764ba2')) {
+        return darkModeGradient;
+      }
+      return gradient;
+    }
+    if (color) {
+      if (isDark) {
+        return getDarkModeColorGradient(bgColor);
+      }
+      return `linear-gradient(135deg, ${bgColor} 0%, ${bgColor}dd 100%)`;
+    }
+    // Default gradient based on theme
+    return isDark ? darkModeGradient : lightModeGradient;
+  };
+  
+  const cardGradient = getCardGradient();
+
+  // Get accent color for dark mode based on the card's color
+  const getDarkModeAccentColor = () => {
+    if (color) {
+      if (bgColor.includes('52c41a') || bgColor === token.colorSuccess) {
+        return { primary: 'rgba(74, 222, 128, 0.15)', secondary: 'rgba(34, 197, 94, 0.12)', border: 'rgba(74, 222, 128, 0.15)' };
+      }
+      if (bgColor.includes('faad14') || bgColor === token.colorWarning) {
+        return { primary: 'rgba(251, 191, 36, 0.15)', secondary: 'rgba(245, 158, 11, 0.12)', border: 'rgba(251, 191, 36, 0.15)' };
+      }
+      if (bgColor.includes('ff4d4f') || bgColor === token.colorError) {
+        return { primary: 'rgba(248, 113, 113, 0.15)', secondary: 'rgba(239, 68, 68, 0.12)', border: 'rgba(248, 113, 113, 0.15)' };
+      }
+      if (bgColor.includes('1677ff') || bgColor === token.colorPrimary) {
+        return { primary: 'rgba(96, 165, 250, 0.15)', secondary: 'rgba(59, 130, 246, 0.12)', border: 'rgba(96, 165, 250, 0.15)' };
+      }
+    }
+    // Default purple accent
+    return { primary: 'rgba(139, 92, 246, 0.15)', secondary: 'rgba(99, 102, 241, 0.12)', border: 'rgba(139, 92, 246, 0.15)' };
+  };
+
+  const darkAccent = getDarkModeAccentColor();
 
   const cardStyle: React.CSSProperties = {
     background: cardGradient,
@@ -103,10 +171,13 @@ const StatCard: React.FC<StatCardProps> = ({
     width: '100%',
     minHeight: '160px',
     flex: 1,
-    boxShadow: `0 8px 24px ${bgColor}40`,
+    boxShadow: isDark 
+      ? '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+      : `0 8px 24px ${bgColor}40`,
+    border: isDark ? `1px solid ${darkAccent.border}` : 'none',
   };
 
-  // Decorative background elements
+  // Decorative background elements - subtle glow for dark mode
   const decorativeCircle1: React.CSSProperties = {
     position: 'absolute',
     top: -40,
@@ -114,8 +185,10 @@ const StatCard: React.FC<StatCardProps> = ({
     width: 120,
     height: 120,
     borderRadius: '50%',
-    background: 'rgba(255, 255, 255, 0.1)',
-    filter: 'blur(20px)',
+    background: isDark 
+      ? `radial-gradient(circle, ${darkAccent.primary} 0%, transparent 70%)`
+      : 'rgba(255, 255, 255, 0.1)',
+    filter: isDark ? 'blur(30px)' : 'blur(20px)',
   };
 
   const decorativeCircle2: React.CSSProperties = {
@@ -125,8 +198,29 @@ const StatCard: React.FC<StatCardProps> = ({
     width: 100,
     height: 100,
     borderRadius: '50%',
-    background: 'rgba(255, 255, 255, 0.08)',
-    filter: 'blur(15px)',
+    background: isDark 
+      ? `radial-gradient(circle, ${darkAccent.secondary} 0%, transparent 70%)`
+      : 'rgba(255, 255, 255, 0.08)',
+    filter: isDark ? 'blur(25px)' : 'blur(15px)',
+  };
+
+  // Get icon background for dark mode based on card color
+  const getDarkIconBackground = () => {
+    if (color) {
+      if (bgColor.includes('52c41a') || bgColor === token.colorSuccess) {
+        return 'rgba(74, 222, 128, 0.2)';
+      }
+      if (bgColor.includes('faad14') || bgColor === token.colorWarning) {
+        return 'rgba(251, 191, 36, 0.2)';
+      }
+      if (bgColor.includes('ff4d4f') || bgColor === token.colorError) {
+        return 'rgba(248, 113, 113, 0.2)';
+      }
+      if (bgColor.includes('1677ff') || bgColor === token.colorPrimary) {
+        return 'rgba(96, 165, 250, 0.2)';
+      }
+    }
+    return 'rgba(139, 92, 246, 0.2)';
   };
 
   const iconContainerStyle: React.CSSProperties = {
@@ -136,14 +230,19 @@ const StatCard: React.FC<StatCardProps> = ({
     width: isMobile ? 56 : isMdOnly ? 48 : isLgOnly ? 56 : 64,
     height: isMobile ? 56 : isMdOnly ? 48 : isLgOnly ? 56 : 64,
     borderRadius: token.borderRadiusLG,
-    background: 'rgba(255, 255, 255, 0.2)',
+    background: isDark 
+      ? getDarkIconBackground()
+      : 'rgba(255, 255, 255, 0.2)',
     backdropFilter: 'blur(10px)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: iconFontSize,
     opacity: 0.9,
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+    boxShadow: isDark 
+      ? '0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+      : '0 4px 12px rgba(0, 0, 0, 0.1)',
+    border: isDark ? `1px solid ${darkAccent.border.replace('0.15', '0.1')}` : 'none',
   };
 
   const contentStyle: React.CSSProperties = {

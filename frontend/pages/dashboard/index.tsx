@@ -307,10 +307,7 @@ export default function DashboardPage() {
         router.push('/login?redirect=/dashboard');
         return;
       }
-      if (user.kycStatus !== 'APPROVED' && user.kycStatus !== 'PENDING') {
-        router.push('/onboarding');
-        return;
-      }
+      // Allow access regardless of KYC status - KYC banner in DashboardLayout handles notification
       setPageLoading(false);
     }
   }, [user, isLoading, router]);

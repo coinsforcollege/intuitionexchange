@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { theme, Button, Modal, message, Input, Empty, Grid } from 'antd';
+import { theme, Button, Modal, Drawer, message, Input, Empty, Grid } from 'antd';
 import { 
   SwapOutlined, 
   InfoCircleOutlined, 
@@ -23,77 +23,7 @@ const { useBreakpoint } = Grid;
 
 type OrderSide = 'BUY' | 'SELL';
 
-// Styled input component - defined outside to prevent re-creation on every render
-interface StyledInputProps {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-  suffix?: React.ReactNode;
-  prefix?: React.ReactNode;
-  disabled?: boolean;
-  token: any;
-}
-
-const StyledInput: React.FC<StyledInputProps> = ({
-  value,
-  onChange,
-  placeholder,
-  suffix,
-  prefix,
-  disabled,
-  token,
-}) => (
-  <div style={{
-    display: 'flex',
-    alignItems: 'center',
-    border: `1px solid ${token.colorBorder}`,
-    borderRadius: token.borderRadius,
-    overflow: 'hidden',
-    backgroundColor: token.colorBgLayout,
-    transition: 'border-color 0.2s',
-  }}>
-    {prefix && (
-      <span style={{
-        paddingLeft: token.paddingMD,
-        color: token.colorText,
-        fontSize: token.fontSizeXL,
-        fontWeight: fontWeights.semibold,
-      }}>
-        {prefix}
-      </span>
-    )}
-    <input
-      type="number"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      disabled={disabled}
-      style={{
-        flex: 1,
-        padding: `${token.paddingMD}px ${prefix ? token.paddingXS : token.paddingMD}px`,
-        border: 'none',
-        outline: 'none',
-        fontSize: token.fontSizeXL,
-        fontWeight: fontWeights.semibold,
-        color: token.colorText,
-        backgroundColor: 'transparent',
-        minWidth: 0,
-      }}
-    />
-    {suffix && (
-      <div style={{
-        padding: `${token.paddingSM}px ${token.paddingMD}px`,
-        color: token.colorTextSecondary,
-        fontSize: token.fontSizeSM,
-        fontWeight: fontWeights.semibold,
-      }}>
-        {suffix}
-      </div>
-    )}
-  </div>
-);
-
-// Percentage chips component - defined outside to prevent re-creation on every render
+// Percentage chips component - minimal style
 interface PercentageChipsProps {
   onPercentageClick: (percent: number) => void;
   token: any;
@@ -106,25 +36,26 @@ const PercentageChips: React.FC<PercentageChipsProps> = ({ onPercentageClick, to
     marginTop: token.marginSM,
   }}>
     {[25, 50, 75, 100].map((percent) => (
-      <div
+      <motion.div
         key={percent}
         onClick={() => onPercentageClick(percent)}
+        whileTap={{ scale: 0.95 }}
         style={{
           flex: 1,
-          padding: `${token.paddingXS}px 0`,
-          textAlign: 'center',
-          fontSize: token.fontSizeSM,
-          fontWeight: fontWeights.medium,
-          color: token.colorTextSecondary,
-          background: token.colorBgLayout,
-          border: `1px solid ${token.colorBorderSecondary}`,
-          borderRadius: token.borderRadiusSM,
+          padding: `6px 0`,
+          fontSize: 12,
+          fontWeight: fontWeights.semibold,
+          color: token.colorPrimary,
+          background: token.colorPrimaryBg,
+          border: `1px solid ${token.colorPrimaryBorder}`,
+          borderRadius: token.borderRadius,
           cursor: 'pointer',
           transition: 'all 0.15s ease',
+          textAlign: 'center',
         }}
       >
-        {percent}%
-      </div>
+        {percent === 100 ? 'MAX' : `${percent}%`}
+      </motion.div>
     ))}
   </div>
 );
@@ -220,6 +151,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [orderStatusModalVisible, setOrderStatusModalVisible] = useState(false);
   const [currentOrder, setCurrentOrder] = useState<InternalOrder | null>(null);
+  const [isSimulatedFailure, setIsSimulatedFailure] = useState(false);
   
   // Update selected asset when initialAsset prop changes (e.g., from URL query)
   // Or when in learner mode, default to first college coin once pairs load
@@ -371,6 +303,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
     
     // Show modal immediately with pending status
     setCurrentOrder(pendingOrder);
+    setIsSimulatedFailure(false); // Reset simulated failure flag
     setOrderStatusModalVisible(true);
     
     try {
@@ -397,9 +330,9 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
           setAmount('');
           setCashAmount('');
           
-          // Handle simulated failure in learner mode
+          // Handle simulated failure in learner mode - modal will show educational content
           if (result.isSimulatedFailure) {
-            message.warning('Simulated trade failure - this is normal in learner mode to practice handling failed orders.');
+            setIsSimulatedFailure(true);
           }
         } else {
           // Update order to failed
@@ -408,9 +341,9 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
             status: 'FAILED',
           });
           
-          // Show message for simulated failure
+          // Track simulated failure for modal display
           if (result.isSimulatedFailure) {
-            message.warning('Simulated trade failure - this is normal in learner mode to practice handling failed orders.');
+            setIsSimulatedFailure(true);
           }
         }
       }
@@ -436,229 +369,253 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
     ? amountNum 
     : cashAmountNum - fee;
 
+  // State for fee details expansion
+  const [showFeeDetails, setShowFeeDetails] = useState(false);
+  
   return (
     <div style={{
       backgroundColor: token.colorBgContainer,
       borderRadius: token.borderRadiusLG,
-      padding: token.paddingLG,
-      paddingBottom: isMobile ? token.paddingMD : token.paddingLG,
-      border: `1px solid ${token.colorBorderSecondary}`,
+      padding: isMobile ? token.paddingMD : token.paddingLG,
       maxWidth: 420,
       width: '100%',
     }}>
-      {/* Buy/Sell Toggle - Tab Style */}
+      {/* Buy/Sell Toggle - Tab style with underline */}
       <div style={{
         display: 'flex',
-        marginBottom: token.marginLG,
         borderBottom: `1px solid ${token.colorBorderSecondary}`,
+        marginBottom: token.marginMD,
       }}>
         {(['BUY', 'SELL'] as OrderSide[]).map((s) => {
           const isActive = side === s;
-          const activeColor = s === 'BUY' ? token.colorSuccess : token.colorError;
           
           return (
-            <motion.div
+            <div
               key={s}
               onClick={() => setSide(s)}
-              whileTap={{ scale: 0.98 }}
               style={{
                 flex: 1,
                 padding: `${token.paddingSM}px ${token.paddingMD}px`,
-                paddingBottom: token.paddingMD,
-                textAlign: 'center',
                 cursor: 'pointer',
+                fontSize: token.fontSize,
+                fontWeight: isActive ? fontWeights.bold : fontWeights.medium,
+                color: isActive ? token.colorText : token.colorTextTertiary,
+                textAlign: 'center',
                 position: 'relative',
-                transition: 'all 0.2s ease',
               }}
             >
-              <span style={{
-                fontSize: token.fontSizeLG,
-                fontWeight: isActive ? fontWeights.bold : fontWeights.medium,
-                color: isActive ? activeColor : token.colorTextTertiary,
-                transition: 'color 0.2s ease',
-              }}>
-                {s === 'BUY' ? 'Buy' : 'Sell'}
-              </span>
-              {/* Active indicator line */}
+              {s === 'BUY' ? 'Buy' : 'Sell'}
               {isActive && (
                 <motion.div
-                  layoutId="activeTab"
+                  layoutId="buySellIndicator"
                   style={{
                     position: 'absolute',
                     bottom: -1,
-                    left: token.paddingMD,
-                    right: token.paddingMD,
-                    height: 3,
-                    borderRadius: 2,
-                    background: activeColor,
+                    left: '20%',
+                    right: '20%',
+                    height: 2,
+                    background: token.colorPrimary,
+                    borderRadius: 1,
                   }}
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               )}
-            </motion.div>
+            </div>
           );
         })}
       </div>
       
-      {/* Token Selector */}
-      <div style={{ marginBottom: token.marginMD }}>
-        <div style={{
-          fontSize: token.fontSizeSM,
-          color: token.colorTextSecondary,
-          marginBottom: token.marginXS,
-        }}>
-          {isBuy ? 'You want to buy' : 'You want to sell'}
-        </div>
-        <motion.div
-          whileHover={{ borderColor: token.colorPrimary }}
-          onClick={() => setShowTokenPicker(true)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: token.marginSM,
-            padding: token.paddingMD,
-            border: `1px solid ${token.colorBorder}`,
-            borderRadius: token.borderRadius,
-            cursor: 'pointer',
-            background: token.colorBgLayout,
-            transition: 'border-color 0.2s',
-          }}
-        >
-          {selectedPair ? (
-            <>
-              <img
-                src={selectedPair.iconUrl}
-                alt={selectedPair.baseCurrency}
-                width={36}
-                height={36}
-                style={{ borderRadius: '50%' }}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${selectedPair.baseCurrency}&background=667eea&color=fff&size=72`;
-                }}
-              />
-              <div style={{ flex: 1 }}>
-                <div style={{
-                  fontWeight: fontWeights.semibold,
-                  color: token.colorText,
-                }}>
-                  {selectedPair.baseCurrency}
-                </div>
-                <div style={{
-                  fontSize: token.fontSizeSM,
-                  color: token.colorTextTertiary,
-                }}>
-                  {selectedPair.name}
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{
-                  fontSize: token.fontSizeSM,
-                  color: token.colorText,
-                  fontWeight: fontWeights.medium,
-                }}>
-                  ${price.toLocaleString('en-US', { 
-                    minimumFractionDigits: 2, 
-                    maximumFractionDigits: price < 1 ? 6 : 2 
-                  })}
-                </div>
-                <div style={{
-                  fontSize: 11,
-                  color: selectedPair.change >= 0 ? token.colorSuccess : token.colorError,
-                }}>
-                  {selectedPair.change >= 0 ? '+' : ''}{selectedPair.change.toFixed(2)}%
-                </div>
-              </div>
-            </>
-          ) : (
-            <span style={{ color: token.colorTextTertiary }}>Select token</span>
-          )}
-          <DownOutlined style={{ color: token.colorTextTertiary, fontSize: 12 }} />
-        </motion.div>
-      </div>
-      
-      {/* Available Balance */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: token.marginSM,
-        padding: `${token.paddingSM}px ${token.paddingMD}px`,
-        background: token.colorBgLayout,
-        borderRadius: token.borderRadiusSM,
-      }}>
-        <div style={{
+      {/* Token Selector - 3D Claymorphic style */}
+      <motion.div
+        whileTap={{ scale: 0.97 }}
+        onClick={() => setShowTokenPicker(true)}
+        style={{
           display: 'flex',
           alignItems: 'center',
-          gap: token.marginXS,
-          fontSize: token.fontSizeSM,
-          color: token.colorTextSecondary,
-        }}>
-          <WalletOutlined />
-          <span>Available</span>
-        </div>
-        <span style={{
-          fontSize: token.fontSizeSM,
-          fontWeight: fontWeights.semibold,
-          color: token.colorText,
-        }}>
-          {isBuy 
-            ? `$${cashBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`
-            : `${tokenBalance.toFixed(tokenBalance < 0.0001 ? 8 : 4)} ${selectedAsset}`
-          }
-        </span>
-      </div>
-      
-      {/* Amount Inputs */}
-      <div style={{ marginBottom: token.marginLG }}>
-        {isBuy ? (
+          gap: token.marginSM,
+          padding: `${token.paddingSM}px ${token.paddingMD}px`,
+          marginBottom: token.marginMD,
+          cursor: 'pointer',
+          borderRadius: 16,
+          // Claymorphic gradient background
+          background: isDark
+            ? `linear-gradient(145deg, rgba(139, 92, 246, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%)`
+            : `linear-gradient(145deg, rgba(139, 92, 246, 0.12) 0%, rgba(99, 102, 241, 0.08) 100%)`,
+          // 3D claymorphic shadows
+          boxShadow: isDark
+            ? `
+              4px 4px 12px rgba(0,0,0,0.4),
+              -2px -2px 8px rgba(139, 92, 246, 0.15),
+              inset 2px 2px 4px rgba(255,255,255,0.05),
+              inset -2px -2px 4px rgba(0,0,0,0.2)
+            `
+            : `
+              4px 4px 12px rgba(0,0,0,0.08),
+              -2px -2px 8px rgba(255,255,255,0.9),
+              inset 2px 2px 4px rgba(255,255,255,0.5),
+              inset -2px -2px 4px rgba(0,0,0,0.03)
+            `,
+          border: isDark 
+            ? '1px solid rgba(139, 92, 246, 0.2)' 
+            : '1px solid rgba(139, 92, 246, 0.15)',
+        }}
+      >
+        {selectedPair ? (
           <>
-            {/* Cash Amount (Primary input for BUY) */}
-            <div style={{ marginBottom: token.marginMD }}>
-              <div style={{
-                fontSize: token.fontSizeSM,
-                color: token.colorTextSecondary,
-                marginBottom: token.marginXS,
-              }}>
-                You pay
-              </div>
-              <StyledInput
-                value={cashAmount}
-                onChange={handleCashAmountChange}
-                placeholder="0.00"
-                prefix="$"
-                suffix="USD"
-                token={token}
-              />
-              {/* Percentage chips right after primary input */}
-              <PercentageChips onPercentageClick={handlePercentage} token={token} />
+            <img
+              src={selectedPair.iconUrl}
+              alt={selectedPair.baseCurrency}
+              width={36}
+              height={36}
+              style={{ 
+                borderRadius: '50%',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+              }}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${selectedPair.baseCurrency}&background=667eea&color=fff&size=72`;
+              }}
+            />
+            <div style={{ flex: 1 }}>
+              <span style={{ fontWeight: fontWeights.bold, color: token.colorText, fontSize: token.fontSizeLG }}>
+                {selectedPair.baseCurrency}
+              </span>
+              <span style={{ color: token.colorTextTertiary, marginLeft: token.marginXS, fontSize: token.fontSizeSM }}>
+                {selectedPair.name}
+              </span>
             </div>
-            
-            {/* Swap Icon */}
-            <div style={{ textAlign: 'center', margin: `${token.marginSM}px 0` }}>
-              <SwapOutlined 
-                rotate={90}
-                style={{ 
-                  fontSize: 16, 
-                  color: token.colorTextTertiary,
-                  padding: token.paddingXS,
-                  background: token.colorBgLayout,
-                  borderRadius: '50%',
-                }} 
-              />
-            </div>
-            
-            {/* Token Amount (Calculated for BUY) */}
-            <div>
-              <div style={{
-                fontSize: token.fontSizeSM,
-                color: token.colorTextSecondary,
-                marginBottom: token.marginXS,
-              }}>
-                You receive (estimate)
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: token.fontSizeSM, color: token.colorText, fontWeight: fontWeights.medium }}>
+                ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: price < 1 ? 4 : 2 })}
               </div>
-              <StyledInput
-                value={amount}
-                onChange={(v) => {
+            </div>
+            <DownOutlined style={{ color: token.colorPrimary, fontSize: 12 }} />
+          </>
+        ) : (
+          <>
+            <div style={{
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              background: `linear-gradient(135deg, ${token.colorPrimary}40, ${token.colorPrimary}20)`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: isDark 
+                ? 'inset 1px 1px 2px rgba(255,255,255,0.1), inset -1px -1px 2px rgba(0,0,0,0.2)'
+                : 'inset 1px 1px 2px rgba(255,255,255,0.5), inset -1px -1px 2px rgba(0,0,0,0.05)',
+            }}>
+              <span style={{ fontSize: 18 }}>🪙</span>
+            </div>
+            <span style={{ color: token.colorText, flex: 1, fontWeight: fontWeights.semibold }}>
+              Select token
+            </span>
+            <DownOutlined style={{ color: token.colorPrimary, fontSize: 12 }} />
+          </>
+        )}
+      </motion.div>
+      
+      {/* Amount Section */}
+      <div style={{ marginBottom: token.marginMD }}>
+        {/* Primary input (You pay / You sell) */}
+        <div style={{ marginBottom: token.marginSM }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 6,
+          }}>
+            <span style={{ fontSize: token.fontSizeSM, color: token.colorTextSecondary }}>
+              {isBuy ? 'You pay' : 'You sell'}
+            </span>
+            <span 
+              onClick={() => handlePercentage(100)}
+              style={{ 
+                fontSize: 12, 
+                color: token.colorPrimary, 
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              <WalletOutlined style={{ fontSize: 11 }} />
+              {isBuy 
+                ? `$${cashBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : `${tokenBalance.toFixed(tokenBalance < 1 ? 4 : 2)} ${selectedAsset}`
+              }
+            </span>
+          </div>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            background: token.colorBgLayout,
+            borderRadius: token.borderRadius,
+            padding: `${token.paddingMD}px`,
+          }}>
+            <input
+              type="number"
+              value={isBuy ? cashAmount : amount}
+              onChange={(e) => isBuy ? handleCashAmountChange(e.target.value) : handleTokenAmountChange(e.target.value)}
+              placeholder="0.00"
+              style={{
+                flex: 1,
+                border: 'none',
+                outline: 'none',
+                fontSize: 24,
+                fontWeight: fontWeights.bold,
+                color: token.colorText,
+                backgroundColor: 'transparent',
+                minWidth: 0,
+              }}
+            />
+            <span style={{ color: token.colorTextSecondary, fontSize: token.fontSize, fontWeight: fontWeights.semibold }}>
+              {isBuy ? 'USD' : selectedAsset}
+            </span>
+          </div>
+          
+          {/* Percentage chips */}
+          <PercentageChips onPercentageClick={handlePercentage} token={token} />
+        </div>
+        
+        {/* Arrow divider */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          margin: `${token.marginSM}px 0`,
+        }}>
+          <SwapOutlined 
+            rotate={90}
+            style={{ 
+              fontSize: 16, 
+              color: token.colorTextTertiary,
+              padding: 8,
+              background: token.colorBgLayout,
+              borderRadius: '50%',
+            }} 
+          />
+        </div>
+        
+        {/* Secondary input (You get) */}
+        <div>
+          <div style={{ marginBottom: 6 }}>
+            <span style={{ fontSize: token.fontSizeSM, color: token.colorTextSecondary }}>
+              You get (estimate)
+            </span>
+          </div>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            background: token.colorBgLayout,
+            borderRadius: token.borderRadius,
+            padding: `${token.paddingMD}px`,
+          }}>
+            <input
+              type="number"
+              value={isBuy ? amount : cashAmount}
+              onChange={(e) => {
+                if (isBuy) {
+                  const v = e.target.value;
                   setAmount(v);
                   const num = parseFloat(v) || 0;
                   if (num > 0 && price > 0) {
@@ -666,171 +623,127 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
                   } else {
                     setCashAmount('');
                   }
-                }}
-                placeholder="0.00"
-                suffix={selectedAsset}
-                token={token}
-              />
-            </div>
-          </>
-        ) : (
-          <>
-            {/* Token Amount (Primary input for SELL) */}
-            <div style={{ marginBottom: token.marginMD }}>
-              <div style={{
-                fontSize: token.fontSizeSM,
-                color: token.colorTextSecondary,
-                marginBottom: token.marginXS,
-              }}>
-                You sell
-              </div>
-              <StyledInput
-                value={amount}
-                onChange={handleTokenAmountChange}
-                placeholder="0.00"
-                suffix={selectedAsset}
-                token={token}
-              />
-              {/* Percentage chips right after primary input */}
-              <PercentageChips onPercentageClick={handlePercentage} token={token} />
-            </div>
-            
-            {/* Swap Icon */}
-            <div style={{ textAlign: 'center', margin: `${token.marginSM}px 0` }}>
-              <SwapOutlined 
-                rotate={90}
-                style={{ 
-                  fontSize: 16, 
-                  color: token.colorTextTertiary,
-                  padding: token.paddingXS,
-                  background: token.colorBgLayout,
-                  borderRadius: '50%',
-                }} 
-              />
-            </div>
-            
-            {/* Cash Amount (Calculated for SELL) */}
-            <div>
-              <div style={{
-                fontSize: token.fontSizeSM,
-                color: token.colorTextSecondary,
-                marginBottom: token.marginXS,
-              }}>
-                You receive (estimate)
-              </div>
-              <StyledInput
-                value={cashAmount}
-                onChange={(v) => {
-                  const restricted = restrictCashDecimals(v);
-                  setCashAmount(restricted);
-                  const num = parseFloat(restricted) || 0;
+                } else {
+                  const v = restrictCashDecimals(e.target.value);
+                  setCashAmount(v);
+                  const num = parseFloat(v) || 0;
                   if (num > 0 && price > 0) {
                     setAmount((num / price).toFixed(8));
                   } else {
                     setAmount('');
                   }
-                }}
-                placeholder="0.00"
-                prefix="$"
-                suffix="USD"
-                token={token}
-              />
-            </div>
-          </>
-        )}
+                }
+              }}
+              placeholder="0.00"
+              style={{
+                flex: 1,
+                border: 'none',
+                outline: 'none',
+                fontSize: 24,
+                fontWeight: fontWeights.bold,
+                color: isBuy ? token.colorSuccess : token.colorText,
+                backgroundColor: 'transparent',
+                minWidth: 0,
+              }}
+            />
+            <span style={{ color: token.colorTextSecondary, fontSize: token.fontSize, fontWeight: fontWeights.semibold }}>
+              {isBuy ? selectedAsset : 'USD'}
+            </span>
+          </div>
+        </div>
       </div>
       
-      {/* Insufficient Balance Warning */}
+      {/* Insufficient Balance Warning - Minimal */}
       <AnimatePresence>
         {(cashAmountNum > 0 || amountNum > 0) && (
           (isBuy && cashAmountNum > cashBalance + 0.01) || (!isBuy && amountNum > tokenBalance) ? (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               style={{
                 marginBottom: token.marginSM,
-                padding: token.paddingSM,
-                backgroundColor: token.colorErrorBg,
-                borderRadius: token.borderRadiusSM,
-                border: `1px solid ${token.colorErrorBorder}`,
                 fontSize: token.fontSizeSM,
                 color: token.colorError,
               }}
             >
-              <InfoCircleOutlined style={{ marginRight: token.marginXS }} />
-              Insufficient balance. {isBuy 
-                ? cashBalance === 0 
-                  ? `You don't have any USD to complete this trade`
-                  : `You need $${cashAmountNum.toFixed(2)} but only have $${cashBalance.toFixed(2)}`
-                : tokenBalance === 0
-                  ? `You don't have any ${selectedAsset} to sell`
-                  : `You want to sell ${amountNum.toFixed(8)} but only have ${tokenBalance.toFixed(8)}`
+              <InfoCircleOutlined style={{ marginRight: 4 }} />
+              {isBuy 
+                ? `Insufficient funds (need $${cashAmountNum.toFixed(2)})`
+                : `Insufficient ${selectedAsset}`
               }
             </motion.div>
           ) : null
         )}
       </AnimatePresence>
       
-      {/* Fee Info */}
+      {/* Fee Summary - Collapsible */}
       <AnimatePresence>
         {cashAmountNum > 0 && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            style={{
-              marginBottom: token.marginMD,
-              padding: token.paddingMD,
-              background: token.colorBgLayout,
-              borderRadius: token.borderRadiusSM,
-              fontSize: token.fontSizeSM,
-            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ marginBottom: token.marginMD }}
           >
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              marginBottom: token.marginXS,
-              color: token.colorTextSecondary,
-            }}>
-              <span>Price</span>
-              <span style={{ color: token.colorText }}>
-                ${price.toLocaleString('en-US', { 
-                  minimumFractionDigits: 2, 
-                  maximumFractionDigits: price < 1 ? 6 : 2 
-                })}
-              </span>
-            </div>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              marginBottom: token.marginXS,
-              color: token.colorTextSecondary,
-            }}>
-              <span>Fee (0.5%)</span>
-              <span style={{ color: token.colorText }}>
-                ${fee.toFixed(2)}
-              </span>
-            </div>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between',
-              paddingTop: token.paddingSM,
-              borderTop: `1px solid ${token.colorBorderSecondary}`,
-            }}>
-              <span style={{ color: token.colorTextSecondary }}>
-                You {isBuy ? 'receive' : 'get'}
+            {/* Summary line - always visible */}
+            <div 
+              onClick={() => setShowFeeDetails(!showFeeDetails)}
+              style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                cursor: 'pointer',
+                padding: `${token.paddingXS}px 0`,
+                fontSize: token.fontSizeSM,
+                color: token.colorTextSecondary,
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                Fee ${fee.toFixed(2)}
+                <DownOutlined style={{ 
+                  fontSize: 8, 
+                  transform: showFeeDetails ? 'rotate(180deg)' : 'rotate(0)',
+                  transition: 'transform 0.2s',
+                }} />
               </span>
               <span style={{ 
                 color: isBuy ? token.colorSuccess : token.colorText, 
-                fontWeight: fontWeights.bold 
+                fontWeight: fontWeights.semibold 
               }}>
-                {isBuy 
-                  ? `${receiveAmount.toFixed(6)} ${selectedAsset}`
+                → {isBuy 
+                  ? `${receiveAmount.toFixed(4)} ${selectedAsset}`
                   : `$${receiveAmount.toFixed(2)}`
                 }
               </span>
             </div>
+            
+            {/* Expanded details */}
+            <AnimatePresence>
+              {showFeeDetails && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  style={{ 
+                    fontSize: 12, 
+                    color: token.colorTextTertiary,
+                    paddingTop: token.paddingXS,
+                    borderTop: `1px dashed ${token.colorBorderSecondary}`,
+                    marginTop: token.marginXS,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                    <span>Price</span>
+                    <span>${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: price < 1 ? 4 : 2 })}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Fee (0.5%)</span>
+                    <span>${fee.toFixed(2)}</span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>
@@ -936,59 +849,46 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
         </>
       )}
       
-      {/* Token Picker Modal */}
-      <Modal
-        title={null}
-        open={showTokenPicker}
-        onCancel={() => {
-          setShowTokenPicker(false);
-          setSearchQuery('');
-        }}
-        footer={null}
-        width={400}
-        centered
-        destroyOnClose={false}
-        styles={{
-          body: {
-            borderRadius: token.borderRadiusLG,
-            padding: 0,
-            overflow: 'hidden',
-            background: token.colorBgContainer,
-          },
-          mask: {
-            backdropFilter: 'blur(4px)',
-          },
-        }}
-      >
-        <div style={{ padding: token.paddingLG }}>
-          <div style={{
-            fontSize: token.fontSizeHeading4,
-            fontWeight: fontWeights.bold,
-            marginBottom: token.marginMD,
-            color: token.colorText,
-          }}>
-            Select Token
+      {/* Token Picker - Drawer (bottom sheet) on mobile, Modal on desktop */}
+      {isMobile ? (
+        <Drawer
+          title="Select Token"
+          placement="bottom"
+          open={showTokenPicker}
+          onClose={() => {
+            setShowTokenPicker(false);
+            setSearchQuery('');
+          }}
+          height="70vh"
+          styles={{
+            header: {
+              padding: `${token.paddingSM}px ${token.paddingMD}px`,
+              borderBottom: `1px solid ${token.colorBorderSecondary}`,
+            },
+            body: {
+              padding: 0,
+              display: 'flex',
+              flexDirection: 'column',
+            },
+          }}
+        >
+          <div style={{ padding: `${token.paddingSM}px ${token.paddingMD}px` }}>
+            <Input
+              prefix={<SearchOutlined style={{ color: token.colorTextTertiary }} />}
+              placeholder="Search tokens..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                borderRadius: token.borderRadius,
+                background: token.colorBgLayout,
+              }}
+              allowClear
+            />
           </div>
-          
-          <Input
-            prefix={<SearchOutlined style={{ color: token.colorTextTertiary }} />}
-            placeholder="Search by name or symbol"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              borderRadius: 50,
-              marginBottom: token.marginMD,
-              background: token.colorBgLayout,
-            }}
-            size="large"
-            allowClear
-          />
-          
           <div style={{
-            maxHeight: 400,
+            flex: 1,
             overflowY: 'auto',
-            margin: `0 -${token.paddingLG}px`,
-            padding: `0 ${token.paddingLG}px`,
+            padding: `0 ${token.paddingXS}px ${token.paddingSM}px`,
           }}>
             {filteredTokens.length === 0 ? (
               <Empty description="No tokens found" />
@@ -1010,9 +910,117 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
                       alignItems: 'center',
                       gap: token.marginSM,
                       padding: `${token.paddingSM}px ${token.paddingMD}px`,
-                      margin: `0 -${token.paddingMD}px`,
                       cursor: 'pointer',
-                      borderRadius: token.borderRadiusSM,
+                      borderRadius: token.borderRadius,
+                      backgroundColor: isSelected ? token.colorPrimaryBg : 'transparent',
+                    }}
+                  >
+                    <img
+                      src={pair.iconUrl}
+                      alt={pair.baseCurrency}
+                      width={40}
+                      height={40}
+                      style={{ borderRadius: '50%', flexShrink: 0 }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${pair.baseCurrency}&background=667eea&color=fff&size=80`;
+                      }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontWeight: fontWeights.semibold, color: token.colorText, fontSize: token.fontSize }}>
+                          {pair.baseCurrency}
+                        </span>
+                        {(pair as TradingPair).isCollegeCoin && (
+                          <span style={{ fontSize: 10, color: '#fff', background: 'linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)', padding: '2px 6px', borderRadius: 4 }}>
+                            College
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: token.fontSizeSM, color: token.colorTextTertiary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {pair.name}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontSize: token.fontSize, color: token.colorText, fontWeight: fontWeights.medium }}>
+                        ${pair.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: pair.price < 1 ? 4 : 2 })}
+                      </div>
+                      {balance > 0 && (
+                        <div style={{ fontSize: token.fontSizeSM, color: token.colorTextTertiary }}>{balance.toFixed(balance < 1 ? 4 : 2)}</div>
+                      )}
+                    </div>
+                    {isSelected && <CheckOutlined style={{ color: token.colorPrimary, fontSize: 16 }} />}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </Drawer>
+      ) : (
+        <Modal
+          title="Select Token"
+          open={showTokenPicker}
+          onCancel={() => {
+            setShowTokenPicker(false);
+            setSearchQuery('');
+          }}
+          footer={null}
+          width={480}
+          centered
+          destroyOnClose={false}
+          styles={{
+            header: {
+              padding: `${token.paddingSM}px ${token.paddingMD}px`,
+              marginBottom: 0,
+              borderBottom: `1px solid ${token.colorBorderSecondary}`,
+            },
+            body: {
+              padding: 0,
+            },
+            mask: {
+              backdropFilter: 'blur(4px)',
+            },
+          }}
+        >
+          <div style={{ padding: `${token.paddingSM}px ${token.paddingMD}px` }}>
+            <Input
+              prefix={<SearchOutlined style={{ color: token.colorTextTertiary }} />}
+              placeholder="Search tokens..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                borderRadius: token.borderRadius,
+                background: token.colorBgLayout,
+              }}
+              allowClear
+            />
+          </div>
+          <div style={{
+            maxHeight: 400,
+            overflowY: 'auto',
+            padding: `0 ${token.paddingXS}px ${token.paddingSM}px`,
+          }}>
+            {filteredTokens.length === 0 ? (
+              <Empty description="No tokens found" />
+            ) : (
+              filteredTokens.map((pair) => {
+                const isSelected = pair.baseCurrency === selectedAsset;
+                const balance = getBalance(pair.baseCurrency);
+                
+                return (
+                  <div
+                    key={pair.baseCurrency}
+                    onClick={() => {
+                      setSelectedAsset(pair.baseCurrency);
+                      setShowTokenPicker(false);
+                      setSearchQuery('');
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: token.marginSM,
+                      padding: `${token.paddingSM}px ${token.paddingMD}px`,
+                      cursor: 'pointer',
+                      borderRadius: token.borderRadius,
                       backgroundColor: isSelected 
                         ? token.colorPrimaryBg
                         : 'transparent',
@@ -1020,7 +1028,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
                     }}
                     onMouseEnter={(e) => {
                       if (!isSelected) {
-                        e.currentTarget.style.backgroundColor = token.colorBgLayout;
+                        e.currentTarget.style.backgroundColor = token.colorFillTertiary;
                       }
                     }}
                     onMouseLeave={(e) => {
@@ -1034,61 +1042,56 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
                       alt={pair.baseCurrency}
                       width={40}
                       height={40}
-                      style={{ borderRadius: '50%' }}
+                      style={{ borderRadius: '50%', flexShrink: 0 }}
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${pair.baseCurrency}&background=667eea&color=fff&size=80`;
                       }}
                     />
-<div style={{ flex: 1 }}>
-                                <div style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 6,
-                                }}>
-                                  <span style={{
-                                    fontWeight: fontWeights.semibold,
-                                    color: token.colorText,
-                                    fontSize: token.fontSize,
-                                  }}>
-                                    {pair.baseCurrency}
-                                  </span>
-                                  {(pair as TradingPair).isCollegeCoin && (
-                                    <span style={{
-                                      fontSize: 10,
-                                      color: '#fff',
-                                      background: 'linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)',
-                                      padding: '2px 6px',
-                                      borderRadius: 4,
-                                      fontWeight: fontWeights.medium,
-                                    }}>
-                                      College
-                                    </span>
-                                  )}
-                                </div>
-                                <div style={{
-                                  fontSize: token.fontSizeSM,
-                                  color: token.colorTextSecondary,
-                                }}>
-                                  {pair.name}
-                                </div>
-                              </div>
-                    <div style={{ textAlign: 'right' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{
+                          fontWeight: fontWeights.semibold,
+                          color: token.colorText,
+                          fontSize: token.fontSize,
+                        }}>
+                          {pair.baseCurrency}
+                        </span>
+                        {(pair as TradingPair).isCollegeCoin && (
+                          <span style={{
+                            fontSize: 10,
+                            color: '#fff',
+                            background: 'linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)',
+                            padding: '2px 6px',
+                            borderRadius: 4,
+                          }}>
+                            College
+                          </span>
+                        )}
+                      </div>
                       <div style={{
                         fontSize: token.fontSizeSM,
+                        color: token.colorTextTertiary,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}>
+                        {pair.name}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{
+                        fontSize: token.fontSize,
                         color: token.colorText,
                         fontWeight: fontWeights.medium,
                       }}>
                         ${pair.price.toLocaleString('en-US', { 
                           minimumFractionDigits: 2, 
-                          maximumFractionDigits: pair.price < 1 ? 6 : 2 
+                          maximumFractionDigits: pair.price < 1 ? 4 : 2 
                         })}
                       </div>
                       {balance > 0 && (
-                        <div style={{
-                          fontSize: 11,
-                          color: token.colorTextTertiary,
-                        }}>
-                          {balance.toFixed(balance < 0.0001 ? 8 : 4)} available
+                        <div style={{ fontSize: token.fontSizeSM, color: token.colorTextTertiary }}>
+                          {balance.toFixed(balance < 1 ? 4 : 2)}
                         </div>
                       )}
                     </div>
@@ -1100,8 +1103,8 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
               })
             )}
           </div>
-        </div>
-      </Modal>
+        </Modal>
+      )}
       
       {/* Confirmation Modal */}
       <Modal
@@ -1266,10 +1269,13 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
         onClose={() => {
           setOrderStatusModalVisible(false);
           setCurrentOrder(null);
+          setIsSimulatedFailure(false);
         }}
         onStatusUpdate={(updatedOrder) => {
           setCurrentOrder(updatedOrder);
         }}
+        isLearnerMode={appMode === 'learner'}
+        isSimulatedFailure={isSimulatedFailure}
       />
     </div>
   );

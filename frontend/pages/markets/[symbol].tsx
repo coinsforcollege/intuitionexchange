@@ -197,9 +197,10 @@ export default function TokenDetailsPage() {
   const livePrice = collegeCoinData?.currentPrice || pairData?.price || tokenData?.market_data?.current_price?.usd || 0;
   const liveChange = pairData?.change || tokenData?.market_data?.price_change_percentage_24h || 0;
 
-  // Check if user is authenticated (for conditional layout and features)
+  // Check if user is authenticated (for conditional layout)
+  // Note: Layout is based only on authentication, not KYC status
+  // KYC-incomplete users still see dashboard layout (with KYC banner in DashboardLayout)
   const isAuthenticated = !!user;
-  const needsOnboarding = user && user.kycStatus !== 'APPROVED' && user.kycStatus !== 'PENDING';
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -285,12 +286,12 @@ export default function TokenDetailsPage() {
 
   // Fetch watchlist (only for authenticated users)
   useEffect(() => {
-    if (!pageLoading && symbol && typeof symbol === 'string' && isAuthenticated && !needsOnboarding) {
+    if (!pageLoading && symbol && typeof symbol === 'string' && isAuthenticated) {
       getWatchlist()
         .then((items) => setIsWatchlisted(items.some((item) => item.asset === symbol.toUpperCase())))
         .catch(() => {});
     }
-  }, [pageLoading, symbol, isAuthenticated, needsOnboarding]);
+  }, [pageLoading, symbol, isAuthenticated]);
 
   const handleToggleWatchlist = useCallback(async () => {
     if (!symbol || typeof symbol !== 'string') return;
@@ -298,11 +299,6 @@ export default function TokenDetailsPage() {
     if (!isAuthenticated) {
       message.info('Please log in to add to watchlist');
       router.push(`/login?redirect=${encodeURIComponent(`/markets/${symbol}`)}`);
-      return;
-    }
-    if (needsOnboarding) {
-      message.info('Please complete onboarding first');
-      router.push('/onboarding');
       return;
     }
     setIsTogglingWatchlist(true);
@@ -315,7 +311,7 @@ export default function TokenDetailsPage() {
     } finally {
       setTimeout(() => setIsTogglingWatchlist(false), 300);
     }
-  }, [symbol, isWatchlisted, isAuthenticated, needsOnboarding, router]);
+  }, [symbol, isWatchlisted, isAuthenticated, router]);
 
   const handleBuy = useCallback(() => {
     if (!symbol || typeof symbol !== 'string') return;
@@ -325,14 +321,9 @@ export default function TokenDetailsPage() {
       router.push(`/login?redirect=${encodeURIComponent(`/buy-sell?asset=${symbol.toUpperCase()}`)}`);
       return;
     }
-    if (needsOnboarding) {
-      message.info('Please complete onboarding first');
-      router.push('/onboarding');
-      return;
-    }
     setSelectedPair(`${symbol.toUpperCase()}-USD`);
     router.push(`/buy-sell?asset=${symbol.toUpperCase()}`);
-  }, [symbol, router, setSelectedPair, isAuthenticated, needsOnboarding]);
+  }, [symbol, router, setSelectedPair, isAuthenticated]);
 
   const supplyPercentage = useMemo(() => {
     if (!tokenData?.market_data) return 0;
@@ -357,7 +348,7 @@ export default function TokenDetailsPage() {
     return (
       <>
         <Head><title>Token Details - InTuition Exchange</title></Head>
-        {isAuthenticated && !needsOnboarding ? (
+        {isAuthenticated ? (
           <DashboardLayout activeKey="markets">
             <Skeleton active paragraph={{ rows: 12 }} />
           </DashboardLayout>
@@ -1588,7 +1579,7 @@ export default function TokenDetailsPage() {
         <meta name="description" content={`View ${tokenData?.name || symbolStr} price, market cap, and more`} />
       </Head>
 
-      {isAuthenticated && !needsOnboarding ? (
+      {isAuthenticated ? (
         <DashboardLayout activeKey="markets">
           {pageContent}
         </DashboardLayout>

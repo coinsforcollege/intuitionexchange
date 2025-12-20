@@ -507,15 +507,21 @@ const DashboardPage: NextPageWithLayout = () => {
               <motion.div
                 initial={false}
                 style={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+                  background: isDark
+                    ? 'linear-gradient(135deg, #1e1b2e 0%, #2d2640 40%, #352f4a 100%)'  // Deep charcoal with subtle indigo
+                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',  // Original light gradient
                   borderRadius: token.borderRadiusLG,
                   padding: isMobile ? token.paddingLG : isTablet ? token.paddingLG : token.paddingXL,
                   color: '#fff',
                   position: 'relative',
                   overflow: 'hidden',
+                  border: isDark ? '1px solid rgba(139, 92, 246, 0.15)' : 'none',
+                  boxShadow: isDark 
+                    ? '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+                    : '0 8px 24px rgba(102, 126, 234, 0.25)',
                 }}
               >
-                {/* Decorative circles */}
+                {/* Decorative circles - subtle glow for dark mode */}
                 <div
                   style={{
                     position: 'absolute',
@@ -524,8 +530,10 @@ const DashboardPage: NextPageWithLayout = () => {
                     width: 120,
                     height: 120,
                     borderRadius: '50%',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    filter: 'blur(20px)',
+                    background: isDark 
+                      ? 'radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%)'
+                      : 'rgba(255, 255, 255, 0.1)',
+                    filter: isDark ? 'blur(30px)' : 'blur(20px)',
                   }}
                 />
                 <div
@@ -536,8 +544,10 @@ const DashboardPage: NextPageWithLayout = () => {
                     width: 100,
                     height: 100,
                     borderRadius: '50%',
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    filter: 'blur(15px)',
+                    background: isDark 
+                      ? 'radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 70%)'
+                      : 'rgba(255, 255, 255, 0.08)',
+                    filter: isDark ? 'blur(25px)' : 'blur(15px)',
                   }}
                 />
 
@@ -584,7 +594,9 @@ const DashboardPage: NextPageWithLayout = () => {
                         flex: portfolioData.cryptoPercent || 1,
                         height: 6,
                         borderRadius: 3,
-                        background: 'rgba(255, 255, 255, 0.9)',
+                        background: isDark 
+                          ? 'linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%)'
+                          : 'rgba(255, 255, 255, 0.9)',
                       }}
                     />
                     <div
@@ -592,7 +604,9 @@ const DashboardPage: NextPageWithLayout = () => {
                         flex: portfolioData.cashPercent || 1,
                         height: 6,
                         borderRadius: 3,
-                        background: 'rgba(255, 255, 255, 0.4)',
+                        background: isDark 
+                          ? 'rgba(139, 92, 246, 0.3)'
+                          : 'rgba(255, 255, 255, 0.4)',
                       }}
                     />
                   </div>
@@ -605,11 +619,25 @@ const DashboardPage: NextPageWithLayout = () => {
                     fontSize: isTablet ? 12 : token.fontSizeSM 
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: token.marginXS }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(255, 255, 255, 0.9)' }} />
+                      <div style={{ 
+                        width: 8, 
+                        height: 8, 
+                        borderRadius: '50%', 
+                        background: isDark 
+                          ? 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)'
+                          : 'rgba(255, 255, 255, 0.9)' 
+                      }} />
                       <span>Crypto ${portfolioData.cryptoValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: token.marginXS }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(255, 255, 255, 0.4)' }} />
+                      <div style={{ 
+                        width: 8, 
+                        height: 8, 
+                        borderRadius: '50%', 
+                        background: isDark 
+                          ? 'rgba(139, 92, 246, 0.4)'
+                          : 'rgba(255, 255, 255, 0.4)' 
+                      }} />
                       <span>Cash ${portfolioData.cashValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   </div>

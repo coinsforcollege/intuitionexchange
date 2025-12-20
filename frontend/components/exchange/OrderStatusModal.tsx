@@ -14,12 +14,16 @@ interface OrderStatusModalProps {
   order: InternalOrder | null;
   onClose: () => void;
   onStatusUpdate?: (order: InternalOrder) => void;
+  isLearnerMode?: boolean;
+  isSimulatedFailure?: boolean;
 }
 
 export default function OrderStatusModal({
   visible,
   order,
   onClose,
+  isLearnerMode = false,
+  isSimulatedFailure = false,
 }: OrderStatusModalProps) {
   const { token } = useToken();
   const [currentOrder, setCurrentOrder] = useState<InternalOrder | null>(order);
@@ -76,9 +80,24 @@ export default function OrderStatusModal({
       title: 'Order Failed',
       subtitle: `Unable to complete ${currentOrder.side} ${baseAsset} order`,
     },
+    // Special learner mode failure - educational and encouraging
+    learnerFailed: {
+      color: '#F59E0B', // Amber/warning color instead of error red
+      bg: 'rgba(245, 158, 11, 0.1)',
+      icon: <CloseCircleOutlined />,
+      title: 'Trade Not Executed',
+      subtitle: `This is a simulated failure — part of learning!`,
+    },
   };
 
-  const config = isLoading ? statusConfig.loading : isSuccess ? statusConfig.success : statusConfig.failed;
+  // Use learner failure config when in learner mode with simulated failure
+  const config = isLoading 
+    ? statusConfig.loading 
+    : isSuccess 
+      ? statusConfig.success 
+      : (isLearnerMode && isSimulatedFailure)
+        ? statusConfig.learnerFailed
+        : statusConfig.failed;
 
   const modalContent = (
     <AnimatePresence>
@@ -293,14 +312,37 @@ export default function OrderStatusModal({
                     <div
                         style={{
                           padding: token.paddingMD,
-                          backgroundColor: token.colorErrorBg,
+                          backgroundColor: isLearnerMode && isSimulatedFailure ? 'rgba(245, 158, 11, 0.1)' : token.colorErrorBg,
                           borderRadius: token.borderRadius,
-                          border: `${token.lineWidth}px solid ${token.colorError}30`,
+                          border: `${token.lineWidth}px solid ${isLearnerMode && isSimulatedFailure ? 'rgba(245, 158, 11, 0.3)' : `${token.colorError}30`}`,
                         }}
                       >
-                        <Text style={{ color: token.colorError, fontSize: token.fontSize }}>
-                          Your order could not be completed. Please try again later.
-                        </Text>
+                        {isLearnerMode && isSimulatedFailure ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginSM }}>
+                            <Text style={{ color: '#D97706', fontSize: token.fontSize, fontWeight: 600 }}>
+                              🎓 This is a learning moment!
+                            </Text>
+                            <Text style={{ color: token.colorTextSecondary, fontSize: token.fontSizeSM, lineHeight: 1.5 }}>
+                              In real trading, orders can fail due to market conditions, network issues, or exchange limits. 
+                              This simulated failure helps you practice handling these situations.
+                            </Text>
+                            <div style={{ 
+                              marginTop: token.marginXS,
+                              padding: token.paddingSM,
+                              backgroundColor: 'rgba(74, 222, 128, 0.1)',
+                              borderRadius: token.borderRadiusSM,
+                              border: '1px solid rgba(74, 222, 128, 0.2)',
+                            }}>
+                              <Text style={{ color: '#22C55E', fontSize: token.fontSizeSM }}>
+                                ✓ No funds were lost — your virtual balance is unchanged. Check your portfolio to confirm, then try again!
+                              </Text>
+                            </div>
+                          </div>
+                        ) : (
+                          <Text style={{ color: token.colorError, fontSize: token.fontSize }}>
+                            Your order could not be completed. Please try again later.
+                          </Text>
+                        )}
                       </div>
                   )}
                 </div>
