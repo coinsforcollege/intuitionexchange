@@ -373,20 +373,32 @@ const SettingsPage: NextPageWithLayout = () => {
       return;
     }
     
+    // Prevent multiple clicks while loading
+    if (appModeLoading) return;
+    
     const newMode: AppMode = isInvestor ? 'INVESTOR' : 'LEARNER';
+    const previousMode = appMode; // Store for rollback
+    const newLocalMode = newMode.toLowerCase() as 'learner' | 'investor';
+    
+    // Optimistic update - immediately update UI
+    setAppMode(newLocalMode);
+    localStorage.setItem('appMode', newLocalMode);
     setAppModeLoading(true);
     
     try {
       const result = await updateAppMode(newMode);
-      const localMode = result.appMode.toLowerCase() as 'learner' | 'investor';
-      setAppMode(localMode);
-      // Sync to localStorage for ExchangeContext to pick up immediately
-      localStorage.setItem('appMode', localMode);
+      // Confirm with server response (should match our optimistic update)
+      const confirmedMode = result.appMode.toLowerCase() as 'learner' | 'investor';
+      setAppMode(confirmedMode);
+      localStorage.setItem('appMode', confirmedMode);
       message.success(result.message);
       
       // Refresh user data in AuthContext so it's in sync
       refreshUser();
     } catch (error: any) {
+      // Rollback on error
+      setAppMode(previousMode);
+      localStorage.setItem('appMode', previousMode);
       message.error(error.message || 'Failed to switch mode');
     } finally {
       setAppModeLoading(false);
@@ -557,6 +569,8 @@ const SettingsPage: NextPageWithLayout = () => {
                   <Switch
                     checked={appMode === 'investor'}
                     onChange={handleAppModeChange}
+                    loading={appModeLoading}
+                    disabled={appModeLoading}
                     className={appMode === 'learner' ? 'learner-switch' : 'investor-switch'}
                   />
                   <Text 

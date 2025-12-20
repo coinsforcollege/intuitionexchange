@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
-import { theme, Grid, Button, Badge, Dropdown, Tooltip } from 'antd';
+import { theme, Grid, Button, Dropdown, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   AppstoreOutlined,
@@ -12,7 +12,6 @@ import {
   SwapOutlined,
   TeamOutlined,
   SettingOutlined,
-  BellOutlined,
   MenuOutlined,
   CloseOutlined,
   PoweroffOutlined,
@@ -122,6 +121,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   // Prefetch all dashboard pages on mount for instant navigation
   React.useEffect(() => {
     const dashboardRoutes = [
+      // Main pages
       '/overview',
       '/trade',
       '/buy-sell',
@@ -131,6 +131,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       '/p2p',
       '/tuition-center',
       '/markets',
+      // Sub-pages
+      '/overview/watchlist',
+      '/tuition-center/kyc-101',
+      '/portfolio/bank-accounts',
+      '/portfolio/bank-accounts/add',
     ];
     
     // Prefetch all routes immediately
@@ -230,11 +235,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     if (isMobile) setSidebarOpen(false);
   };
 
-  const handleLogout = async () => {
-    // Clear KYC banner dismissal so it shows again on next login
+  const handleLogout = () => {
+    // Clear session storage
     sessionStorage.removeItem('kycBannerDismissed');
-    await logout();
-    router.push('/login');
+    // Clear auth state (tokens, cookies)
+    logout();
+    // Hard redirect immediately - prevents any re-render with null user
+    window.location.href = '/login';
   };
 
   // Get display name for menus
@@ -523,20 +530,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
       : 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
     color: isDark ? '#ffd700' : '#fff',
-    border: 'none',
-  };
-
-  const notificationStyle: React.CSSProperties = {
-    width: token.controlHeight,
-    height: token.controlHeight,
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: token.fontSizeLG,
-    cursor: 'pointer',
-    background: token.colorBgTextHover,
-    color: token.colorTextSecondary,
     border: 'none',
   };
 
@@ -895,10 +888,30 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                     {user?.kycStatus === 'APPROVED' ? '✓ Verified' : 'Unverified'}
                   </div>
                 </div>
-                <PoweroffOutlined
-                  style={{ fontSize: token.fontSizeLG, color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)', cursor: 'pointer' }}
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: '#ef4444',
+                    transition: 'all 0.2s ease',
+                  }}
                   onClick={(e) => { e.stopPropagation(); handleLogout(); }}
-                />
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+                    e.currentTarget.style.color = '#dc2626';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = '#ef4444';
+                  }}
+                >
+                  <PoweroffOutlined style={{ fontSize: token.fontSizeLG }} />
+                </div>
               </div>
             );
           })()}
@@ -1086,12 +1099,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
           <div style={themeButtonStyle} onClick={toggleMode}>
             {isDark ? <MoonOutlined /> : <SunOutlined />}
-          </div>
-
-          <div style={notificationStyle}>
-            <Badge count={0} size="small">
-              <BellOutlined style={{ fontSize: token.fontSizeLG, color: token.colorTextSecondary }} />
-            </Badge>
           </div>
 
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={['click']}>

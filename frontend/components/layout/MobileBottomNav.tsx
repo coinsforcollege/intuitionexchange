@@ -161,16 +161,17 @@ const MobileBottomNav: React.FC = () => {
   const NAV_MARGIN = 16;
   const BUBBLE_SIZE = 50;
 
-  // Colors change based on app mode - Learner mode uses coral palette, Investor uses indigo
-  const primaryColor = isLearnerMode ? '#FF6B6B' : '#6366F1';
-  const secondaryColor = isLearnerMode ? '#FF8E8E' : '#8B5CF6';
+  // Colors change based on app mode - Learner mode uses amber palette, Investor uses indigo
+  const primaryColor = isLearnerMode ? '#B45309' : '#6366F1';  // Amber-700 / Indigo (darker for visibility)
+  const secondaryColor = isLearnerMode ? '#D97706' : '#8B5CF6'; // Amber-600 / Purple
+  const tertiaryColor = isLearnerMode ? '#92400E' : '#4F46E5';  // Amber-800 / Indigo-600
   const inactiveColor = 'rgba(255, 255, 255, 0.6)';
   const activeIconColor = '#FFFFFF';
   // Page base color for bubble stroke - matches theme
   // Dark: custom colorBgBase, Light: Ant Design default colorBgLayout
   const pageBaseColor = isDark 
-    ? (isLearnerMode ? '#1F1418' : '#0f0f1a') 
-    : (isLearnerMode ? '#FFF5F5' : '#f5f5f5');
+    ? (isLearnerMode ? '#1a1510' : '#0f0f1a') 
+    : (isLearnerMode ? '#FFFBEB' : '#f5f5f5'); // Amber-50 for light mode
 
   // Scrim height - covers nav area plus extra fade zone
   const SCRIM_HEIGHT = NAV_HEIGHT + NAV_MARGIN + 40; // 40px extra for gradient fade
@@ -215,8 +216,8 @@ const MobileBottomNav: React.FC = () => {
               // 3D Claymorphism gradient background
               background: isLearnerMode
                 ? (isDark
-                    ? 'linear-gradient(145deg, rgba(100, 45, 45, 0.95) 0%, rgba(74, 28, 28, 0.95) 50%, rgba(60, 20, 20, 0.95) 100%)'
-                    : 'linear-gradient(135deg, #FF8E8E 0%, #FF6B6B 35%, #D94848 100%)')
+                    ? 'linear-gradient(145deg, rgba(180, 83, 9, 0.95) 0%, rgba(146, 64, 14, 0.95) 50%, rgba(120, 53, 15, 0.95) 100%)' // Amber-700 to Amber-900
+                    : 'linear-gradient(135deg, #D97706 0%, #B45309 35%, #92400E 100%)') // Amber-600 to Amber-800 (darker for white icons)
                 : (isDark
                     ? 'linear-gradient(145deg, rgba(79, 70, 229, 0.95) 0%, rgba(55, 48, 163, 0.95) 50%, rgba(49, 46, 129, 0.95) 100%)'
                     : 'linear-gradient(135deg, #818CF8 0%, #6366F1 35%, #4F46E5 100%)'),
@@ -227,14 +228,14 @@ const MobileBottomNav: React.FC = () => {
                 ? (isDark 
                     ? `
                       8px 8px 24px rgba(0, 0, 0, 0.5),
-                      -4px -4px 16px rgba(255, 107, 107, 0.15),
-                      inset 3px 3px 8px rgba(255, 142, 142, 0.25),
+                      -4px -4px 16px rgba(245, 158, 11, 0.15),
+                      inset 3px 3px 8px rgba(251, 191, 36, 0.25),
                       inset -3px -3px 8px rgba(0, 0, 0, 0.3)
                     ` 
                     : `
                       8px 8px 24px rgba(0, 0, 0, 0.35),
-                      -3px -3px 12px rgba(255, 142, 142, 0.2),
-                      inset 3px 3px 8px rgba(255, 255, 255, 0.2),
+                      -3px -3px 12px rgba(180, 83, 9, 0.25),
+                      inset 3px 3px 8px rgba(217, 119, 6, 0.3),
                       inset -3px -3px 8px rgba(0, 0, 0, 0.2)
                     `)
                 : (isDark
@@ -253,8 +254,8 @@ const MobileBottomNav: React.FC = () => {
               // Beveled edge border
               border: isLearnerMode
                 ? (isDark 
-                    ? '1px solid rgba(255, 142, 142, 0.4)' 
-                    : '1px solid rgba(255, 255, 255, 0.25)')
+                    ? '1px solid rgba(251, 191, 36, 0.4)' 
+                    : '1px solid rgba(255, 255, 255, 0.35)')
                 : (isDark
                     ? '1px solid rgba(129, 140, 248, 0.5)'
                     : '1px solid rgba(255, 255, 255, 0.3)'),
@@ -399,8 +400,8 @@ const MobileBottomNav: React.FC = () => {
           height: 'env(safe-area-inset-bottom, 0)',
           background: isLearnerMode
             ? (isDark
-                ? 'linear-gradient(180deg, rgba(60, 20, 20, 0.95) 0%, rgba(40, 15, 15, 0.98) 100%)'
-                : 'linear-gradient(180deg, #D94848 0%, #C43B3B 100%)')
+                ? 'linear-gradient(180deg, rgba(120, 53, 15, 0.95) 0%, rgba(92, 45, 12, 0.98) 100%)' // Amber-800/900
+                : 'linear-gradient(180deg, #92400E 0%, #78350F 100%)') // Amber-800/900 (darker for consistency)
             : (isDark
                 ? 'linear-gradient(180deg, rgba(49, 46, 129, 0.95) 0%, rgba(35, 32, 100, 0.98) 100%)'
                 : 'linear-gradient(180deg, #4F46E5 0%, #4338CA 100%)'),

@@ -10,6 +10,10 @@ import {
   BankOutlined,
   LockOutlined,
   RocketOutlined,
+  BookOutlined,
+  ClockCircleOutlined,
+  ReadOutlined,
+  ArrowRightOutlined,
 } from '@ant-design/icons';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { fontWeights } from '@/theme/themeConfig';
@@ -173,7 +177,7 @@ const TuitionCenterPage: NextPageWithLayout = () => {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM }}>
-            <span style={{ fontSize: isMobile ? 32 : 40 }}>🎓</span>
+            <BookOutlined style={{ fontSize: isMobile ? 28 : 36, color: token.colorPrimary }} />
             <h1
               style={{
                 fontSize: isMobile ? token.fontSizeHeading4 : token.fontSizeHeading3,
@@ -228,34 +232,16 @@ const TuitionCenterPage: NextPageWithLayout = () => {
                 position: 'relative',
               }}
             >
-              {/* Claymorphic Card */}
+              {/* Flat Card */}
               <div
                 style={{
                   position: 'relative',
                   borderRadius: 24,
                   padding: isMobile ? token.paddingMD : token.paddingLG,
-                  // Base color gradient - adjusted for dark/light mode
+                  // Flat colored background
                   background: isDark
-                    ? `linear-gradient(145deg, ${module.color}90 0%, ${module.colorDark} 50%, ${module.colorDark}dd 100%)`
-                    : `linear-gradient(135deg, ${module.colorLight}ee 0%, ${module.color} 35%, ${module.colorDark} 100%)`,
-                  // Outer shadow - 3D claymorphic style matching LearningSection icons
-                  boxShadow: isDark
-                    ? `
-                      6px 6px 16px rgba(0,0,0,0.5),
-                      -3px -3px 10px ${module.color}25,
-                      inset 2px 2px 6px ${module.color}40,
-                      inset -2px -2px 6px rgba(0,0,0,0.3)
-                    `
-                    : `
-                      4px 4px 12px rgba(0,0,0,0.15),
-                      -2px -2px 8px ${module.colorLight}15,
-                      inset 2px 2px 4px rgba(255,255,255,0.2),
-                      inset -2px -2px 4px rgba(0,0,0,0.2)
-                    `,
-                  // Beveled edge
-                  border: isDark 
-                    ? `1px solid ${module.color}50`
-                    : `1px solid rgba(255,255,255,0.5)`,
+                    ? module.colorDark
+                    : module.color,
                   overflow: 'hidden',
                 }}
               >
@@ -266,20 +252,19 @@ const TuitionCenterPage: NextPageWithLayout = () => {
                       position: 'absolute',
                       top: 12,
                       right: 12,
-                      background: 'rgba(0,0,0,0.6)',
+                      background: 'rgba(0,0,0,0.5)',
                       color: '#fff',
                       padding: '6px 12px',
                       borderRadius: 20,
                       fontSize: token.fontSizeSM,
                       fontWeight: fontWeights.bold,
-                      backdropFilter: 'blur(4px)',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 6,
                       zIndex: 10,
                     }}
                   >
-                    🔒 Soon
+                    <LockOutlined /> Soon
                   </div>
                 )}
                 {/* Content */}
@@ -291,38 +276,20 @@ const TuitionCenterPage: NextPageWithLayout = () => {
                     marginBottom: token.marginMD,
                   }}
                 >
-                  {/* Emoji - raised clay button */}
+                  {/* Emoji - flat container */}
                   <div
                     style={{
                       width: 64,
                       height: 64,
                       borderRadius: 16,
-                      // Raised button gradient - darker in dark mode
                       background: isDark
-                        ? `linear-gradient(145deg, #3a3a45 0%, #2a2a35 50%, #1f1f28 100%)`
-                        : `linear-gradient(135deg, #ffffff 0%, #f8f8f8 30%, #e8e8e8 100%)`,
+                        ? 'rgba(255,255,255,0.15)'
+                        : 'rgba(255,255,255,0.25)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: 32,
                       flexShrink: 0,
-                      // Inner highlight, outer shadow for puffy look
-                      boxShadow: isDark
-                        ? `
-                          4px 4px 10px rgba(0,0,0,0.4),
-                          -2px -2px 6px ${module.color}20,
-                          inset 2px 2px 4px rgba(255,255,255,0.08),
-                          inset -2px -2px 4px rgba(0,0,0,0.3)
-                        `
-                        : `
-                          4px 4px 12px rgba(0,0,0,0.15),
-                          -2px -2px 8px ${module.colorLight}15,
-                          inset 2px 2px 4px rgba(255,255,255,0.2),
-                          inset -2px -2px 4px rgba(0,0,0,0.2)
-                        `,
-                      border: isDark 
-                        ? `1px solid rgba(255,255,255,0.1)`
-                        : `1px solid rgba(255,255,255,0.9)`,
                     }}
                   >
                     {module.emoji}
@@ -337,9 +304,6 @@ const TuitionCenterPage: NextPageWithLayout = () => {
                           fontWeight: fontWeights.bold,
                           color: '#ffffff',
                           margin: 0,
-                          textShadow: isDark 
-                            ? `1px 1px 2px ${module.colorDark}`
-                            : `0 1px 3px rgba(0,0,0,0.4), 0 2px 6px ${module.colorDark}80`,
                         }}
                       >
                         {module.title}
@@ -349,21 +313,12 @@ const TuitionCenterPage: NextPageWithLayout = () => {
                           style={{
                             fontSize: token.fontSizeSM,
                             fontWeight: fontWeights.bold,
-                            color: isDark ? '#ffffff' : module.colorDark,
+                            color: '#ffffff',
                             background: isDark
-                              ? `linear-gradient(145deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08))`
-                              : `linear-gradient(145deg, #ffffff, #f0f0f0)`,
+                              ? 'rgba(255,255,255,0.2)'
+                              : 'rgba(255,255,255,0.25)',
                             padding: '3px 10px',
                             borderRadius: 12,
-                            boxShadow: isDark
-                              ? `
-                                2px 2px 4px rgba(0,0,0,0.3),
-                                inset 1px 1px 2px rgba(255,255,255,0.1)
-                              `
-                              : `
-                                2px 2px 4px ${module.colorDark}40,
-                                inset 1px 1px 2px rgba(255,255,255,0.8)
-                              `,
                           }}
                         >
                           Soon
@@ -373,12 +328,9 @@ const TuitionCenterPage: NextPageWithLayout = () => {
                     <p
                       style={{
                         fontSize: token.fontSize,
-                        color: '#ffffff',
+                        color: 'rgba(255,255,255,0.9)',
                         margin: 0,
                         lineHeight: 1.5,
-                        textShadow: isDark
-                          ? `0 1px 2px ${module.colorDark}40`
-                          : `0 1px 2px rgba(0,0,0,0.3), 0 2px 4px ${module.colorDark}60`,
                       }}
                     >
                       {module.description}
@@ -386,7 +338,7 @@ const TuitionCenterPage: NextPageWithLayout = () => {
                   </div>
                 </div>
 
-                {/* Footer - recessed panel */}
+                {/* Footer - flat panel */}
                 <div
                   style={{
                     display: 'flex',
@@ -394,62 +346,44 @@ const TuitionCenterPage: NextPageWithLayout = () => {
                     justifyContent: 'space-between',
                     padding: `${token.paddingSM}px ${token.paddingMD}px`,
                     borderRadius: 12,
-                    // Recessed look - adjusted for dark mode
                     background: isDark
-                      ? `linear-gradient(145deg, rgba(0,0,0,0.3), rgba(0,0,0,0.4))`
-                      : `linear-gradient(145deg, ${module.colorDark}70, ${module.colorDark}90)`,
-                    boxShadow: isDark
-                      ? `
-                        inset 2px 2px 6px rgba(0,0,0,0.4),
-                        inset -1px -1px 3px ${module.color}15
-                      `
-                      : `
-                        inset 3px 3px 10px ${module.colorDark}80,
-                        inset -2px -2px 6px ${module.colorLight}20
-                      `,
+                      ? 'rgba(0,0,0,0.25)'
+                      : 'rgba(0,0,0,0.15)',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: token.marginMD }}>
-                    {/* Difficulty pill - raised */}
+                    {/* Difficulty pill - flat */}
                     <span
                       style={{
                         fontSize: token.fontSize,
                         fontWeight: fontWeights.bold,
-                        color: isDark ? '#ffffff' : module.colorDark,
+                        color: '#ffffff',
                         padding: '4px 12px',
                         background: isDark
-                          ? `linear-gradient(145deg, ${module.color}80, ${module.color}60)`
-                          : `linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)`,
+                          ? 'rgba(255,255,255,0.2)'
+                          : 'rgba(255,255,255,0.25)',
                         borderRadius: 20,
-                        boxShadow: isDark
-                          ? `
-                            2px 2px 4px rgba(0,0,0,0.3),
-                            inset 1px 1px 2px ${module.colorLight}20
-                          `
-                          : `
-                            2px 2px 6px rgba(0,0,0,0.12),
-                            -1px -1px 4px ${module.colorLight}15,
-                            inset 1px 1px 2px rgba(255,255,255,0.2),
-                            inset -1px -1px 2px rgba(0,0,0,0.1)
-                          `,
-                        border: isDark ? 'none' : '1px solid rgba(255,255,255,0.8)',
                       }}
                     >
                       {module.difficulty}
                     </span>
                     <span style={{ 
                       fontSize: token.fontSize, 
-                      color: '#ffffff',
-                      textShadow: isDark ? 'none' : '0 1px 2px rgba(0,0,0,0.3)',
+                      color: 'rgba(255,255,255,0.9)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
                     }}>
-                      ⏱️ {module.duration}
+                      <ClockCircleOutlined /> {module.duration}
                     </span>
                     <span style={{ 
                       fontSize: token.fontSize, 
-                      color: '#ffffff',
-                      textShadow: isDark ? 'none' : '0 1px 2px rgba(0,0,0,0.3)',
+                      color: 'rgba(255,255,255,0.9)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
                     }}>
-                      📚 {module.lessons}
+                      <ReadOutlined /> {module.lessons}
                     </span>
                   </div>
 
@@ -469,33 +403,17 @@ const TuitionCenterPage: NextPageWithLayout = () => {
                         width: 36,
                         height: 36,
                         borderRadius: '50%',
-                        // Raised button - adjusted for dark mode
                         background: isDark
-                          ? `linear-gradient(145deg, ${module.color}90 0%, ${module.colorDark} 100%)`
-                          : `linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)`,
+                          ? 'rgba(255,255,255,0.2)'
+                          : 'rgba(255,255,255,0.3)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: isDark ? '#ffffff' : module.colorDark,
-                        fontSize: token.fontSizeLG,
-                        fontWeight: fontWeights.bold,
-                        boxShadow: isDark
-                          ? `
-                            3px 3px 8px rgba(0,0,0,0.4),
-                            -1px -1px 4px ${module.color}30,
-                            inset 1px 1px 3px ${module.colorLight}20,
-                            inset -1px -1px 2px rgba(0,0,0,0.2)
-                          `
-                          : `
-                            3px 3px 8px rgba(0,0,0,0.15),
-                            -1px -1px 4px ${module.colorLight}15,
-                            inset 1px 1px 3px rgba(255,255,255,0.2),
-                            inset -1px -1px 2px rgba(0,0,0,0.15)
-                          `,
-                        border: isDark ? 'none' : '1px solid rgba(255,255,255,0.8)',
+                        color: '#ffffff',
+                        fontSize: 16,
                       }}
                     >
-                      →
+                      <ArrowRightOutlined />
                     </div>
                   ) : null}
                 </div>

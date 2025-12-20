@@ -1,13 +1,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { theme, Button, Modal, message } from 'antd';
-import { CloseOutlined, SwapOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { theme, Button, message } from 'antd';
+import { SwapOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'motion/react';
 import { fontWeights } from '@/theme/themeConfig';
 import { useThemeMode } from '@/context/ThemeContext';
+import { useExchange } from '@/context/ExchangeContext';
 
 const { useToken } = theme;
+
+// Minimum order value in USD
+const MIN_ORDER_VALUE_USD = 1;
 
 type OrderSide = 'BUY' | 'SELL';
 
@@ -40,6 +44,7 @@ const TradeFormModal: React.FC<TradeFormModalProps> = ({
 }) => {
   const { token } = useToken();
   const { mode } = useThemeMode();
+  const { pairs } = useExchange();
   const isDark = mode === 'dark';
 
   const [amount, setAmount] = useState<string>('');
@@ -49,6 +54,30 @@ const TradeFormModal: React.FC<TradeFormModalProps> = ({
   const isBuy = side === 'BUY';
   const amountNum = parseFloat(amount) || 0;
   const totalNum = parseFloat(total) || 0;
+  
+  // Calculate USD value for minimum order validation
+  // For USD pairs: totalNum is already in USD
+  // For non-USD pairs (ETH, USDT): convert using quote-USD price
+  const getUsdValue = (): number => {
+    if (quoteAsset === 'USD') {
+      return totalNum;
+    }
+    
+    // Non-USD quote (ETH, USDT) - find quote-USD price
+    const quoteUsdPair = pairs.find(p => p.symbol === `${quoteAsset}-USD`);
+    if (quoteUsdPair && quoteUsdPair.price > 0) {
+      return totalNum * quoteUsdPair.price;
+    }
+    
+    // Fallback: can't determine USD value, allow the trade (backend will validate)
+    return MIN_ORDER_VALUE_USD;
+  };
+  
+  const usdValue = getUsdValue();
+  const isBelowMinimum = totalNum > 0 && usdValue < MIN_ORDER_VALUE_USD;
+
+  // Get current pair data for icon
+  const currentPair = pairs.find(p => p.symbol === symbol || p.baseCurrency === baseAsset);
 
   // Reset form when modal opens/closes or pair changes
   useEffect(() => {
@@ -125,7 +154,10 @@ const TradeFormModal: React.FC<TradeFormModalProps> = ({
       return;
     }
     
+    // Close the entire modal immediately before processing
+    // This prevents the form from reappearing while order status shows
     setShowConfirm(false);
+    onClose();
     
     try {
       if (onTrade) {
@@ -133,7 +165,6 @@ const TradeFormModal: React.FC<TradeFormModalProps> = ({
       }
       setAmount('');
       setTotal('');
-      onClose();
     } catch (error: any) {
       console.error('Trade failed:', error);
     }
@@ -145,6 +176,9 @@ const TradeFormModal: React.FC<TradeFormModalProps> = ({
 
   // Check if balance is insufficient
   const insufficientBalance = (isBuy && totalNum > quoteBalance + 0.01) || (!isBuy && amountNum > baseBalance);
+
+  // Button disabled state - calculate once for consistent styling
+  const isButtonDisabled = !amountNum || amountNum <= 0 || !totalNum || totalNum <= 0 || price <= 0 || isBelowMinimum || insufficientBalance;
 
   // Custom input with addon
   const InputWithAddon = ({ 
@@ -224,148 +258,251 @@ const TradeFormModal: React.FC<TradeFormModalProps> = ({
   );
 
   const modalContent = (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-      {/* Header */}
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+      {/* Compact Header with Price */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: `${token.paddingMD}px ${token.paddingLG}px`,
-          borderBottom: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}`,
+          padding: `${token.paddingSM}px ${token.paddingLG}px ${token.paddingMD}px`,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM }}>
+          {/* BUY/SELL Badge */}
           <div
             style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: isBuy ? '#22C55E' : '#EF4444',
-            }}
-          />
-          <span
-            style={{
-              fontSize: token.fontSizeXL,
+              padding: `${token.paddingXS}px ${token.paddingSM}px`,
+              borderRadius: 8,
+              background: isBuy 
+                ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(22, 163, 74, 0.15) 100%)'
+                : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.15) 100%)',
+              color: isBuy ? '#22C55E' : '#EF4444',
+              fontSize: token.fontSizeSM,
               fontWeight: fontWeights.bold,
-              color: token.colorText,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
             }}
           >
-            {isBuy ? 'Buy' : 'Sell'} {baseAsset}
-          </span>
+            {isBuy ? 'Buy' : 'Sell'}
+          </div>
+          {/* Token Icon + Ticker */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: token.marginXS }}>
+            {currentPair?.iconUrl && (
+              <img
+                src={currentPair.iconUrl}
+                alt={baseAsset}
+                width={28}
+                height={28}
+                style={{ borderRadius: '50%', flexShrink: 0 }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${baseAsset}&background=667eea&color=fff&size=56`;
+                }}
+              />
+            )}
+            <span
+              style={{
+                fontSize: token.fontSizeLG,
+                fontWeight: fontWeights.bold,
+                color: token.colorText,
+              }}
+            >
+              {baseAsset}
+            </span>
+          </div>
         </div>
-        <div
-          onClick={onClose}
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 12,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-          }}
-        >
-          <CloseOutlined style={{ fontSize: 16, color: token.colorText }} />
-        </div>
-      </div>
-
-      {/* Price Display */}
-      <div
-        style={{
-          padding: `${token.paddingLG}px ${token.paddingLG}px ${token.paddingMD}px`,
-          textAlign: 'center',
-        }}
-      >
-        <div style={{ fontSize: token.fontSizeSM, color: token.colorTextSecondary, marginBottom: token.marginXS }}>
-          Current Price
-        </div>
-        <div style={{ 
-          fontSize: 32, 
-          fontWeight: fontWeights.bold, 
-          color: token.colorText,
-          letterSpacing: '-0.02em',
-        }}>
-          {quoteAsset === 'USD' 
-            ? `$${price.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
-            : `${price.toLocaleString('en-US', { maximumFractionDigits: 8 })} ${quoteAsset}`
-          }
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: token.fontSizeSM, color: token.colorTextSecondary }}>
+            Price
+          </div>
+          <div style={{ 
+            fontSize: token.fontSizeLG, 
+            fontWeight: fontWeights.bold, 
+            color: token.colorText,
+          }}>
+            {quoteAsset === 'USD' 
+              ? `$${price.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
+              : `${price.toFixed(4)} ${quoteAsset}`
+            }
+          </div>
         </div>
       </div>
 
       {/* Form Content */}
       <div style={{ flex: 1, padding: `0 ${token.paddingLG}px`, overflowY: 'auto' }}>
-        {/* Amount Input */}
-        <InputWithAddon
-          value={amount}
-          onChange={handleAmountChange}
-          addon={baseAsset}
-          placeholder="0.00"
-          label="Amount"
-          balance={`${baseBalance.toFixed(4)} ${baseAsset}`}
-        />
+        {/* For BUY: Total first (what you pay), then Amount (what you get) */}
+        {/* For SELL: Amount first (what you sell), then Total (what you get) */}
+        
+        {isBuy ? (
+          <>
+            {/* Total Input - What you pay */}
+            <InputWithAddon
+              value={total}
+              onChange={handleTotalChange}
+              addon={quoteAsset}
+              placeholder="0.00"
+              label="You Pay"
+              balance={quoteAsset === 'USD' 
+                ? `$${quoteBalance.toFixed(2)}`
+                : `${quoteBalance.toFixed(4)} ${quoteAsset}`
+              }
+            />
 
-        {/* Percentage Buttons */}
-        <div style={{
-          display: 'flex',
-          gap: token.marginSM,
-          marginBottom: token.marginMD,
-        }}>
-          {[25, 50, 75, 100].map((percent) => (
-            <div
-              key={percent}
-              onClick={() => handlePercentage(percent)}
+            {/* Percentage Buttons - % of your paying balance */}
+            <div style={{
+              display: 'flex',
+              gap: token.marginXS,
+              marginBottom: token.marginMD,
+            }}>
+              {[25, 50, 75, 100].map((percent) => (
+                <div
+                  key={percent}
+                  onClick={() => handlePercentage(percent)}
+                  style={{
+                    flex: 1,
+                    padding: `${token.paddingXS}px`,
+                    textAlign: 'center',
+                    fontSize: token.fontSizeSM,
+                    fontWeight: fontWeights.semibold,
+                    color: token.colorTextSecondary,
+                    border: `1.5px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'}`,
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
+                  }}
+                >
+                  {percent}%
+                </div>
+              ))}
+            </div>
+
+            {/* Swap Icon */}
+            <div style={{ textAlign: 'center', margin: `${token.marginXS}px 0` }}>
+              <SwapOutlined 
+                rotate={90}
+                style={{ 
+                  fontSize: 18, 
+                  color: token.colorTextTertiary,
+                  padding: token.paddingXS,
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
+                  borderRadius: 8,
+                }} 
+              />
+            </div>
+
+            {/* Amount Input - What you receive */}
+            <InputWithAddon
+              value={amount}
+              onChange={handleAmountChange}
+              addon={baseAsset}
+              placeholder="0.00"
+              label="You Receive"
+              balance={`${baseBalance.toFixed(4)} ${baseAsset}`}
+            />
+          </>
+        ) : (
+          <>
+            {/* Amount Input - What you sell */}
+            <InputWithAddon
+              value={amount}
+              onChange={handleAmountChange}
+              addon={baseAsset}
+              placeholder="0.00"
+              label="You Sell"
+              balance={`${baseBalance.toFixed(4)} ${baseAsset}`}
+            />
+
+            {/* Percentage Buttons - % of your crypto balance */}
+            <div style={{
+              display: 'flex',
+              gap: token.marginXS,
+              marginBottom: token.marginMD,
+            }}>
+              {[25, 50, 75, 100].map((percent) => (
+                <div
+                  key={percent}
+                  onClick={() => handlePercentage(percent)}
+                  style={{
+                    flex: 1,
+                    padding: `${token.paddingXS}px`,
+                    textAlign: 'center',
+                    fontSize: token.fontSizeSM,
+                    fontWeight: fontWeights.semibold,
+                    color: token.colorTextSecondary,
+                    border: `1.5px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'}`,
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
+                  }}
+                >
+                  {percent}%
+                </div>
+              ))}
+            </div>
+
+            {/* Swap Icon */}
+            <div style={{ textAlign: 'center', margin: `${token.marginXS}px 0` }}>
+              <SwapOutlined 
+                rotate={90}
+                style={{ 
+                  fontSize: 18, 
+                  color: token.colorTextTertiary,
+                  padding: token.paddingXS,
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
+                  borderRadius: 8,
+                }} 
+              />
+            </div>
+
+            {/* Total Input - What you receive */}
+            <InputWithAddon
+              value={total}
+              onChange={handleTotalChange}
+              addon={quoteAsset}
+              placeholder="0.00"
+              label="You Receive"
+              balance={quoteAsset === 'USD' 
+                ? `$${quoteBalance.toFixed(2)}`
+                : `${quoteBalance.toFixed(4)} ${quoteAsset}`
+              }
+            />
+          </>
+        )}
+
+        {/* Minimum Order Value Warning */}
+        <AnimatePresence>
+          {isBelowMinimum && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
               style={{
-                flex: 1,
-                padding: `${token.paddingSM}px`,
-                textAlign: 'center',
-                fontSize: token.fontSize,
-                fontWeight: fontWeights.semibold,
-                color: token.colorTextSecondary,
-                border: `1.5px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'}`,
-                borderRadius: 10,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
+                marginBottom: token.marginMD,
+                padding: token.paddingMD,
+                backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                borderRadius: 12,
+                border: '1px solid rgba(251, 191, 36, 0.2)',
+                fontSize: token.fontSizeSM,
+                color: '#F59E0B',
+                display: 'flex',
+                alignItems: 'center',
+                gap: token.marginXS,
               }}
             >
-              {percent}%
-            </div>
-          ))}
-        </div>
-
-        {/* Swap Icon */}
-        <div style={{ textAlign: 'center', margin: `${token.marginSM}px 0` }}>
-          <SwapOutlined 
-            rotate={90}
-            style={{ 
-              fontSize: 20, 
-              color: token.colorTextTertiary,
-              padding: token.paddingXS,
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
-              borderRadius: 8,
-            }} 
-          />
-        </div>
-
-        {/* Total Input */}
-        <InputWithAddon
-          value={total}
-          onChange={handleTotalChange}
-          addon={quoteAsset}
-          placeholder="0.00"
-          label="Total"
-          balance={quoteAsset === 'USD' 
-            ? `$${quoteBalance.toFixed(2)}`
-            : `${quoteBalance.toFixed(4)} ${quoteAsset}`
-          }
-        />
+              <InfoCircleOutlined />
+              Minimum order value is $1.00 USD
+              {quoteAsset !== 'USD' && usdValue > 0 && (
+                <span> (current: ${usdValue.toFixed(2)})</span>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Insufficient Balance Warning */}
         <AnimatePresence>
-          {amountNum > 0 && insufficientBalance && (
+          {amountNum > 0 && !isBelowMinimum && insufficientBalance && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
@@ -391,7 +528,7 @@ const TradeFormModal: React.FC<TradeFormModalProps> = ({
 
         {/* Fee Info */}
         <AnimatePresence>
-          {amountNum > 0 && !insufficientBalance && (
+          {amountNum > 0 && !insufficientBalance && !isBelowMinimum && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
@@ -424,15 +561,11 @@ const TradeFormModal: React.FC<TradeFormModalProps> = ({
         </AnimatePresence>
       </div>
 
-      {/* Sticky Submit Button */}
+      {/* Submit Button */}
       <div
         style={{
-          padding: `${token.paddingMD}px ${token.paddingLG}px`,
-          paddingBottom: `calc(${token.paddingMD}px + env(safe-area-inset-bottom, 16px))`,
-          borderTop: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}`,
-          backgroundColor: isDark ? 'rgba(15, 15, 26, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
+          padding: `${token.paddingSM}px ${token.paddingLG}px`,
+          paddingBottom: `calc(${token.paddingSM}px + env(safe-area-inset-bottom, 8px))`,
         }}
       >
         <Button
@@ -440,23 +573,29 @@ const TradeFormModal: React.FC<TradeFormModalProps> = ({
           size="large"
           block
           loading={isLoading}
-          disabled={!amountNum || amountNum <= 0 || !totalNum || totalNum <= 0 || price <= 0 || insufficientBalance}
+          disabled={isButtonDisabled}
           onClick={() => setShowConfirm(true)}
           style={{
-            height: 56,
+            height: 52,
             borderRadius: 14,
             fontWeight: fontWeights.bold,
-            fontSize: token.fontSizeLG,
+            fontSize: token.fontSize,
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
-            color: '#ffffff',
-            background: isBuy 
-              ? 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)'
-              : 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+            color: isButtonDisabled ? token.colorTextDisabled : '#ffffff',
+            background: isButtonDisabled 
+              ? (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)')
+              : (isBuy 
+                ? 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)'
+                : 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'),
             border: 'none',
-            boxShadow: isBuy
-              ? '0 8px 24px rgba(34, 197, 94, 0.3)'
-              : '0 8px 24px rgba(239, 68, 68, 0.3)',
+            boxShadow: isButtonDisabled 
+              ? 'none'
+              : (isBuy
+                ? '0 6px 20px rgba(34, 197, 94, 0.35)'
+                : '0 6px 20px rgba(239, 68, 68, 0.35)'),
+            opacity: isButtonDisabled ? 0.7 : 1,
+            cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
           }}
         >
           {isBuy ? 'Buy' : 'Sell'} {baseAsset}
@@ -465,97 +604,229 @@ const TradeFormModal: React.FC<TradeFormModalProps> = ({
     </div>
   );
 
-  if (!visible) return null;
+  // Common bottom sheet styles
+  const bottomSheetStyle = {
+    position: 'fixed' as const,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1101,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    background: isDark 
+      ? 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)'
+      : 'linear-gradient(180deg, #ffffff 0%, #f8f9fc 100%)',
+    boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.3)',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column' as const,
+  };
 
-  return (
-    <>
-      {/* Fullscreen overlay - no Ant Design Modal wrapper */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 1000,
-          background: isDark 
-            ? 'linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%)'
-            : 'linear-gradient(180deg, #ffffff 0%, #f8f9fc 100%)',
-        }}
-      >
-        {modalContent}
+  // Confirmation content
+  const confirmationContent = (
+    <div style={{ padding: token.paddingLG }}>
+      {/* Drag handle */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: token.marginMD }}>
+        <div style={{
+          width: 40,
+          height: 4,
+          borderRadius: 2,
+          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.15)',
+        }} />
       </div>
 
-      {/* Confirmation Modal - outside the fullscreen modal */}
-      <Modal
-        title={`Confirm ${side} Order`}
-        open={showConfirm}
-        onCancel={() => setShowConfirm(false)}
-        centered
-        footer={[
-          <Button key="cancel" onClick={() => setShowConfirm(false)}>
-            Cancel
-          </Button>,
-          <Button
-            key="confirm"
-            type="primary"
-            onClick={handleSubmit}
-            loading={isLoading}
-            style={{
-              background: isBuy ? '#22C55E' : '#EF4444',
-              border: 'none',
-            }}
-          >
-            Confirm {side}
-          </Button>,
-        ]}
-      >
-        <div style={{ padding: `${token.paddingMD}px 0` }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: token.marginSM, fontSize: token.fontSize }}>
-            <span style={{ color: token.colorTextSecondary }}>Type</span>
-            <span style={{ color: isBuy ? '#22C55E' : '#EF4444', fontWeight: fontWeights.bold }}>
-              Market {side}
+      {/* Header */}
+      <div style={{ textAlign: 'center', marginBottom: token.marginLG }}>
+        <div style={{
+          width: 56,
+          height: 56,
+          borderRadius: '50%',
+          background: isBuy 
+            ? 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)'
+            : 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto',
+          marginBottom: token.marginSM,
+          overflow: 'hidden',
+        }}>
+          {currentPair?.iconUrl ? (
+            <img
+              src={currentPair.iconUrl}
+              alt={baseAsset}
+              width={36}
+              height={36}
+              style={{ borderRadius: '50%' }}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${baseAsset}&background=667eea&color=fff&size=72`;
+              }}
+            />
+          ) : (
+            <span style={{ color: '#ffffff', fontSize: 24, fontWeight: fontWeights.bold }}>
+              {isBuy ? '↓' : '↑'}
             </span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: token.marginSM, fontSize: token.fontSize }}>
-            <span style={{ color: token.colorTextSecondary }}>Amount</span>
-            <span style={{ color: token.colorText, fontWeight: fontWeights.semibold }}>
-              {amountNum.toFixed(6)} {baseAsset}
-            </span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: token.marginSM, fontSize: token.fontSize }}>
-            <span style={{ color: token.colorTextSecondary }}>Price</span>
-            <span style={{ color: token.colorText }}>
-              {quoteAsset === 'USD' 
-                ? `$${price.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
-                : `${price.toFixed(8)} ${quoteAsset}`
-              }
-            </span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: token.marginSM, fontSize: token.fontSize }}>
-            <span style={{ color: token.colorTextSecondary }}>Fee (0.5%)</span>
-            <span style={{ color: token.colorText }}>
-              {quoteAsset === 'USD' ? `$${fee.toFixed(2)}` : `${fee.toFixed(8)} ${quoteAsset}`}
-            </span>
-          </div>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            paddingTop: token.paddingSM,
-            borderTop: `1px solid ${token.colorBorderSecondary}`,
-            fontSize: token.fontSizeLG,
-          }}>
-            <span style={{ color: token.colorTextSecondary }}>You {isBuy ? 'pay' : 'receive'}</span>
-            <span style={{ color: token.colorText, fontWeight: fontWeights.bold }}>
-              {isBuy 
-                ? (quoteAsset === 'USD' ? `$${totalNum.toFixed(2)}` : `${totalNum.toFixed(8)} ${quoteAsset}`)
-                : (quoteAsset === 'USD' ? `$${receiveAmount.toFixed(2)}` : `${receiveAmount.toFixed(8)} ${quoteAsset}`)
-              }
-            </span>
-          </div>
+          )}
         </div>
-      </Modal>
-    </>
+        <div style={{
+          fontSize: token.fontSizeLG,
+          fontWeight: fontWeights.bold,
+          color: token.colorText,
+        }}>
+          Confirm {side} Order
+        </div>
+      </div>
+      
+      {/* Order Details */}
+      <div style={{
+        background: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
+        borderRadius: 12,
+        padding: token.paddingMD,
+        marginBottom: token.marginLG,
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: token.marginSM }}>
+          <span style={{ color: token.colorTextSecondary, fontSize: token.fontSizeSM }}>Type</span>
+          <span style={{ color: isBuy ? '#22C55E' : '#EF4444', fontWeight: fontWeights.bold, fontSize: token.fontSizeSM }}>
+            Market {side}
+          </span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: token.marginSM }}>
+          <span style={{ color: token.colorTextSecondary, fontSize: token.fontSizeSM }}>Amount</span>
+          <span style={{ color: token.colorText, fontWeight: fontWeights.semibold, fontSize: token.fontSizeSM }}>
+            {amountNum.toFixed(6)} {baseAsset}
+          </span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: token.marginSM }}>
+          <span style={{ color: token.colorTextSecondary, fontSize: token.fontSizeSM }}>Price</span>
+          <span style={{ color: token.colorText, fontSize: token.fontSizeSM }}>
+            {quoteAsset === 'USD' 
+              ? `$${price.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
+              : `${price.toFixed(8)} ${quoteAsset}`
+            }
+          </span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: token.marginSM }}>
+          <span style={{ color: token.colorTextSecondary, fontSize: token.fontSizeSM }}>Fee (0.5%)</span>
+          <span style={{ color: token.colorText, fontSize: token.fontSizeSM }}>
+            {quoteAsset === 'USD' ? `$${fee.toFixed(2)}` : `${fee.toFixed(8)} ${quoteAsset}`}
+          </span>
+        </div>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          paddingTop: token.paddingSM,
+          borderTop: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}`,
+        }}>
+          <span style={{ color: token.colorTextSecondary }}>You {isBuy ? 'pay' : 'receive'}</span>
+          <span style={{ color: token.colorText, fontWeight: fontWeights.bold }}>
+            {isBuy 
+              ? (quoteAsset === 'USD' ? `$${totalNum.toFixed(2)}` : `${totalNum.toFixed(8)} ${quoteAsset}`)
+              : (quoteAsset === 'USD' ? `$${receiveAmount.toFixed(2)}` : `${receiveAmount.toFixed(8)} ${quoteAsset}`)
+            }
+          </span>
+        </div>
+      </div>
+      
+      {/* Buttons */}
+      <div style={{ display: 'flex', gap: token.marginSM, paddingBottom: 'env(safe-area-inset-bottom, 8px)' }}>
+        <Button
+          size="large"
+          onClick={() => setShowConfirm(false)}
+          style={{ flex: 1, height: 48, borderRadius: 12 }}
+        >
+          Back
+        </Button>
+        <Button
+          type="primary"
+          size="large"
+          onClick={handleSubmit}
+          loading={isLoading}
+          style={{
+            flex: 1,
+            height: 48,
+            borderRadius: 12,
+            background: isBuy 
+              ? 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)'
+              : 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+            border: 'none',
+          }}
+        >
+          Confirm {side}
+        </Button>
+      </div>
+    </div>
+  );
+
+  return (
+    <AnimatePresence mode="wait">
+      {visible && (
+        <>
+          {/* Backdrop overlay */}
+          <motion.div
+            key="backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => {
+              if (showConfirm) {
+                setShowConfirm(false);
+              } else {
+                onClose();
+              }
+            }}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 1100,
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              backdropFilter: 'blur(4px)',
+              WebkitBackdropFilter: 'blur(4px)',
+            }}
+          />
+
+          {/* Form Bottom Sheet - hidden when confirming */}
+          {!showConfirm && (
+            <motion.div
+              key="form-sheet"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 400 }}
+              style={{ ...bottomSheetStyle, maxHeight: '90vh' }}
+            >
+              {/* Drag handle */}
+              <div style={{ display: 'flex', justifyContent: 'center', padding: `${token.paddingSM}px 0` }}>
+                <div style={{
+                  width: 40,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.15)',
+                }} />
+              </div>
+              {modalContent}
+            </motion.div>
+          )}
+
+          {/* Confirmation Bottom Sheet - shown when confirming */}
+          {showConfirm && (
+            <motion.div
+              key="confirm-sheet"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 400 }}
+              style={bottomSheetStyle}
+            >
+              {confirmationContent}
+            </motion.div>
+          )}
+        </>
+      )}
+    </AnimatePresence>
   );
 };
 

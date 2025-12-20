@@ -369,6 +369,18 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
     ? amountNum 
     : cashAmountNum - fee;
 
+  // Button disabled state - calculate once for consistent styling
+  const isButtonDisabled = 
+    !selectedPair ||
+    !cashAmountNum || 
+    cashAmountNum <= 0 || 
+    cashAmountNum < 1 || // Minimum $1 USD order value
+    !amountNum || 
+    amountNum <= 0 || 
+    price <= 0 ||
+    (isBuy && cashAmountNum > cashBalance + 0.01) ||
+    (!isBuy && amountNum > tokenBalance);
+
   // State for fee details expansion
   const [showFeeDetails, setShowFeeDetails] = useState(false);
   
@@ -399,7 +411,9 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
                 cursor: 'pointer',
                 fontSize: token.fontSize,
                 fontWeight: isActive ? fontWeights.bold : fontWeights.medium,
-                color: isActive ? token.colorText : token.colorTextTertiary,
+                color: isActive 
+                  ? (s === 'BUY' ? '#22C55E' : '#EF4444')
+                  : token.colorTextTertiary,
                 textAlign: 'center',
                 position: 'relative',
               }}
@@ -414,7 +428,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
                     left: '20%',
                     right: '20%',
                     height: 2,
-                    background: token.colorPrimary,
+                    background: s === 'BUY' ? '#22C55E' : '#EF4444',
                     borderRadius: 1,
                   }}
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
@@ -653,9 +667,28 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
         </div>
       </div>
       
+      {/* Minimum Order Value Warning */}
+      <AnimatePresence>
+        {cashAmountNum > 0 && cashAmountNum < 1 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              marginBottom: token.marginSM,
+              fontSize: token.fontSizeSM,
+              color: token.colorWarning,
+            }}
+          >
+            <InfoCircleOutlined style={{ marginRight: 4 }} />
+            Minimum order value is $1.00
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Insufficient Balance Warning - Minimal */}
       <AnimatePresence>
-        {(cashAmountNum > 0 || amountNum > 0) && (
+        {(cashAmountNum > 0 || amountNum > 0) && cashAmountNum >= 1 && (
           (isBuy && cashAmountNum > cashBalance + 0.01) || (!isBuy && amountNum > tokenBalance) ? (
             <motion.div
               initial={{ opacity: 0 }}
@@ -767,16 +800,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
               size="large"
               block
               loading={loading}
-              disabled={
-                !selectedPair ||
-                !cashAmountNum || 
-                cashAmountNum <= 0 || 
-                !amountNum || 
-                amountNum <= 0 || 
-                price <= 0 ||
-                (isBuy && cashAmountNum > cashBalance + 0.01) ||
-                (!isBuy && amountNum > tokenBalance)
-              }
+              disabled={isButtonDisabled}
               onClick={() => setShowConfirm(true)}
               style={{
                 height: 56,
@@ -785,9 +809,13 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
                 textTransform: 'uppercase',
                 letterSpacing: '1px',
                 fontSize: token.fontSizeLG,
-                background: isBuy ? token.colorSuccess : token.colorError,
+                background: isButtonDisabled 
+                  ? (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)')
+                  : (isBuy ? token.colorSuccess : token.colorError),
                 border: 'none',
-                color: '#ffffff',
+                color: isButtonDisabled ? token.colorTextDisabled : '#ffffff',
+                opacity: isButtonDisabled ? 0.7 : 1,
+                cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
               }}
             >
               {isBuy ? 'Buy' : 'Sell'} {selectedAsset}
@@ -810,16 +838,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
             size="large"
             block
             loading={loading}
-            disabled={
-              !selectedPair ||
-              !cashAmountNum || 
-              cashAmountNum <= 0 || 
-              !amountNum || 
-              amountNum <= 0 || 
-              price <= 0 ||
-              (isBuy && cashAmountNum > cashBalance + 0.01) ||
-              (!isBuy && amountNum > tokenBalance)
-            }
+            disabled={isButtonDisabled}
             onClick={() => setShowConfirm(true)}
             style={{
               height: 56,
@@ -828,9 +847,13 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
               textTransform: 'uppercase',
               letterSpacing: '1px',
               fontSize: token.fontSizeLG,
-              background: isBuy ? token.colorSuccess : token.colorError,
+              background: isButtonDisabled 
+                ? (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)')
+                : (isBuy ? token.colorSuccess : token.colorError),
               border: 'none',
-              color: '#ffffff',
+              color: isButtonDisabled ? token.colorTextDisabled : '#ffffff',
+              opacity: isButtonDisabled ? 0.7 : 1,
+              cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
             }}
           >
             {isBuy ? 'Buy' : 'Sell'} {selectedAsset}
@@ -860,6 +883,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
             setSearchQuery('');
           }}
           height="70vh"
+          zIndex={1100}
           styles={{
             header: {
               padding: `${token.paddingSM}px ${token.paddingMD}px`,
@@ -1106,161 +1130,249 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
         </Modal>
       )}
       
-      {/* Confirmation Modal */}
-      <Modal
-        title={null}
-        open={showConfirm}
-        onCancel={() => setShowConfirm(false)}
-        footer={null}
-        centered
-        width={380}
-        styles={{
-          body: {
-            borderRadius: token.borderRadiusLG,
-            padding: token.paddingLG,
-            background: token.colorBgContainer,
-          },
-        }}
-      >
-        <div style={{ textAlign: 'center', marginBottom: token.marginLG }}>
+      {/* Confirmation - Drawer on mobile, Modal on desktop */}
+      {isMobile ? (
+        <Drawer
+          title={null}
+          placement="bottom"
+          open={showConfirm}
+          onClose={() => setShowConfirm(false)}
+          height="auto"
+          zIndex={1100}
+          closable={false}
+          styles={{
+            body: {
+              padding: token.paddingLG,
+            },
+          }}
+        >
+          {/* Drag handle */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: token.marginMD }}>
+            <div style={{
+              width: 40,
+              height: 4,
+              borderRadius: 2,
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.15)',
+            }} />
+          </div>
+
+          <div style={{ textAlign: 'center', marginBottom: token.marginLG }}>
+            <div style={{
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              background: isBuy ? token.colorSuccess : token.colorError,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto',
+              marginBottom: token.marginSM,
+            }}>
+              {selectedPair && (
+                <img
+                  src={selectedPair.iconUrl}
+                  alt={selectedAsset}
+                  width={36}
+                  height={36}
+                  style={{ borderRadius: '50%' }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${selectedAsset}&background=667eea&color=fff&size=80`;
+                  }}
+                />
+              )}
+            </div>
+            <div style={{
+              fontSize: token.fontSizeLG,
+              fontWeight: fontWeights.bold,
+              color: token.colorText,
+            }}>
+              Confirm {side}
+            </div>
+          </div>
+          
           <div style={{
-            width: 64,
-            height: 64,
-            borderRadius: '50%',
-            background: isBuy 
-              ? token.colorSuccess
-              : token.colorError,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto',
+            background: token.colorBgLayout,
+            borderRadius: token.borderRadius,
+            padding: token.paddingMD,
+            marginBottom: token.marginLG,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: token.marginSM }}>
+              <span style={{ color: token.colorTextSecondary, fontSize: token.fontSizeSM }}>Type</span>
+              <span style={{ color: isBuy ? token.colorSuccess : token.colorError, fontWeight: fontWeights.bold, fontSize: token.fontSizeSM }}>
+                Market {side}
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: token.marginSM }}>
+              <span style={{ color: token.colorTextSecondary, fontSize: token.fontSizeSM }}>Amount</span>
+              <span style={{ color: token.colorText, fontWeight: fontWeights.semibold, fontSize: token.fontSizeSM }}>
+                {amountNum.toFixed(6)} {selectedAsset}
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: token.marginSM }}>
+              <span style={{ color: token.colorTextSecondary, fontSize: token.fontSizeSM }}>Price</span>
+              <span style={{ color: token.colorText, fontSize: token.fontSizeSM }}>
+                ${price.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: token.marginSM }}>
+              <span style={{ color: token.colorTextSecondary, fontSize: token.fontSizeSM }}>Fee (0.5%)</span>
+              <span style={{ color: token.colorText, fontSize: token.fontSizeSM }}>${fee.toFixed(2)}</span>
+            </div>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              paddingTop: token.paddingSM,
+              borderTop: `1px solid ${token.colorBorderSecondary}`,
+            }}>
+              <span style={{ color: token.colorTextSecondary }}>You {isBuy ? 'pay' : 'receive'}</span>
+              <span style={{ color: token.colorText, fontWeight: fontWeights.bold }}>
+                {isBuy ? `$${cashAmountNum.toFixed(2)}` : `$${receiveAmount.toFixed(2)}`}
+              </span>
+            </div>
+          </div>
+          
+          <div style={{ display: 'flex', gap: token.marginSM, paddingBottom: 'env(safe-area-inset-bottom, 8px)' }}>
+            <Button
+              size="large"
+              onClick={() => setShowConfirm(false)}
+              style={{ flex: 1, height: 48, borderRadius: token.borderRadius }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="primary"
+              size="large"
+              onClick={handleSubmit}
+              loading={loading}
+              style={{
+                flex: 1,
+                height: 48,
+                borderRadius: token.borderRadius,
+                background: isBuy ? token.colorSuccess : token.colorError,
+                border: 'none',
+              }}
+            >
+              Confirm {side}
+            </Button>
+          </div>
+        </Drawer>
+      ) : (
+        <Modal
+          title={null}
+          open={showConfirm}
+          onCancel={() => setShowConfirm(false)}
+          footer={null}
+          centered
+          width={360}
+          zIndex={1100}
+          styles={{
+            body: {
+              padding: token.paddingLG,
+            },
+          }}
+        >
+          <div style={{ textAlign: 'center', marginBottom: token.marginMD }}>
+            <div style={{
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              background: isBuy ? token.colorSuccess : token.colorError,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto',
+              marginBottom: token.marginSM,
+            }}>
+              {selectedPair && (
+                <img
+                  src={selectedPair.iconUrl}
+                  alt={selectedAsset}
+                  width={36}
+                  height={36}
+                  style={{ borderRadius: '50%' }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${selectedAsset}&background=667eea&color=fff&size=80`;
+                  }}
+                />
+              )}
+            </div>
+            <div style={{
+              fontSize: token.fontSizeLG,
+              fontWeight: fontWeights.bold,
+              color: token.colorText,
+            }}>
+              Confirm {side}
+            </div>
+          </div>
+          
+          <div style={{
+            background: token.colorBgLayout,
+            borderRadius: token.borderRadius,
+            padding: token.paddingMD,
             marginBottom: token.marginMD,
           }}>
-            {selectedPair && (
-              <img
-                src={selectedPair.iconUrl}
-                alt={selectedAsset}
-                width={40}
-                height={40}
-                style={{ borderRadius: '50%' }}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${selectedAsset}&background=667eea&color=fff&size=80`;
-                }}
-              />
-            )}
-          </div>
-          <div style={{
-            fontSize: token.fontSizeHeading4,
-            fontWeight: fontWeights.bold,
-            color: token.colorText,
-            marginBottom: token.marginXS,
-          }}>
-            Confirm {side}
-          </div>
-          <div style={{
-            fontSize: token.fontSizeSM,
-            color: token.colorTextSecondary,
-          }}>
-            Review your order details
-          </div>
-        </div>
-        
-        <div style={{
-          background: token.colorBgLayout,
-          borderRadius: token.borderRadiusSM,
-          padding: token.paddingMD,
-          marginBottom: token.marginLG,
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: token.marginSM,
-          }}>
-            <span style={{ color: token.colorTextSecondary }}>Type</span>
-            <span style={{ 
-              color: isBuy ? token.colorSuccess : token.colorError,
-              fontWeight: fontWeights.bold,
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: token.marginXS }}>
+              <span style={{ color: token.colorTextSecondary, fontSize: token.fontSizeSM }}>Type</span>
+              <span style={{ color: isBuy ? token.colorSuccess : token.colorError, fontWeight: fontWeights.bold, fontSize: token.fontSizeSM }}>
+                Market {side}
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: token.marginXS }}>
+              <span style={{ color: token.colorTextSecondary, fontSize: token.fontSizeSM }}>Amount</span>
+              <span style={{ color: token.colorText, fontWeight: fontWeights.semibold, fontSize: token.fontSizeSM }}>
+                {amountNum.toFixed(6)} {selectedAsset}
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: token.marginXS }}>
+              <span style={{ color: token.colorTextSecondary, fontSize: token.fontSizeSM }}>Price</span>
+              <span style={{ color: token.colorText, fontSize: token.fontSizeSM }}>
+                ${price.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: token.marginXS }}>
+              <span style={{ color: token.colorTextSecondary, fontSize: token.fontSizeSM }}>Fee (0.5%)</span>
+              <span style={{ color: token.colorText, fontSize: token.fontSizeSM }}>${fee.toFixed(2)}</span>
+            </div>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              paddingTop: token.paddingXS,
+              borderTop: `1px solid ${token.colorBorderSecondary}`,
+              marginTop: token.marginXS,
             }}>
-              Market {side}
-            </span>
+              <span style={{ color: token.colorTextSecondary, fontSize: token.fontSizeSM }}>You {isBuy ? 'pay' : 'receive'}</span>
+              <span style={{ color: token.colorText, fontWeight: fontWeights.bold, fontSize: token.fontSizeSM }}>
+                {isBuy ? `$${cashAmountNum.toFixed(2)}` : `$${receiveAmount.toFixed(2)}`}
+              </span>
+            </div>
           </div>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: token.marginSM,
-          }}>
-            <span style={{ color: token.colorTextSecondary }}>Amount</span>
-            <span style={{ color: token.colorText, fontWeight: fontWeights.semibold }}>
-              {amountNum.toFixed(6)} {selectedAsset}
-            </span>
+          
+          <div style={{ display: 'flex', gap: token.marginSM }}>
+            <Button
+              size="large"
+              onClick={() => setShowConfirm(false)}
+              style={{ flex: 1, height: 44, borderRadius: token.borderRadius }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="primary"
+              size="large"
+              onClick={handleSubmit}
+              loading={loading}
+              style={{
+                flex: 1,
+                height: 44,
+                borderRadius: token.borderRadius,
+                background: isBuy ? token.colorSuccess : token.colorError,
+                border: 'none',
+              }}
+            >
+              Confirm {side}
+            </Button>
           </div>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: token.marginSM,
-          }}>
-            <span style={{ color: token.colorTextSecondary }}>Price</span>
-            <span style={{ color: token.colorText }}>
-              ${price.toLocaleString('en-US', { maximumFractionDigits: 2 })}
-            </span>
-          </div>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: token.marginSM,
-          }}>
-            <span style={{ color: token.colorTextSecondary }}>Fee (0.5%)</span>
-            <span style={{ color: token.colorText }}>
-              ${fee.toFixed(2)}
-            </span>
-          </div>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            paddingTop: token.paddingSM,
-            borderTop: `1px solid ${token.colorBorderSecondary}`,
-          }}>
-            <span style={{ color: token.colorTextSecondary }}>
-              You {isBuy ? 'pay' : 'receive'}
-            </span>
-            <span style={{ color: token.colorText, fontWeight: fontWeights.bold }}>
-              {isBuy 
-                ? `$${cashAmountNum.toFixed(2)}`
-                : `$${receiveAmount.toFixed(2)}`
-              }
-            </span>
-          </div>
-        </div>
-        
-        <div style={{ display: 'flex', gap: token.marginSM }}>
-          <Button
-            size="large"
-            onClick={() => setShowConfirm(false)}
-            style={{
-              flex: 1,
-              height: 48,
-              borderRadius: token.borderRadius,
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="primary"
-            size="large"
-            onClick={handleSubmit}
-            loading={loading}
-            style={{
-              flex: 1,
-              height: 48,
-              borderRadius: token.borderRadius,
-              background: isBuy ? token.colorSuccess : token.colorError,
-              border: 'none',
-            }}
-          >
-            Confirm {side}
-          </Button>
-        </div>
-      </Modal>
+        </Modal>
+      )}
       
       {/* Order Status Modal (Bottom Sheet on mobile) */}
       <OrderStatusModal

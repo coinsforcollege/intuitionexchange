@@ -6,9 +6,13 @@ import { SwapOutlined, InfoCircleOutlined, ThunderboltOutlined, ClockCircleOutli
 import { motion, AnimatePresence } from 'motion/react';
 import { fontWeights } from '@/theme/themeConfig';
 import { useThemeMode } from '@/context/ThemeContext';
+import { useExchange } from '@/context/ExchangeContext';
 import Image from 'next/image';
 
 const { useToken } = theme;
+
+// Minimum order value in USD
+const MIN_ORDER_VALUE_USD = 1;
 
 type OrderSide = 'BUY' | 'SELL';
 
@@ -35,6 +39,7 @@ const TradeForm: React.FC<TradeFormProps> = ({
 }) => {
   const { token } = useToken();
   const { mode } = useThemeMode();
+  const { pairs } = useExchange();
   const isDark = mode === 'dark';
   const [side, setSide] = useState<OrderSide>('BUY');
   const [amount, setAmount] = useState<string>('');
@@ -45,6 +50,30 @@ const TradeForm: React.FC<TradeFormProps> = ({
   const isBuy = side === 'BUY';
   const amountNum = parseFloat(amount) || 0;
   const totalNum = parseFloat(total) || 0;
+  
+  // Calculate USD value for minimum order validation
+  // For USD pairs: totalNum is already in USD
+  // For non-USD pairs (ETH, USDT): convert using quote-USD price
+  const getUsdValue = (): number => {
+    if (quoteAsset === 'USD') {
+      // For BUY: totalNum is what user pays in USD
+      // For SELL: amountNum * price = totalNum, which is in USD
+      return totalNum;
+    }
+    
+    // Non-USD quote (ETH, USDT) - find quote-USD price
+    const quoteUsdPair = pairs.find(p => p.symbol === `${quoteAsset}-USD`);
+    if (quoteUsdPair && quoteUsdPair.price > 0) {
+      // totalNum is in quote currency, convert to USD
+      return totalNum * quoteUsdPair.price;
+    }
+    
+    // Fallback: can't determine USD value, allow the trade (backend will validate)
+    return MIN_ORDER_VALUE_USD;
+  };
+  
+  const usdValue = getUsdValue();
+  const isBelowMinimum = totalNum > 0 && usdValue < MIN_ORDER_VALUE_USD;
 
   // Reset form when pair changes
   useEffect(() => {
@@ -167,6 +196,17 @@ const TradeForm: React.FC<TradeFormProps> = ({
   const receiveAmount = isBuy 
     ? amountNum  // BUY: user receives the amount of base asset
     : (amountNum * price) - fee;  // SELL: user receives perceived value minus our fee
+
+  // Button disabled state - calculate once for consistent styling
+  const isButtonDisabled = 
+    !amountNum || 
+    amountNum <= 0 || 
+    !totalNum || 
+    totalNum <= 0 || 
+    price <= 0 ||
+    isBelowMinimum ||
+    (isBuy && totalNum > quoteBalance + 0.01) ||
+    (!isBuy && amountNum > baseBalance);
 
   // Custom input with addon - proper rounded corners
   const InputWithAddon = ({ 
@@ -413,9 +453,35 @@ const TradeForm: React.FC<TradeFormProps> = ({
         />
       </div>
 
+      {/* Minimum Order Value Warning */}
+      <AnimatePresence>
+        {isBelowMinimum && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            style={{
+              marginBottom: token.marginSM,
+              padding: token.paddingSM,
+              backgroundColor: token.colorWarningBg,
+              borderRadius: token.borderRadiusSM,
+              border: `1px solid ${token.colorWarningBorder}`,
+              fontSize: token.fontSizeSM,
+              color: token.colorWarning,
+            }}
+          >
+            <InfoCircleOutlined style={{ marginRight: token.marginXS }} />
+            Minimum order value is $1.00 USD
+            {quoteAsset !== 'USD' && usdValue > 0 && (
+              <span> (current: ${usdValue.toFixed(2)})</span>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Insufficient Balance Warning */}
       <AnimatePresence>
-        {amountNum > 0 && (
+        {amountNum > 0 && !isBelowMinimum && (
           (isBuy && totalNum > quoteBalance + 0.01) || (!isBuy && amountNum > baseBalance) ? (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
@@ -492,15 +558,7 @@ const TradeForm: React.FC<TradeFormProps> = ({
         size="large"
         block
         loading={loading}
-        disabled={
-          !amountNum || 
-          amountNum <= 0 || 
-          !totalNum || 
-          totalNum <= 0 || 
-          price <= 0 ||
-          (isBuy && totalNum > quoteBalance + 0.01) || // BUY: Check if user has enough quote currency (with tolerance for floating point)
-          (!isBuy && amountNum > baseBalance) // SELL: Check if user has enough base asset
-        }
+        disabled={isButtonDisabled}
         onClick={() => setShowConfirm(true)}
         style={{
           height: token.controlHeightLG,
@@ -509,11 +567,13 @@ const TradeForm: React.FC<TradeFormProps> = ({
           textTransform: 'uppercase',
           letterSpacing: '0.5px',
           fontSize: token.fontSize,
-          background: isBuy 
-            ? '#52c41a'
-            : '#ff4d4f',
+          background: isButtonDisabled 
+            ? (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)')
+            : (isBuy ? '#52c41a' : '#ff4d4f'),
           border: 'none',
-          color: '#ffffff',
+          color: isButtonDisabled ? token.colorTextDisabled : '#ffffff',
+          opacity: isButtonDisabled ? 0.7 : 1,
+          cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
         }}
       >
         {isBuy ? 'Buy' : 'Sell'} {baseAsset}

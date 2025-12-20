@@ -60,20 +60,13 @@ function ExchangePageContent() {
     refreshBalances,
   } = useExchange();
 
-  // Set up layout options - fullWidth always true, hideMobileNav on mobile
-  const { setHideMobileNav, setExchangeData } = useLayoutOptions({
+  // Set up layout options - fullWidth always true, show nav bar on mobile
+  const { setExchangeData } = useLayoutOptions({
     fullWidth: true,
-    hideMobileNav: false, // Will be updated based on mount state
+    hideMobileNav: false, // Always show bottom nav
   });
 
   const isMobile = mounted ? !screens.md : false;
-
-  // Update hideMobileNav based on mobile state
-  useEffect(() => {
-    if (mounted) {
-      setHideMobileNav(isMobile);
-    }
-  }, [mounted, isMobile, setHideMobileNav]);
 
   // Update exchange header data when pair changes
   useEffect(() => {

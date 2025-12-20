@@ -178,14 +178,14 @@ const MobileTradePage: React.FC<MobileTradePageProps> = ({
         ))}
       </div>
 
-      {/* Tab Content - with bottom padding for fixed buttons */}
+      {/* Tab Content - with bottom padding for fixed buttons + nav bar */}
       <div
         style={{
           flex: 1,
           minHeight: 0,
           overflowY: 'auto',
           padding: `${token.paddingSM}px ${token.paddingMD}px`,
-          paddingBottom: 80, // Space for fixed buttons
+          paddingBottom: 150, // Space for fixed buttons (48px) + nav bar (~100px)
         }}
       >
         {activeTab === 'history' && (
@@ -199,24 +199,16 @@ const MobileTradePage: React.FC<MobileTradePageProps> = ({
         )}
       </div>
 
-      {/* Fixed Buy/Sell Buttons at Bottom */}
+      {/* Compact Buy/Sell Buttons - positioned above bottom nav */}
       <div
         style={{
           position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
+          bottom: 104, // Above bottom nav (72px height + 16px margin + 16px spacing)
+          left: token.paddingMD,
+          right: token.paddingMD,
           display: 'flex',
           gap: token.marginSM,
-          padding: `${token.paddingSM}px ${token.paddingMD}px`,
-          paddingBottom: `calc(${token.paddingSM}px + env(safe-area-inset-bottom, 8px))`,
-          background: isDark 
-            ? 'rgba(15, 15, 26, 0.98)'
-            : 'rgba(255, 255, 255, 0.98)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          borderTop: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'}`,
-          zIndex: 100,
+          zIndex: 90,
         }}
       >
         <motion.button
@@ -224,38 +216,42 @@ const MobileTradePage: React.FC<MobileTradePageProps> = ({
           onClick={() => handleOpenTrade('BUY')}
           style={{
             flex: 1,
-            height: 48,
-            borderRadius: 12,
+            height: 40,
+            borderRadius: 20,
             border: 'none',
             background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
             color: '#ffffff',
-            fontSize: token.fontSize,
+            fontSize: token.fontSizeSM,
             fontWeight: fontWeights.bold,
-            letterSpacing: '0.05em',
+            letterSpacing: '0.03em',
             cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(34, 197, 94, 0.3)',
+            boxShadow: isDark 
+              ? '0 4px 16px rgba(34, 197, 94, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)'
+              : '0 4px 12px rgba(34, 197, 94, 0.35)',
           }}
         >
-          BUY
+          BUY {baseAsset}
         </motion.button>
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={() => handleOpenTrade('SELL')}
           style={{
             flex: 1,
-            height: 48,
-            borderRadius: 12,
+            height: 40,
+            borderRadius: 20,
             border: 'none',
             background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
             color: '#ffffff',
-            fontSize: token.fontSize,
+            fontSize: token.fontSizeSM,
             fontWeight: fontWeights.bold,
-            letterSpacing: '0.05em',
+            letterSpacing: '0.03em',
             cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+            boxShadow: isDark 
+              ? '0 4px 16px rgba(239, 68, 68, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)'
+              : '0 4px 12px rgba(239, 68, 68, 0.35)',
           }}
         >
-          SELL
+          SELL {baseAsset}
         </motion.button>
       </div>
 
