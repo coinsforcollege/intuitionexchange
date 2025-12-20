@@ -132,12 +132,16 @@ export class KycService {
       dob,
     );
 
-    // Save session details
+    // Save session details and reset any previous rejection data
     await this.prisma.client.kyc.update({
       where: { id: kyc.id },
       data: {
         veriffSessionId: session.verification.id,
         veriffStatus: 'created',
+        veriffAttemptId: null,
+        veriffReason: null,
+        veriffDecisionTime: null,
+        status: 'SUBMITTED',
         currentStep: 3,
       },
     });
