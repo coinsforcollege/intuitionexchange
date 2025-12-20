@@ -33,7 +33,7 @@ const warmColors = {
 export default function StatusPage() {
   const router = useRouter();
   const { token } = useToken();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { mode } = useThemeMode();
   const screens = useBreakpoint();
   const isDark = mode === 'dark';
@@ -44,6 +44,9 @@ export default function StatusPage() {
   const [rejectReason, setRejectReason] = useState<string | null>(null);
 
   useEffect(() => {
+    // Wait for auth to finish loading
+    if (authLoading) return;
+
     if (!user) {
       router.push('/login?redirect=/onboarding');
       return;
@@ -75,7 +78,7 @@ export default function StatusPage() {
     };
 
     checkStatus();
-  }, [user, router]);
+  }, [user, authLoading, router]);
 
   // Poll for updates if pending
   useEffect(() => {

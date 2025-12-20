@@ -223,8 +223,9 @@ export class KycService {
 
     if (!decision) {
       return {
-        status: kyc.veriffStatus || 'pending',
-        message: 'Verification in progress',
+        status: kyc.status || 'PENDING',
+        veriffStatus: kyc.veriffStatus || null,
+        reason: null,
       };
     }
 

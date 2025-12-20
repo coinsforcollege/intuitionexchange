@@ -1,8 +1,7 @@
 import React from 'react';
 import Head from 'next/head';
-import Link from 'next/link';
-import { Button, theme, Grid } from 'antd';
-import { CheckCircleOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import { theme, Grid } from 'antd';
+import { CheckCircleOutlined } from '@ant-design/icons';
 import { motion } from 'motion/react';
 import OnboardingLayout from '@/components/onboarding/OnboardingLayout';
 import { fontWeights } from '@/theme/themeConfig';
@@ -10,18 +9,6 @@ import { useThemeMode } from '@/context/ThemeContext';
 
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
-
-// Theme colors
-const themeColors = {
-  primary: '#6366F1',
-  light: '#A5B4FC',
-  dark: '#4338CA',
-};
-
-// Warm palette for light mode buttons
-const warmColors = {
-  coral: '#E07A5F',
-};
 
 export default function VeriffCallbackPage() {
   const { token } = useToken();
@@ -42,25 +29,6 @@ export default function VeriffCallbackPage() {
     padding: token.paddingLG,
     width: '100%',
     textAlign: 'center' as const,
-  });
-
-  const getButtonStyle = (primary = true): React.CSSProperties => ({
-    background: primary
-      ? (isDark
-          ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.dark} 100%)`
-          : `linear-gradient(135deg, ${warmColors.coral} 0%, #C45C44 100%)`)
-      : (isDark
-          ? 'rgba(255,255,255,0.1)'
-          : 'rgba(255,255,255,0.15)'),
-    boxShadow: primary
-      ? (isDark ? `0 4px 14px rgba(99, 102, 241, 0.4)` : `0 4px 14px rgba(224,122,95,0.4)`)
-      : 'none',
-    border: primary ? 'none' : '1px solid rgba(255,255,255,0.3)',
-    borderRadius: 12,
-    color: '#ffffff',
-    fontWeight: fontWeights.bold,
-    height: 52,
-    fontSize: token.fontSizeLG,
   });
 
   return (
@@ -123,7 +91,7 @@ export default function VeriffCallbackPage() {
               color: '#ffffff',
               marginBottom: token.marginMD,
             }}>
-              You can safely close this tab and return to the previous page to see your verification status.
+              Close this tab and return to the previous page to see your verification status.
             </p>
             <p style={{
               fontSize: token.fontSizeSM,
@@ -133,26 +101,6 @@ export default function VeriffCallbackPage() {
               Verification usually takes less than a minute.
             </p>
           </div>
-
-          {/* Link to verify page */}
-          <Link href="/onboarding/verify" style={{ width: '100%', textDecoration: 'none' }}>
-            <Button
-              type="primary"
-              size="large"
-              block
-              style={getButtonStyle()}
-            >
-              Check Verification Status <ArrowRightOutlined />
-            </Button>
-          </Link>
-
-          <p style={{
-            fontSize: token.fontSizeSM,
-            color: 'rgba(255,255,255,0.6)',
-            textAlign: 'center',
-          }}>
-            Or close this tab to return to your previous page
-          </p>
         </motion.div>
       </OnboardingLayout>
     </>
