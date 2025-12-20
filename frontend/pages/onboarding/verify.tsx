@@ -332,7 +332,7 @@ export default function VerifyPage() {
       </Head>
 
       <OnboardingLayout
-        currentStep={2}
+        currentStep={3}
         title={state === 'processing' ? 'Processing...' : 'Identity Verification'}
         subtitle={
           state === 'processing'

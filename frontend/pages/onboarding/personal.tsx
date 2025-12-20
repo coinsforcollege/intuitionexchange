@@ -221,7 +221,7 @@ export default function PersonalDetailsPage() {
         <Head>
           <title>Personal Details - InTuition Exchange</title>
         </Head>
-        <OnboardingLayout currentStep={0} title="Personal Details" subtitle="Tell us about yourself">
+        <OnboardingLayout currentStep={1} title="Personal Details" subtitle="Tell us about yourself">
           <Skeleton active paragraph={{ rows: 6 }} />
         </OnboardingLayout>
       </>
@@ -236,7 +236,7 @@ export default function PersonalDetailsPage() {
       </Head>
 
       <OnboardingLayout
-        currentStep={0}
+        currentStep={1}
         title="Personal Details"
         subtitle="Enter your legal name as it appears on your ID"
       >

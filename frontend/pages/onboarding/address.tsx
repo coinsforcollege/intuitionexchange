@@ -279,7 +279,7 @@ export default function AddressPage() {
         <Head>
           <title>Address - InTuition Exchange</title>
         </Head>
-        <OnboardingLayout currentStep={1} title="Your Address" subtitle="Where do you currently live?">
+        <OnboardingLayout currentStep={2} title="Your Address" subtitle="Where do you currently live?">
           <Skeleton active paragraph={{ rows: 8 }} />
         </OnboardingLayout>
       </>
@@ -294,7 +294,7 @@ export default function AddressPage() {
       </Head>
 
       <OnboardingLayout
-        currentStep={1}
+        currentStep={2}
         title="Your Address"
         subtitle="Enter your current residential address"
         showBack
