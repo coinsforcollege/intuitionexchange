@@ -580,28 +580,34 @@ const WalletPage: NextPageWithLayout = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.15 }}
         >
-          <Card
-            style={{
-              borderRadius: token.borderRadiusLG,
-              border: `1px solid ${token.colorBorderSecondary}`,
-            }}
-            styles={{
-              body: {
-                padding: isMobile ? token.paddingSM : token.paddingMD,
-              },
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM, marginBottom: token.marginSM }}>
-              <LineChartOutlined style={{ fontSize: token.fontSizeLG, color: appMode === 'learner' ? '#F59E0B' : '#6366F1' }} />
-              <span style={{ fontWeight: fontWeights.semibold, color: token.colorText }}>
-                Portfolio Growth
-              </span>
-              <Tag color={appMode === 'learner' ? 'orange' : 'blue'} style={{ marginLeft: 'auto' }}>
-                {appMode === 'learner' ? 'Learner Mode' : 'Investor Mode'}
-              </Tag>
-            </div>
-            <PortfolioGrowthChart mode={appMode} height={isMobile ? 280 : 350} />
-          </Card>
+          {isMobile ? (
+            // Mobile: Chart without card wrapper or title
+            <PortfolioGrowthChart mode={appMode} height={280} />
+          ) : (
+            // Desktop: Chart in card
+            <Card
+              style={{
+                borderRadius: token.borderRadiusLG,
+                border: `1px solid ${token.colorBorderSecondary}`,
+              }}
+              styles={{
+                body: {
+                  padding: token.paddingMD,
+                },
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM, marginBottom: token.marginSM }}>
+                <LineChartOutlined style={{ fontSize: token.fontSizeLG, color: appMode === 'learner' ? '#F59E0B' : '#6366F1' }} />
+                <span style={{ fontWeight: fontWeights.semibold, color: token.colorText }}>
+                  Portfolio Growth
+                </span>
+                <Tag color={appMode === 'learner' ? 'orange' : 'blue'} style={{ marginLeft: 'auto' }}>
+                  {appMode === 'learner' ? 'Learner Mode' : 'Investor Mode'}
+                </Tag>
+              </div>
+              <PortfolioGrowthChart mode={appMode} height={350} />
+            </Card>
+          )}
         </motion.div>
 
         {/* Action Buttons */}
