@@ -1115,6 +1115,17 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [isLoggedIn, appMode, refreshBalances, refreshOrders]);
 
+  // Reset selectedPair when switching to investor mode if current pair is a college coin
+  useEffect(() => {
+    if (appMode === 'investor' && pairs.length > 0) {
+      const currentPair = pairs.find(p => p.symbol === selectedPair);
+      if (currentPair?.isCollegeCoin) {
+        // Reset to BTC-USD when switching to investor mode with a college coin selected
+        setSelectedPair('BTC-USD');
+      }
+    }
+  }, [appMode, pairs, selectedPair]);
+
   // Fetch candles when pair or granularity changes
   useEffect(() => {
     if (!isLoadingPairs && selectedPair) {

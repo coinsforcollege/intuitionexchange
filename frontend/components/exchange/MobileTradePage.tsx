@@ -262,6 +262,7 @@ const MobileTradePage: React.FC<MobileTradePageProps> = ({
         height="70vh"
         open={pairDrawerOpen}
         onClose={() => setPairDrawerOpen(false)}
+        zIndex={token.zIndexPopupBase + 100}
         styles={{ 
           body: { padding: token.paddingMD },
           header: { 

@@ -133,8 +133,8 @@ const PairSelector: React.FC<PairSelectorProps> = ({
           matchesQuote = pair.isCollegeCoin === true;
         }
       } else {
-        // Investor mode: filter by quote currency as before
-        matchesQuote = pair.quote === activeQuote;
+        // Investor mode: filter by quote currency, but exclude college coins
+        matchesQuote = pair.quote === activeQuote && !pair.isCollegeCoin;
       }
       
       const matchesSearch = search === '' || 
@@ -385,6 +385,7 @@ const PairSelector: React.FC<PairSelectorProps> = ({
           height="60vh"
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
+          zIndex={token.zIndexPopupBase + 100}
           styles={{ body: { padding: token.paddingSM } }}
         >
           {searchInput}
