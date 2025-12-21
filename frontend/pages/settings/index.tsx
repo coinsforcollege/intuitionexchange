@@ -96,7 +96,7 @@ const SettingsPage: NextPageWithLayout = () => {
   const screens = useBreakpoint();
   const { mode } = useThemeMode();
   const isDark = mode === 'dark';
-  const { user, isLoading: authLoading, refreshUser } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [mounted, setMounted] = useState(false);
 
   const [settings, setSettings] = useState<UserSettings | null>(null);
@@ -264,10 +264,10 @@ const SettingsPage: NextPageWithLayout = () => {
     try {
       const result = await updateAppMode(newMode);
       const confirmedMode = result.appMode.toLowerCase() as 'learner' | 'investor';
-      setAppMode(confirmedMode);
       localStorage.setItem('appMode', confirmedMode);
       message.success(result.message);
-      refreshUser();
+      // Refresh page to reload all data for the new mode
+      router.reload();
     } catch (err) {
       setAppMode(previousMode);
       localStorage.setItem('appMode', previousMode);
