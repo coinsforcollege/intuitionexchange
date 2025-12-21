@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Request, Param } from '@nestjs/common';
+import { Controller, Get, Post, UseGuards, Request, Param, Query, Body } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AssetsService } from './assets.service';
 
@@ -15,6 +15,39 @@ export class AssetsController {
   async getBalances(@Request() req: any) {
     const balances = await this.assetsService.getUserBalances(req.user.id);
     return balances;
+  }
+
+  /**
+   * GET /api/assets/portfolio/history
+   * Get portfolio history for investor mode growth chart
+   */
+  @Get('portfolio/history')
+  async getPortfolioHistory(
+    @Request() req: any,
+    @Query('range') range: '1D' | '1W' | '1M' | '6M' | '1Y' = '1M',
+  ) {
+    const history = await this.assetsService.getPortfolioHistory(req.user.id, range);
+    return {
+      success: true,
+      history,
+      range,
+    };
+  }
+
+  /**
+   * POST /api/assets/portfolio/snapshot
+   * Create a portfolio snapshot for investor mode
+   */
+  @Post('portfolio/snapshot')
+  async createPortfolioSnapshot(
+    @Request() req: any,
+    @Body() body: { cryptoPrices: Record<string, number> },
+  ) {
+    await this.assetsService.createPortfolioSnapshot(req.user.id, body.cryptoPrices);
+    return {
+      success: true,
+      message: 'Portfolio snapshot created',
+    };
   }
 
   /**

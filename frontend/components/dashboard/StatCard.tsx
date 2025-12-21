@@ -306,6 +306,106 @@ const StatCard: React.FC<StatCardProps> = ({
     width: 'fit-content',
   };
 
+  // Mobile: Clean, matches app design language
+  if (isMobile) {
+    return (
+      <div style={{
+        background: token.colorBgContainer,
+        borderRadius: token.borderRadius,
+        padding: token.paddingMD,
+        width: '100%',
+      }}>
+        {/* Top row: Icon badge + Title + Action */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: token.marginSM,
+          marginBottom: token.marginSM,
+        }}>
+          {/* Small accent icon */}
+          {icon && (
+            <div style={{
+              width: 28,
+              height: 28,
+              borderRadius: 8,
+              background: token.colorPrimaryBg,
+              color: token.colorPrimary,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 14,
+            }}>
+              {icon}
+            </div>
+          )}
+          <span style={{
+            fontSize: token.fontSizeSM,
+            color: token.colorTextSecondary,
+            fontWeight: fontWeights.medium,
+            flex: 1,
+          }}>
+            {title}
+          </span>
+          {showDepositButton && onDepositClick && (
+            <button
+              onClick={onDepositClick}
+              style={{
+                background: token.colorPrimaryBg,
+                border: 'none',
+                borderRadius: token.borderRadius,
+                padding: `${token.paddingXS}px ${token.paddingSM}px`,
+                color: token.colorPrimary,
+                fontSize: token.fontSizeSM,
+                fontWeight: fontWeights.semibold,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              <PlusOutlined style={{ fontSize: 11 }} />
+              Add Cash
+            </button>
+          )}
+        </div>
+
+        {/* Value */}
+        <div style={{
+          fontSize: 32,
+          fontWeight: fontWeights.bold,
+          color: token.colorText,
+          letterSpacing: '-0.02em',
+          lineHeight: 1.1,
+        }}>
+          {value}
+        </div>
+
+        {/* Subtitle */}
+        {subtitle && (
+          <div style={{
+            fontSize: token.fontSizeSM,
+            color: token.colorTextTertiary,
+            marginTop: token.marginXS,
+          }}>
+            {subtitle}
+          </div>
+        )}
+
+        {trend && (
+          <div style={{
+            fontSize: token.fontSizeSM,
+            color: trend.isPositive ? token.colorSuccess : token.colorError,
+            marginTop: token.marginXS,
+            fontWeight: fontWeights.medium,
+          }}>
+            {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Desktop: Original layout
   return (
     <div style={cardStyle}>
       {/* Decorative background circles */}

@@ -15,12 +15,14 @@ import { theme, Spin, Empty } from 'antd';
 import { useThemeMode } from '@/context/ThemeContext';
 import { fontWeights } from '@/theme/themeConfig';
 import { getPortfolioHistory, PortfolioSnapshot } from '@/services/api/learner';
+import { getInvestorPortfolioHistory } from '@/services/api/assets';
 
 const { useToken } = theme;
 
 interface PortfolioGrowthChartProps {
   mode: 'learner' | 'investor';
   height?: number;
+  hideHeader?: boolean;
 }
 
 type TimeRange = '1D' | '1W' | '1M' | '6M' | '1Y';
@@ -37,6 +39,7 @@ interface ChartDataPoint {
 const PortfolioGrowthChart: React.FC<PortfolioGrowthChartProps> = ({
   mode,
   height = 300,
+  hideHeader = false,
 }) => {
   const { token } = useToken();
   const { mode: themeMode } = useThemeMode();
@@ -47,34 +50,39 @@ const PortfolioGrowthChart: React.FC<PortfolioGrowthChartProps> = ({
   const [timeRange, setTimeRange] = useState<TimeRange>('1M');
   const [data, setData] = useState<PortfolioSnapshot[]>([]);
 
-  // Color schemes based on mode
+  // Color schemes based on mode - contrasting colors
   const colors = isLearner
     ? {
-        current: '#F59E0B', // Amber for learner
-        currentGradient: 'rgba(245, 158, 11, 0.3)',
-        invested: '#EF4444', // Red for invested baseline
-        investedGradient: 'rgba(239, 68, 68, 0.15)',
+        current: '#10B981', // Green for current (learner)
+        currentGradient: 'rgba(16, 185, 129, 0.3)',
+        invested: '#F59E0B', // Amber for invested
+        investedGradient: 'rgba(245, 158, 11, 0.15)',
       }
     : {
-        current: '#6366F1', // Indigo for investor
+        current: '#6366F1', // Indigo for current (investor)
         currentGradient: 'rgba(99, 102, 241, 0.3)',
-        invested: '#10B981', // Green for invested baseline
-        investedGradient: 'rgba(16, 185, 129, 0.15)',
+        invested: '#F59E0B', // Amber for invested
+        investedGradient: 'rgba(245, 158, 11, 0.15)',
       };
 
-  // Fetch portfolio history
+  // Fetch portfolio history based on mode
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await getPortfolioHistory(timeRange);
-      setData(result.history);
+      if (isLearner) {
+        const result = await getPortfolioHistory(timeRange);
+        setData(result.history);
+      } else {
+        const result = await getInvestorPortfolioHistory(timeRange);
+        setData(result.history);
+      }
     } catch (error) {
       console.error('Failed to fetch portfolio history:', error);
       setData([]);
     } finally {
       setLoading(false);
     }
-  }, [timeRange]);
+  }, [timeRange, isLearner]);
 
   useEffect(() => {
     fetchData();
@@ -96,6 +104,32 @@ const PortfolioGrowthChart: React.FC<PortfolioGrowthChartProps> = ({
       }))
       .sort((a, b) => a.timestamp - b.timestamp);
   }, [data]);
+
+  // Calculate smart Y-axis domain based on data range
+  const yAxisDomain = React.useMemo(() => {
+    if (chartData.length === 0) return [0, 100];
+    
+    // Find min and max across both current and invested values
+    const allValues = chartData.flatMap(d => [d.current, d.invested]);
+    const dataMin = Math.min(...allValues);
+    const dataMax = Math.max(...allValues);
+    const range = dataMax - dataMin;
+    
+    // If range is very small relative to values (< 5%), zoom in significantly
+    if (range < dataMax * 0.05) {
+      const padding = Math.max(range * 0.5, 50);
+      return [Math.max(0, dataMin - padding), dataMax + padding];
+    }
+    
+    // If range is moderate (5-20%), add some padding
+    if (range < dataMax * 0.2) {
+      const padding = range * 0.2;
+      return [Math.max(0, dataMin - padding), dataMax + padding];
+    }
+    
+    // For large ranges, start closer to zero for context
+    return [Math.max(0, dataMin * 0.9), dataMax * 1.05];
+  }, [chartData]);
 
   // Calculate performance metrics
   const performanceData = React.useMemo(() => {
@@ -155,54 +189,56 @@ const PortfolioGrowthChart: React.FC<PortfolioGrowthChartProps> = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height }}>
-      {/* Header with metrics */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'flex-start',
-        padding: `${token.paddingSM}px 0`,
-        flexShrink: 0,
-      }}>
-        <div>
-          <div style={{ 
-            fontSize: token.fontSizeSM, 
-            color: token.colorTextSecondary,
-            marginBottom: 2,
-          }}>
-            Portfolio Value
+      {/* Header with metrics - optional */}
+      {!hideHeader && (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'flex-start',
+          padding: `${token.paddingSM}px 0`,
+          flexShrink: 0,
+        }}>
+          <div>
+            <div style={{ 
+              fontSize: token.fontSizeSM, 
+              color: token.colorTextSecondary,
+              marginBottom: 2,
+            }}>
+              Portfolio Value
+            </div>
+            <div style={{ 
+              fontSize: token.fontSizeHeading4, 
+              fontWeight: fontWeights.bold, 
+              color: token.colorText,
+            }}>
+              ${performanceData.currentValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <div style={{ 
+              fontSize: token.fontSize, 
+              fontWeight: fontWeights.medium,
+              color: isPositive ? token.colorSuccess : token.colorError,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+            }}>
+              <span>{isPositive ? '+' : ''}{performanceData.change.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span>({isPositive ? '+' : ''}{performanceData.changePercent.toFixed(2)}%)</span>
+            </div>
           </div>
-          <div style={{ 
-            fontSize: token.fontSizeHeading4, 
-            fontWeight: fontWeights.bold, 
-            color: token.colorText,
-          }}>
-            ${performanceData.currentValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </div>
-          <div style={{ 
-            fontSize: token.fontSize, 
-            fontWeight: fontWeights.medium,
-            color: isPositive ? token.colorSuccess : token.colorError,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-          }}>
-            <span>{isPositive ? '+' : ''}{performanceData.change.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            <span>({isPositive ? '+' : ''}{performanceData.changePercent.toFixed(2)}%)</span>
+          
+          {/* Legend */}
+          <div style={{ display: 'flex', gap: token.marginMD, alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: token.marginXS }}>
+              <div style={{ width: 16, height: 3, backgroundColor: colors.current, borderRadius: 2 }} />
+              <span style={{ fontSize: token.fontSizeSM, color: token.colorTextSecondary, fontWeight: fontWeights.medium }}>Current</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: token.marginXS }}>
+              <div style={{ width: 16, height: 3, backgroundColor: colors.invested, borderRadius: 2, opacity: 0.8 }} />
+              <span style={{ fontSize: token.fontSizeSM, color: token.colorTextSecondary, fontWeight: fontWeights.medium }}>Invested</span>
+            </div>
           </div>
         </div>
-        
-        {/* Legend */}
-        <div style={{ display: 'flex', gap: token.marginMD, alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: token.marginXS }}>
-            <div style={{ width: 12, height: 3, backgroundColor: colors.current, borderRadius: 2 }} />
-            <span style={{ fontSize: token.fontSizeSM, color: token.colorTextSecondary }}>Current</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: token.marginXS }}>
-            <div style={{ width: 12, height: 3, backgroundColor: colors.invested, borderRadius: 2, opacity: 0.7 }} />
-            <span style={{ fontSize: token.fontSizeSM, color: token.colorTextSecondary }}>Invested</span>
-          </div>
-        </div>
-      </div>
+      )}
       
       {/* Timeframe selector */}
       <div style={{ 
@@ -304,6 +340,8 @@ const PortfolioGrowthChart: React.FC<PortfolioGrowthChartProps> = ({
                 tickFormatter={(value) => `$${(value / 1000).toFixed(1)}k`}
                 dx={-5}
                 width={50}
+                domain={['dataMin', 'dataMax']}
+                allowDataOverflow
               />
               <Tooltip content={<CustomTooltip />} />
               <Area

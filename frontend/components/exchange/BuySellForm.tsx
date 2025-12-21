@@ -386,9 +386,9 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
   
   return (
     <div style={{
-      backgroundColor: token.colorBgContainer,
-      borderRadius: token.borderRadiusLG,
-      padding: isMobile ? token.paddingMD : token.paddingLG,
+      backgroundColor: isMobile ? 'transparent' : token.colorBgContainer,
+      borderRadius: isMobile ? 0 : token.borderRadiusLG,
+      padding: isMobile ? 0 : token.paddingLG,
       maxWidth: 420,
       width: '100%',
     }}>
@@ -562,9 +562,10 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            background: token.colorBgLayout,
-            borderRadius: token.borderRadius,
+            background: isMobile ? token.colorBgContainer : token.colorBgLayout,
+            borderRadius: token.borderRadiusLG,
             padding: `${token.paddingMD}px`,
+            border: isMobile ? `1px solid ${token.colorBorderSecondary}` : 'none',
           }}>
             <input
               type="number"
@@ -604,8 +605,9 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
               fontSize: 16, 
               color: token.colorTextTertiary,
               padding: 8,
-              background: token.colorBgLayout,
+              background: isMobile ? token.colorBgContainer : token.colorBgLayout,
               borderRadius: '50%',
+              border: isMobile ? `1px solid ${token.colorBorderSecondary}` : 'none',
             }} 
           />
         </div>
@@ -620,9 +622,10 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            background: token.colorBgLayout,
-            borderRadius: token.borderRadius,
+            background: isMobile ? token.colorBgContainer : token.colorBgLayout,
+            borderRadius: token.borderRadiusLG,
             padding: `${token.paddingMD}px`,
+            border: isMobile ? `1px solid ${token.colorBorderSecondary}` : 'none',
           }}>
             <input
               type="number"
@@ -788,11 +791,13 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
           <div style={{
             position: 'fixed',
             bottom: 70, // Above navbar
-            left: 0,
-            right: 0,
-            padding: `${token.paddingSM}px ${token.paddingMD}px`,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '100%',
+            maxWidth: 420,
+            padding: `${token.paddingSM}px 0`,
             paddingBottom: token.paddingMD,
-            background: `linear-gradient(to top, ${token.colorBgContainer} 70%, transparent)`,
+            background: `linear-gradient(to top, ${token.colorBgLayout} 70%, transparent)`,
             zIndex: 100,
           }}>
             <Button

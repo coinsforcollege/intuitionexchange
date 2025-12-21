@@ -113,9 +113,9 @@ const BuySellPage: NextPageWithLayout = () => {
 
         {/* Main Content */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
           style={{
             display: 'flex',
             flexDirection: 'column',
@@ -128,17 +128,14 @@ const BuySellPage: NextPageWithLayout = () => {
           }}
         >
           {/* Form Widget */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1, duration: 0.4 }}
+          <div
             style={{
               width: '100%',
               maxWidth: 420,
             }}
           >
             <BuySellForm initialAsset={initialAsset} />
-          </motion.div>
+          </div>
 
           {/* Info Text - hidden on mobile since it's in the sticky footer */}
           {!isMobile && (

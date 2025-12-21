@@ -66,3 +66,41 @@ export async function getBalance(asset: string): Promise<Balance> {
   });
 }
 
+// ============================================
+// PORTFOLIO SNAPSHOTS (Investor Mode)
+// ============================================
+
+export interface PortfolioSnapshot {
+  totalValue: number;
+  investedValue: number;
+  cashBalance: number;
+  cryptoValue: number;
+  snapshotDate: string;
+}
+
+/**
+ * Get portfolio history for investor mode growth chart
+ */
+export async function getInvestorPortfolioHistory(range: '1D' | '1W' | '1M' | '6M' | '1Y' = '1M'): Promise<{
+  success: boolean;
+  history: PortfolioSnapshot[];
+  range: string;
+}> {
+  return apiCall(`/assets/portfolio/history?range=${range}`, {
+    method: 'GET',
+  });
+}
+
+/**
+ * Create a portfolio snapshot for investor mode
+ */
+export async function createInvestorPortfolioSnapshot(cryptoPrices: Record<string, number>): Promise<{
+  success: boolean;
+  message: string;
+}> {
+  return apiCall('/assets/portfolio/snapshot', {
+    method: 'POST',
+    body: JSON.stringify({ cryptoPrices }),
+  });
+}
+

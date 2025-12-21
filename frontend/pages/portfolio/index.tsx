@@ -20,6 +20,7 @@ import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import StatCard from '@/components/dashboard/StatCard';
 import AssetCard from '@/components/dashboard/AssetCard';
 import PortfolioGrowthChart from '@/components/dashboard/PortfolioGrowthChart';
+import MobilePortfolioCard from '@/components/dashboard/MobilePortfolioCard';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
 import { useExchange } from '@/context/ExchangeContext';
@@ -27,6 +28,7 @@ import DepositModal from '@/components/wallet/DepositModal';
 import WithdrawModal from '@/components/wallet/WithdrawModal';
 import { getFiatTransactions, syncPaymentStatus } from '@/services/api/fiat';
 import { createPortfolioSnapshot } from '@/services/api/learner';
+import { createInvestorPortfolioSnapshot } from '@/services/api/assets';
 import type { NextPageWithLayout } from '../_app';
 
 const { useToken } = theme;
@@ -86,9 +88,9 @@ const WalletPage: NextPageWithLayout = () => {
     }
   }, [pageLoading, user, refreshBalances, refreshOrders]);
 
-  // Create portfolio snapshot when page loads (for growth chart) - learner mode only
+  // Create portfolio snapshot when page loads (for growth chart) - both modes
   useEffect(() => {
-    if (!pageLoading && user && appMode === 'learner' && balances.length > 0 && pairs.length > 0) {
+    if (!pageLoading && user && balances.length > 0 && pairs.length > 0) {
       const createSnapshot = async () => {
         try {
           // Build crypto prices from current pairs
@@ -99,7 +101,12 @@ const WalletPage: NextPageWithLayout = () => {
               cryptoPrices[asset] = pair.price;
             }
           });
-          await createPortfolioSnapshot(cryptoPrices);
+          
+          if (appMode === 'learner') {
+            await createPortfolioSnapshot(cryptoPrices);
+          } else {
+            await createInvestorPortfolioSnapshot(cryptoPrices);
+          }
         } catch (error) {
           console.error('Failed to create portfolio snapshot:', error);
         }
@@ -490,20 +497,16 @@ const WalletPage: NextPageWithLayout = () => {
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           <Row gutter={[token.marginMD, token.marginMD]}>
-            {/* Mobile: Only show total balance with breakdown */}
+            {/* Mobile: Unified portfolio card with chart */}
             {isMobile ? (
-              <Col xs={24} style={{ display: 'flex' }}>
-                <div style={{ width: '100%', height: '100%', display: 'flex' }}>
-                  <StatCard
-                    title="Total Balance"
-                    value={`$${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                    subtitle={`Crypto: $${cryptoBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} • Cash: $${fiatBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                    icon={<WalletOutlined />}
-                    gradient="linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)"
-                    showDepositButton={isMobile}
-                    onDepositClick={() => setDepositModalVisible(true)}
-                  />
-                </div>
+              <Col xs={24}>
+                <MobilePortfolioCard
+                  totalBalance={totalBalance}
+                  cryptoBalance={cryptoBalance}
+                  cashBalance={fiatBalance}
+                  mode={appMode}
+                  onDepositClick={() => setDepositModalVisible(true)}
+                />
               </Col>
             ) : isTablet ? (
               /* Tablet: 2 cards with all data */
@@ -573,18 +576,14 @@ const WalletPage: NextPageWithLayout = () => {
           </Row>
         </motion.div>
 
-        {/* Portfolio Growth Chart */}
-        <motion.div
-          style={sectionStyle}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.15 }}
-        >
-          {isMobile ? (
-            // Mobile: Chart without card wrapper or title
-            <PortfolioGrowthChart mode={appMode} height={280} />
-          ) : (
-            // Desktop: Chart in card
+        {/* Portfolio Growth Chart - Desktop/Tablet only */}
+        {!isMobile && (
+          <motion.div
+            style={sectionStyle}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+          >
             <Card
               style={{
                 borderRadius: token.borderRadiusLG,
@@ -607,8 +606,8 @@ const WalletPage: NextPageWithLayout = () => {
               </div>
               <PortfolioGrowthChart mode={appMode} height={350} />
             </Card>
-          )}
-        </motion.div>
+          </motion.div>
+        )}
 
         {/* Action Buttons */}
         {!isMobile && (

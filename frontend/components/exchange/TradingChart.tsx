@@ -114,8 +114,9 @@ const TradingChart: React.FC<TradingChartProps> = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Timeframe selector */}
+      {/* Interval selector */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: `${token.paddingXS}px 0`, gap: token.marginXS, flexShrink: 0 }}>
+        <span style={{ fontSize: 11, color: token.colorTextTertiary, marginRight: token.marginXS }}>Interval</span>
         {TIMEFRAMES.map((tf) => (
           <div
             key={tf}
