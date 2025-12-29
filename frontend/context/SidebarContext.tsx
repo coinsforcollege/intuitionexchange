@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Grid } from 'antd';
+import { throttle } from '@/utils/debounce';
 
 const { useBreakpoint } = Grid;
 
@@ -48,9 +49,10 @@ export const SidebarProvider: React.FC<SidebarProviderProps> = ({ children }) =>
     setMounted(true);
     setWindowWidth(window.innerWidth);
 
-    const handleResize = () => {
+    // Throttle resize handler to reduce main thread work
+    const handleResize = throttle(() => {
       setWindowWidth(window.innerWidth);
-    };
+    }, 150);
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);

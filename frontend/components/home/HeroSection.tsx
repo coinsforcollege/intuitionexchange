@@ -321,9 +321,13 @@ export default function HeroSection() {
       )}
 
       {/* Hand with phone emerging from bottom edge - positioned to section */}
-      <img
+      <Image
         src="/images/hero/layer01.png"
         alt="InTuition Exchange App"
+        width={500}
+        height={600}
+        priority
+        sizes="(max-width: 768px) 320px, (max-width: 1024px) 400px, 500px"
         style={{
           position: "absolute",
           bottom: 0,

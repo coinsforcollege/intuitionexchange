@@ -34,7 +34,6 @@ model User {
   cryptoBalances          CryptoBalance[]
   depositAddresses        DepositAddress[]
   trades                  Trade[]
-  p2pOrders               P2POrder[]
   fiatTransactions        FiatTransaction[]
   cryptoTransactions      CryptoTransaction[]
   creditCards             CreditCard[]
@@ -43,6 +42,15 @@ model User {
   watchlistItems          WatchlistItem[]
   notificationPreferences NotificationPreferences?
   portfolioSnapshots      PortfolioSnapshot[]
+  
+  // P2P OTC Relations
+  p2pAds                  P2PAd[]
+  p2pTradesAsBuyer        P2PTrade[]          @relation("BuyerTrades")
+  p2pTradesAsSeller       P2PTrade[]          @relation("SellerTrades")
+  p2pDisputesOpened       P2PDispute[]        @relation("DisputeOpener")
+  p2pDisputesResolved     P2PDispute[]        @relation("DisputeResolver")
+  p2pPaymentMethods       P2PPaymentMethod[]
+  p2pUserStats            P2PUserStats?
 
   // Relations - Learner Mode (Virtual Trading)
   learnerFiatBalance       LearnerFiatBalance?
@@ -326,55 +334,276 @@ enum TradeStatus {
 }
 
 // ============================================
-// P2P MARKETPLACE
+// P2P OTC MARKETPLACE
 // ============================================
 
-model P2POrder {
+// User's saved payment methods for P2P
+model P2PPaymentMethod {
   id     String @id @default(uuid())
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  asset             String
-  base              String
-  orderType         OrderType
-  quantity          Decimal   @db.Decimal(20, 8)
-  quantityRemaining Decimal   @db.Decimal(20, 8)
-  price             Decimal   @db.Decimal(20, 8)
-
-  status    P2POrderStatus @default(ACTIVE)
-  expiresAt DateTime
+  type        P2PPaymentMethodType // BANK_TRANSFER, UPI, PAYPAL, etc.
+  name        String               // Display name: "My Bank Account", "PayPal"
+  details     Json                 // Encrypted/masked details specific to payment type
+  isActive    Boolean              @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  transactions P2PTransaction[]
+  // Ads using this payment method
+  ads P2PAdPaymentMethod[]
 
-  @@map("p2p_orders")
+  @@map("p2p_payment_methods")
 }
 
-enum P2POrderStatus {
+enum P2PPaymentMethodType {
+  BANK_TRANSFER
+  UPI
+  PAYPAL
+  VENMO
+  ZELLE
+  CASH_APP
+  WISE
+  REVOLUT
+  OTHER
+}
+
+// P2P Advertisement (maker posts an ad to buy/sell crypto)
+model P2PAd {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // What is being traded
+  side          P2PAdSide // SELL (maker sells crypto) or BUY (maker buys crypto)
+  asset         String    // Crypto asset: BTC, ETH, etc.
+  fiatCurrency  String    // Fiat or payment asset: USD, EUR, etc.
+
+  // Pricing (fixed price only)
+  price         Decimal   @db.Decimal(20, 8) // Fixed price per unit
+
+  // Quantity
+  totalQty      Decimal   @db.Decimal(20, 8) // Total quantity for the ad
+  remainingQty  Decimal   @db.Decimal(20, 8) // Remaining quantity available
+  minQty        Decimal   @db.Decimal(20, 8) // Minimum per trade
+  maxQty        Decimal   @db.Decimal(20, 8) // Maximum per trade
+
+  // Ad status
+  status        P2PAdStatus @default(ACTIVE)
+
+  // Terms and conditions (optional)
+  terms         String?     @db.Text
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  paymentMethods P2PAdPaymentMethod[]
+  trades         P2PTrade[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([asset, fiatCurrency])
+  @@index([side, status])
+  @@map("p2p_ads")
+}
+
+enum P2PAdSide {
+  BUY   // Maker wants to buy crypto (taker sells)
+  SELL  // Maker wants to sell crypto (taker buys)
+}
+
+enum P2PAdStatus {
   ACTIVE
-  PARTIALLY_FILLED
-  FILLED
-  CANCELLED
-  EXPIRED
+  PAUSED
+  CLOSED
 }
 
-model P2PTransaction {
-  id      String   @id @default(uuid())
-  orderId String
-  order   P2POrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+// Junction table for Ad <-> PaymentMethod (many-to-many)
+model P2PAdPaymentMethod {
+  id              String           @id @default(uuid())
+  adId            String
+  ad              P2PAd            @relation(fields: [adId], references: [id], onDelete: Cascade)
+  paymentMethodId String
+  paymentMethod   P2PPaymentMethod @relation(fields: [paymentMethodId], references: [id], onDelete: Cascade)
 
-  buyerId    String
-  sellerId   String
-  quantity   Decimal @db.Decimal(20, 8)
-  price      Decimal @db.Decimal(20, 8)
-  totalValue Decimal @db.Decimal(20, 8)
+  @@unique([adId, paymentMethodId])
+  @@map("p2p_ad_payment_methods")
+}
 
-  status    TradeStatus @default(COMPLETED)
-  createdAt DateTime    @default(now())
+// P2P Trade (created when taker accepts an ad)
+model P2PTrade {
+  id            String  @id @default(uuid())
+  tradeNumber   String  @unique // Human-readable: P2P-20241222-ABC123
 
-  @@map("p2p_transactions")
+  // Parties
+  adId          String
+  ad            P2PAd   @relation(fields: [adId], references: [id])
+  buyerUserId   String
+  buyer         User    @relation("BuyerTrades", fields: [buyerUserId], references: [id])
+  sellerUserId  String
+  seller        User    @relation("SellerTrades", fields: [sellerUserId], references: [id])
+
+  // Trade details
+  asset         String          // Crypto asset being traded
+  fiatCurrency  String          // Fiat currency for payment
+  qtyCrypto     Decimal         @db.Decimal(20, 8) // Amount of crypto
+  price         Decimal         @db.Decimal(20, 8) // Price per unit at trade creation
+  notional      Decimal         @db.Decimal(20, 8) // = qtyCrypto * price (fiat value)
+
+  // Payment
+  paymentMethodType P2PPaymentMethodType // Selected payment method
+  paymentDetails    Json?                // Seller's payment details for this trade
+
+  // Timing
+  paymentWindowSeconds Int       @default(900) // 15 minutes default
+  expiresAt           DateTime  // When payment must be made by
+
+  // Proof of payment
+  proofRequired       Boolean   @default(true)
+  proofUrls           String[]  // URLs to uploaded proof images
+
+  // State machine
+  status              P2PTradeStatus @default(CREATED)
+
+  // Idempotency keys (for preventing duplicate operations)
+  createIdempotencyKey   String?  @unique
+  markPaidIdempotencyKey String?  @unique
+  releaseIdempotencyKey  String?  @unique
+  cancelIdempotencyKey   String?  @unique
+
+  // Timestamps
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  paidAt       DateTime?
+  releasedAt   DateTime?
+  cancelledAt  DateTime?
+
+  // Relations
+  escrow       P2PEscrow?
+  dispute      P2PDispute?
+  auditLogs    P2PAuditLog[]
+
+  @@index([buyerUserId])
+  @@index([sellerUserId])
+  @@index([status])
+  @@index([adId])
+  @@map("p2p_trades")
+}
+
+enum P2PTradeStatus {
+  CREATED    // Trade created, escrow locked, timer running
+  CANCELLED  // Buyer cancelled before paid, or auto-expired unpaid
+  PAID       // Buyer marked paid with mandatory proof
+  DISPUTED   // Either party opened dispute after PAID
+  RELEASED   // Seller released escrow, funds credited to buyer
+  REFUNDED   // Dispute resolved to seller, escrow unlocked back to seller
+  EXPIRED    // Unpaid timer elapsed (treated as CANCELLED with strike)
+}
+
+// Escrow Lock (holds crypto during trade)
+model P2PEscrow {
+  id        String @id @default(uuid())
+  tradeId   String @unique
+  trade     P2PTrade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+
+  asset     String              // Crypto asset locked
+  qtyLocked Decimal             @db.Decimal(20, 8) // Amount locked
+  status    P2PEscrowStatus     @default(LOCKED)
+
+  lockedAt    DateTime  @default(now())
+  releasedAt  DateTime?
+  unlockedAt  DateTime?
+
+  @@map("p2p_escrows")
+}
+
+enum P2PEscrowStatus {
+  LOCKED    // Crypto is held in escrow
+  RELEASED  // Escrow transferred to buyer
+  UNLOCKED  // Escrow returned to seller (cancel/refund)
+}
+
+// Dispute (opened when there's a conflict)
+model P2PDispute {
+  id        String   @id @default(uuid())
+  tradeId   String   @unique
+  trade     P2PTrade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+
+  openedById   String
+  openedBy     User     @relation("DisputeOpener", fields: [openedById], references: [id])
+  reason       String   @db.Text
+  evidence     String[] // URLs to evidence files
+
+  status       P2PDisputeStatus  @default(OPEN)
+  outcome      P2PDisputeOutcome?
+
+  // Resolution
+  resolvedById String?
+  resolvedBy   User?    @relation("DisputeResolver", fields: [resolvedById], references: [id])
+  resolution   String?  @db.Text // Admin notes on resolution
+
+  openedAt     DateTime  @default(now())
+  resolvedAt   DateTime?
+
+  @@map("p2p_disputes")
+}
+
+enum P2PDisputeStatus {
+  OPEN
+  RESOLVED
+}
+
+enum P2PDisputeOutcome {
+  RELEASE_TO_BUYER  // Escrow transfers to buyer
+  REFUND_TO_SELLER  // Escrow returns to seller
+}
+
+// Immutable Audit Log (for every state transition)
+model P2PAuditLog {
+  id        String   @id @default(uuid())
+  tradeId   String
+  trade     P2PTrade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+
+  action        String   // CREATE, MARK_PAID, RELEASE, CANCEL, DISPUTE_OPEN, DISPUTE_RESOLVE, etc.
+  triggeredBy   String   // User ID or "SYSTEM" for auto actions
+  previousState String?  // Previous status
+  newState      String   // New status
+  metadata      Json?    // Additional context (amounts, reasons, etc.)
+
+  createdAt     DateTime @default(now())
+
+  @@index([tradeId])
+  @@index([createdAt])
+  @@map("p2p_audit_logs")
+}
+
+// User P2P Stats (daily limits, strikes, etc.)
+model P2PUserStats {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Daily trading volume (resets daily)
+  dailyVolumeUsd    Decimal   @default(0) @db.Decimal(20, 8)
+  dailyVolumeDate   DateTime  @db.Date // Date of the daily volume
+
+  // Strike system
+  strikeCount       Int       @default(0)
+  lastStrikeAt      DateTime?
+  suspendedUntil    DateTime? // If suspended due to strikes
+
+  // Stats
+  totalTradesCompleted Int     @default(0)
+  totalTradesCancelled Int     @default(0)
+  totalVolumeBought    Decimal @default(0) @db.Decimal(20, 8) // In USD
+  totalVolumeSold      Decimal @default(0) @db.Decimal(20, 8) // In USD
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("p2p_user_stats")
 }
 
 // ============================================

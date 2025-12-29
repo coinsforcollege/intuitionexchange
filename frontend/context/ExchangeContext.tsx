@@ -20,10 +20,6 @@ import { getLearnerBalances, getLearnerOrders, placeLearnerTrade, LearnerOrder, 
 import { getDemoCollegeCoins, DemoCollegeCoin } from '@/services/api/college-coins';
 import { useAuth } from '@/context/AuthContext';
 
-// Coinbase fee rate (typically 0.5% for market orders, but may vary)
-// This is used for quote calculations. Actual fees are returned in order responses.
-const COINBASE_FEE_RATE = 0.005; // 0.5%
-
 // API base URL for resolving upload paths
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, '') || 'http://localhost:8000';
 
@@ -383,20 +379,28 @@ export const ExchangeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setCollegeCoins(coins);
         
         // Convert college coins to trading pairs format
-        const collegePairs: TradingPair[] = coins.map((coin: DemoCollegeCoin) => ({
-          symbol: `${coin.ticker}-USD`,
-          name: coin.name,
-          price: coin.currentPrice || 0,
-          change: 0, // College coins don't have 24h change
-          volume: '0', // No trading volume for demo coins
-          quote: 'USD',
-          baseCurrency: coin.ticker,
-          quoteCurrency: 'USD',
-          iconUrl: resolveUploadUrl(coin.iconUrl) || `https://ui-avatars.com/api/?name=${coin.ticker}&size=64&background=667eea&color=ffffff&bold=true`,
-          isCollegeCoin: true,
-          peggedToAsset: coin.peggedToAsset,
-          peggedPercentage: coin.peggedPercentage,
-        }));
+        // Initialize change from reference token if available
+        const collegePairs: TradingPair[] = coins.map((coin: DemoCollegeCoin) => {
+          // Find the reference token pair to get its current change
+          const refSymbol = `${coin.peggedToAsset}-USD`;
+          const refPair = transformedPairs.find(p => p.symbol === refSymbol);
+          const initialChange = refPair?.change || 0;
+          
+          return {
+            symbol: `${coin.ticker}-USD`,
+            name: coin.name,
+            price: coin.currentPrice || 0,
+            change: initialChange, // Initialize from reference token's change
+            volume: '0', // No trading volume for demo coins
+            quote: 'USD',
+            baseCurrency: coin.ticker,
+            quoteCurrency: 'USD',
+            iconUrl: resolveUploadUrl(coin.iconUrl) || `https://ui-avatars.com/api/?name=${coin.ticker}&size=64&background=667eea&color=ffffff&bold=true`,
+            isCollegeCoin: true,
+            peggedToAsset: coin.peggedToAsset,
+            peggedPercentage: coin.peggedPercentage,
+          };
+        });
         
         // Merge with regular pairs
         const allPairs = [...transformedPairs, ...collegePairs];

@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
 import { theme, Grid } from 'antd';
@@ -51,7 +50,6 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
   const { token } = useToken();
   const { mode } = useThemeMode();
   const screens = useBreakpoint();
-  const router = useRouter();
   const isDark = mode === 'dark';
   const isMobile = !screens.md;
   const isTablet = screens.md && !screens.lg;

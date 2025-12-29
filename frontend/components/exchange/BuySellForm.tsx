@@ -439,7 +439,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
         })}
       </div>
       
-      {/* Token Selector - 3D Claymorphic style */}
+      {/* Token Selector - Clickable with rich purple gradient in light mode */}
       <motion.div
         whileTap={{ scale: 0.97 }}
         onClick={() => setShowTokenPicker(true)}
@@ -447,15 +447,15 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
           display: 'flex',
           alignItems: 'center',
           gap: token.marginSM,
-          padding: `${token.paddingSM}px ${token.paddingMD}px`,
+          padding: `${token.paddingMD}px ${token.paddingLG}px`,
           marginBottom: token.marginMD,
           cursor: 'pointer',
-          borderRadius: 16,
-          // Claymorphic gradient background
+          borderRadius: token.borderRadius,
+          // Light mode: rich purple gradient background with white text
+          // Dark mode: keep claymorphic style
           background: isDark
             ? `linear-gradient(145deg, rgba(139, 92, 246, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%)`
-            : `linear-gradient(145deg, rgba(139, 92, 246, 0.12) 0%, rgba(99, 102, 241, 0.08) 100%)`,
-          // 3D claymorphic shadows
+            : `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`,
           boxShadow: isDark
             ? `
               4px 4px 12px rgba(0,0,0,0.4),
@@ -463,15 +463,21 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
               inset 2px 2px 4px rgba(255,255,255,0.05),
               inset -2px -2px 4px rgba(0,0,0,0.2)
             `
-            : `
-              4px 4px 12px rgba(0,0,0,0.08),
-              -2px -2px 8px rgba(255,255,255,0.9),
-              inset 2px 2px 4px rgba(255,255,255,0.5),
-              inset -2px -2px 4px rgba(0,0,0,0.03)
-            `,
+            : `0 4px 16px rgba(102, 126, 234, 0.4)`,
           border: isDark 
             ? '1px solid rgba(139, 92, 246, 0.2)' 
-            : '1px solid rgba(139, 92, 246, 0.15)',
+            : 'none',
+          transition: 'all 0.2s ease',
+        }}
+        onMouseEnter={(e) => {
+          if (!isDark) {
+            e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.5)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isDark) {
+            e.currentTarget.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.4)';
+          }
         }}
       >
         {selectedPair ? (
@@ -479,51 +485,106 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
             <img
               src={selectedPair.iconUrl}
               alt={selectedPair.baseCurrency}
-              width={36}
-              height={36}
+              width={40}
+              height={40}
               style={{ 
                 borderRadius: '50%',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                border: `2px solid ${isDark ? 'transparent' : 'rgba(255, 255, 255, 0.4)'}`,
               }}
               onError={(e) => {
                 (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${selectedPair.baseCurrency}&background=667eea&color=fff&size=72`;
               }}
             />
-            <div style={{ flex: 1 }}>
-              <span style={{ fontWeight: fontWeights.bold, color: token.colorText, fontSize: token.fontSizeLG }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <span style={{ 
+                fontWeight: fontWeights.bold, 
+                color: isDark ? token.colorText : '#ffffff', 
+                fontSize: token.fontSizeLG 
+              }}>
                 {selectedPair.baseCurrency}
               </span>
-              <span style={{ color: token.colorTextTertiary, marginLeft: token.marginXS, fontSize: token.fontSizeSM }}>
-                {selectedPair.name}
-              </span>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: token.fontSizeSM, color: token.colorText, fontWeight: fontWeights.medium }}>
-                ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: price < 1 ? 4 : 2 })}
+              <div style={{ display: 'flex', alignItems: 'center', gap: token.marginXS }}>
+                <span style={{ 
+                  color: isDark ? token.colorTextTertiary : 'rgba(255, 255, 255, 0.95)', 
+                  fontSize: token.fontSize,
+                  fontWeight: fontWeights.medium,
+                }}>
+                  {selectedPair.name}
+                </span>
+                <span style={{ 
+                  fontSize: token.fontSize, 
+                  color: isDark ? token.colorTextTertiary : 'rgba(255, 255, 255, 0.9)', 
+                  fontWeight: fontWeights.medium,
+                }}>
+                  • ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: price < 1 ? 4 : 2 })}
+                </span>
               </div>
             </div>
-            <DownOutlined style={{ color: token.colorPrimary, fontSize: 12 }} />
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              gap: 6,
+            }}>
+              <span style={{ 
+                fontSize: token.fontSize, 
+                color: isDark ? '#8B5CF6' : '#ffffff',
+                fontWeight: fontWeights.bold,
+              }}>
+                Change
+              </span>
+              <DownOutlined style={{ 
+                color: isDark ? '#8B5CF6' : '#ffffff', 
+                fontSize: 18,
+                fontWeight: fontWeights.bold,
+              }} />
+            </div>
           </>
         ) : (
           <>
             <div style={{
-              width: 36,
-              height: 36,
+              width: 40,
+              height: 40,
               borderRadius: '50%',
-              background: `linear-gradient(135deg, ${token.colorPrimary}40, ${token.colorPrimary}20)`,
+              background: isDark 
+                ? `linear-gradient(135deg, ${token.colorPrimary}40, ${token.colorPrimary}20)`
+                : 'rgba(255, 255, 255, 0.25)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               boxShadow: isDark 
                 ? 'inset 1px 1px 2px rgba(255,255,255,0.1), inset -1px -1px 2px rgba(0,0,0,0.2)'
-                : 'inset 1px 1px 2px rgba(255,255,255,0.5), inset -1px -1px 2px rgba(0,0,0,0.05)',
+                : 'none',
+              border: isDark ? 'none' : '2px solid rgba(255, 255, 255, 0.4)',
             }}>
-              <span style={{ fontSize: 18 }}>🪙</span>
+              <span style={{ fontSize: 20 }}>🪙</span>
             </div>
-            <span style={{ color: token.colorText, flex: 1, fontWeight: fontWeights.semibold }}>
+            <span style={{ 
+              color: isDark ? token.colorText : '#ffffff', 
+              flex: 1, 
+              fontWeight: fontWeights.semibold,
+              fontSize: token.fontSizeLG,
+            }}>
               Select token
             </span>
-            <DownOutlined style={{ color: token.colorPrimary, fontSize: 12 }} />
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              gap: 6,
+            }}>
+              <span style={{ 
+                fontSize: token.fontSize, 
+                color: isDark ? '#8B5CF6' : '#ffffff',
+                fontWeight: fontWeights.bold,
+              }}>
+                Change
+              </span>
+              <DownOutlined style={{ 
+                color: isDark ? '#8B5CF6' : '#ffffff', 
+                fontSize: 18,
+                fontWeight: fontWeights.bold,
+              }} />
+            </div>
           </>
         )}
       </motion.div>
@@ -538,21 +599,26 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
             alignItems: 'center',
             marginBottom: 6,
           }}>
-            <span style={{ fontSize: token.fontSizeSM, color: token.colorTextSecondary }}>
+            <span style={{ 
+              fontSize: token.fontSize, 
+              color: isDark ? token.colorTextSecondary : token.colorText,
+              fontWeight: fontWeights.medium,
+            }}>
               {isBuy ? 'You pay' : 'You sell'}
             </span>
             <span 
               onClick={() => handlePercentage(100)}
               style={{ 
-                fontSize: 12, 
-                color: token.colorPrimary, 
+                fontSize: token.fontSizeSM, 
+                color: isDark ? token.colorPrimary : '#667eea', 
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 4,
+                fontWeight: fontWeights.semibold,
               }}
             >
-              <WalletOutlined style={{ fontSize: 11 }} />
+              <WalletOutlined style={{ fontSize: token.fontSizeSM }} />
               {isBuy 
                 ? `$${cashBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                 : `${tokenBalance.toFixed(tokenBalance < 1 ? 4 : 2)} ${selectedAsset}`
@@ -583,7 +649,11 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
                 minWidth: 0,
               }}
             />
-            <span style={{ color: token.colorTextSecondary, fontSize: token.fontSize, fontWeight: fontWeights.semibold }}>
+            <span style={{ 
+              color: isDark ? token.colorTextSecondary : token.colorText, 
+              fontSize: token.fontSize, 
+              fontWeight: fontWeights.semibold 
+            }}>
               {isBuy ? 'USD' : selectedAsset}
             </span>
           </div>
@@ -615,7 +685,11 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
         {/* Secondary input (You get) */}
         <div>
           <div style={{ marginBottom: 6 }}>
-            <span style={{ fontSize: token.fontSizeSM, color: token.colorTextSecondary }}>
+            <span style={{ 
+              fontSize: token.fontSize, 
+              color: isDark ? token.colorTextSecondary : token.colorText,
+              fontWeight: fontWeights.medium,
+            }}>
               You get (estimate)
             </span>
           </div>
@@ -663,7 +737,11 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
                 minWidth: 0,
               }}
             />
-            <span style={{ color: token.colorTextSecondary, fontSize: token.fontSize, fontWeight: fontWeights.semibold }}>
+            <span style={{ 
+              color: isDark ? token.colorTextSecondary : token.colorText, 
+              fontSize: token.fontSize, 
+              fontWeight: fontWeights.semibold 
+            }}>
               {isBuy ? selectedAsset : 'USD'}
             </span>
           </div>
@@ -679,8 +757,9 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
             exit={{ opacity: 0 }}
             style={{
               marginBottom: token.marginSM,
-              fontSize: token.fontSizeSM,
+              fontSize: token.fontSize,
               color: token.colorWarning,
+              fontWeight: fontWeights.medium,
             }}
           >
             <InfoCircleOutlined style={{ marginRight: 4 }} />
@@ -699,8 +778,9 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
               exit={{ opacity: 0 }}
               style={{
                 marginBottom: token.marginSM,
-                fontSize: token.fontSizeSM,
+                fontSize: token.fontSize,
                 color: token.colorError,
+                fontWeight: fontWeights.medium,
               }}
             >
               <InfoCircleOutlined style={{ marginRight: 4 }} />
@@ -731,14 +811,15 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
                 alignItems: 'center',
                 cursor: 'pointer',
                 padding: `${token.paddingXS}px 0`,
-                fontSize: token.fontSizeSM,
-                color: token.colorTextSecondary,
+                fontSize: token.fontSize,
+                color: isDark ? token.colorTextSecondary : token.colorText,
+                fontWeight: fontWeights.medium,
               }}
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 Fee ${fee.toFixed(2)}
                 <DownOutlined style={{ 
-                  fontSize: 8, 
+                  fontSize: 10, 
                   transform: showFeeDetails ? 'rotate(180deg)' : 'rotate(0)',
                   transition: 'transform 0.2s',
                 }} />
@@ -762,8 +843,8 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                   style={{ 
-                    fontSize: 12, 
-                    color: token.colorTextTertiary,
+                    fontSize: token.fontSizeSM, 
+                    color: isDark ? token.colorTextTertiary : token.colorTextSecondary,
                     paddingTop: token.paddingXS,
                     borderTop: `1px dashed ${token.colorBorderSecondary}`,
                     marginTop: token.marginXS,
@@ -790,7 +871,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
           {/* Sticky button container */}
           <div style={{
             position: 'fixed',
-            bottom: 70, // Above navbar
+            bottom: 104, // Above navbar (72px nav + 16px margin + 16px padding)
             left: '50%',
             transform: 'translateX(-50%)',
             width: '100%',
@@ -825,15 +906,6 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
             >
               {isBuy ? 'Buy' : 'Sell'} {selectedAsset}
             </Button>
-            <div style={{
-              marginTop: token.marginXS,
-              fontSize: 11,
-              color: token.colorTextTertiary,
-              textAlign: 'center',
-              lineHeight: 1.5,
-            }}>
-              Market order • Executes at best available price
-            </div>
           </div>
         </>
       ) : (
@@ -867,10 +939,11 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
           {/* Market Order Info */}
           <div style={{
             marginTop: token.marginMD,
-            fontSize: 11,
-            color: token.colorTextTertiary,
+            fontSize: token.fontSizeSM,
+            color: isDark ? token.colorTextTertiary : token.colorTextSecondary,
             textAlign: 'center',
             lineHeight: 1.5,
+            fontWeight: fontWeights.medium,
           }}>
             Market order • Executes at best available price
           </div>

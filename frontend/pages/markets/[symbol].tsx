@@ -165,9 +165,7 @@ export default function TokenDetailsPage() {
   const { pairs, setSelectedPair } = useExchange();
   const { mode } = useThemeMode();
   const { isEffectiveDesktop, isEffectiveMobile } = useSidebar();
-  const screens = useBreakpoint();
 
-  const [mounted, setMounted] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [tokenData, setTokenData] = useState<TokenMarketData | null>(null);
   const [collegeCoinData, setCollegeCoinData] = useState<DemoCollegeCoin | null>(null);
@@ -189,10 +187,6 @@ export default function TokenDetailsPage() {
     return pairs.find((p) => p.baseCurrency === symbol.toUpperCase() && p.quote === 'USD');
   }, [pairs, symbol]);
 
-  // Check if this is a college coin
-  const isCollegeCoin = useMemo(() => {
-    return (pairData as any)?.isCollegeCoin === true;
-  }, [pairData]);
 
   const livePrice = collegeCoinData?.currentPrice || pairData?.price || tokenData?.market_data?.current_price?.usd || 0;
   const liveChange = pairData?.change || tokenData?.market_data?.price_change_percentage_24h || 0;
@@ -202,7 +196,6 @@ export default function TokenDetailsPage() {
   // KYC-incomplete users still see dashboard layout (with KYC banner in DashboardLayout)
   const isAuthenticated = !!user;
 
-  useEffect(() => { setMounted(true); }, []);
 
   // Page is ready once auth check is done (public access)
   useEffect(() => {

@@ -5,6 +5,7 @@ import { CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined, CloseOutline
 import { motion, AnimatePresence } from 'motion/react';
 import { InternalOrder } from '@/services/api/coinbase';
 import { fontWeights } from '@/theme/themeConfig';
+import { throttle } from '@/utils/debounce';
 
 const { Text, Title } = Typography;
 const { useToken } = theme;
@@ -37,9 +38,10 @@ export default function OrderStatusModal({
 
   useEffect(() => {
     setMounted(true);
-    const checkMobile = () => {
+    // Throttle resize handler to reduce main thread work
+    const checkMobile = throttle(() => {
       setIsMobile(window.innerWidth < 768);
-    };
+    }, 150);
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);

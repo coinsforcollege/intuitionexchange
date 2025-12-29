@@ -24,7 +24,7 @@ import {
 } from '@ant-design/icons';
 import { FullAdminUser, updateUser, deleteUser } from '../../../services/api/admin';
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
 interface UserOverviewProps {
   user: FullAdminUser;

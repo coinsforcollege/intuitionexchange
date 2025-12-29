@@ -6,12 +6,9 @@ import Head from 'next/head';
 import { theme, Form, Input, Button, message, Card, Typography, Space, Skeleton } from 'antd';
 import {
   BankOutlined,
-  ArrowLeftOutlined,
-  CheckCircleOutlined,
 } from '@ant-design/icons';
 import { motion } from 'motion/react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
-import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
 import { addBankAccount } from '@/services/api/fiat';
 import { loadStripe } from '@stripe/stripe-js';

@@ -14,7 +14,7 @@ import { PlusOutlined } from '@ant-design/icons';
 import { useThemeMode } from '@/context/ThemeContext';
 import { fontWeights } from '@/theme/themeConfig';
 import { getPortfolioHistory, PortfolioSnapshot } from '@/services/api/learner';
-import { getInvestorPortfolioHistory, PortfolioSnapshot as InvestorPortfolioSnapshot } from '@/services/api/assets';
+import { getInvestorPortfolioHistory } from '@/services/api/assets';
 
 const { useToken } = theme;
 
@@ -96,34 +96,6 @@ const MobilePortfolioCard: React.FC<MobilePortfolioCardProps> = ({
       }))
       .sort((a, b) => a.timestamp - b.timestamp);
   }, [data]);
-
-  // Calculate smart Y-axis domain based on data range
-  const yAxisDomain = React.useMemo(() => {
-    if (chartData.length === 0) return [0, 100];
-    
-    // Find min and max across both current and invested values
-    const allValues = chartData.flatMap(d => [d.current, d.invested]);
-    const dataMin = Math.min(...allValues);
-    const dataMax = Math.max(...allValues);
-    const range = dataMax - dataMin;
-    
-    // If range is very small relative to values (< 5%), zoom in significantly
-    // This makes small changes visible
-    if (range < dataMax * 0.05) {
-      // Add 20% padding around the actual range, or minimum $50 padding
-      const padding = Math.max(range * 0.5, 50);
-      return [Math.max(0, dataMin - padding), dataMax + padding];
-    }
-    
-    // If range is moderate (5-20%), add some padding
-    if (range < dataMax * 0.2) {
-      const padding = range * 0.2;
-      return [Math.max(0, dataMin - padding), dataMax + padding];
-    }
-    
-    // For large ranges, can start closer to zero for context
-    return [Math.max(0, dataMin * 0.9), dataMax * 1.05];
-  }, [chartData]);
 
   // Calculate change - compare current balance against first snapshot in range
   const performanceData = React.useMemo(() => {

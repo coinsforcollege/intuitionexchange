@@ -102,16 +102,30 @@ function ExchangePageContent() {
   }, []);
 
   // Handle pair from URL query param
+  // Track if this is the first render to distinguish direct visits from navigation
+  const isFirstRenderRef = React.useRef(true);
+  
   useEffect(() => {
-    if (router.query.pair && typeof router.query.pair === 'string') {
-      const pairFromUrl = router.query.pair.toUpperCase();
-      // Validate pair exists
-      const pairExists = pairs.some(p => p.symbol === pairFromUrl);
-      if (pairExists) {
-        setSelectedPair(pairFromUrl);
+    if (!isLoadingPairs && pairs.length > 0 && router.isReady) {
+      if (router.query.pair && typeof router.query.pair === 'string') {
+        // If there's a pair in URL, use it
+        const pairFromUrl = router.query.pair.toUpperCase();
+        const pairExists = pairs.some(p => p.symbol === pairFromUrl);
+        if (pairExists) {
+          setSelectedPair(pairFromUrl);
+        }
+        isFirstRenderRef.current = false;
+      } else if (isFirstRenderRef.current) {
+        // First render with no query param (direct visit) - reset to default
+        // In learner mode: BTC-USD (Popular pair), otherwise BTC-USD
+        // In investor mode: BTC-USD
+        setSelectedPair('BTC-USD');
+        isFirstRenderRef.current = false;
       }
+      // If navigating back to /trade after being on another page (not first render, no query param),
+      // keep current selectedPair (don't reset)
     }
-  }, [router.query.pair, pairs, setSelectedPair]);
+  }, [router.query.pair, router.isReady, pairs, setSelectedPair, isLoadingPairs, appMode]);
 
   useEffect(() => {
     if (!isLoading) {

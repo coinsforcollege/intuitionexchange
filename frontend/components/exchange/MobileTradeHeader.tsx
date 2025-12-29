@@ -3,7 +3,8 @@
 import React from 'react';
 import { useRouter } from 'next/router';
 import { theme } from 'antd';
-import { LeftOutlined, CaretUpOutlined, CaretDownOutlined } from '@ant-design/icons';
+import { LeftOutlined, CaretUpOutlined, CaretDownOutlined, DownOutlined } from '@ant-design/icons';
+import { motion } from 'motion/react';
 import { fontWeights } from '@/theme/themeConfig';
 import { useThemeMode } from '@/context/ThemeContext';
 
@@ -39,104 +40,122 @@ const MobileTradeHeader: React.FC<MobileTradeHeaderProps> = ({
   return (
     <div
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        padding: `${token.paddingXS}px ${token.paddingSM}px`,
-        gap: token.marginSM,
+        padding: `${token.paddingSM}px ${token.paddingMD}px`,
         borderBottom: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}`,
         background: isDark 
           ? 'rgba(15, 15, 26, 0.95)'
           : 'rgba(255, 255, 255, 0.98)',
       }}
     >
-      {/* Back Button */}
-      <div
-        onClick={handleBack}
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: 8,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
-          cursor: 'pointer',
-          flexShrink: 0,
-        }}
-      >
-        <LeftOutlined style={{ fontSize: 14, color: token.colorText }} />
-      </div>
-
-      {/* Token Icon */}
-      <img
-        src={iconUrl || `https://assets.coincap.io/assets/icons/${baseAsset.toLowerCase()}@2x.png`}
-        alt={baseAsset}
-        width={28}
-        height={28}
-        style={{ borderRadius: '50%', flexShrink: 0 }}
-        onError={(e) => {
-          (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${baseAsset}&size=28&background=6366F1&color=ffffff`;
-        }}
-      />
-
-      {/* Pair Name - Clickable Pill */}
-      <div
+      {/* Pair Selector - Prominent like buy/sell, with price/change in same row */}
+      <motion.div
+        whileTap={{ scale: 0.97 }}
         onClick={onPairClick}
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 6,
-          padding: '6px 12px',
-          borderRadius: 20,
+          gap: token.marginSM,
+          padding: `${token.paddingMD}px ${token.paddingLG}px`,
           cursor: 'pointer',
-          backgroundColor: isDark ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.1)',
-          border: `1px solid ${isDark ? 'rgba(99, 102, 241, 0.3)' : 'rgba(99, 102, 241, 0.2)'}`,
+          borderRadius: token.borderRadius,
+          // Light mode: rich purple gradient background with white text
+          // Dark mode: keep claymorphic style
+          background: isDark
+            ? `linear-gradient(145deg, rgba(139, 92, 246, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%)`
+            : `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`,
+          boxShadow: isDark
+            ? `
+              4px 4px 12px rgba(0,0,0,0.4),
+              -2px -2px 8px rgba(139, 92, 246, 0.15),
+              inset 2px 2px 4px rgba(255,255,255,0.05),
+              inset -2px -2px 4px rgba(0,0,0,0.2)
+            `
+            : `0 4px 16px rgba(102, 126, 234, 0.4)`,
+          border: isDark 
+            ? '1px solid rgba(139, 92, 246, 0.2)' 
+            : 'none',
           transition: 'all 0.2s ease',
         }}
+        onMouseEnter={(e) => {
+          if (!isDark) {
+            e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.5)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isDark) {
+            e.currentTarget.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.4)';
+          }
+        }}
       >
-        <span
-          style={{
-            fontSize: token.fontSize,
-            fontWeight: fontWeights.bold,
-            color: isDark ? '#A5B4FC' : '#6366F1',
+        <img
+          src={iconUrl || `https://assets.coincap.io/assets/icons/${baseAsset.toLowerCase()}@2x.png`}
+          alt={baseAsset}
+          width={40}
+          height={40}
+          style={{ 
+            borderRadius: '50%',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+            border: `2px solid ${isDark ? 'transparent' : 'rgba(255, 255, 255, 0.4)'}`,
+            flexShrink: 0,
           }}
-        >
-          {pair}
-        </span>
-        <CaretDownOutlined style={{ fontSize: 10, color: isDark ? '#A5B4FC' : '#6366F1' }} />
-      </div>
-
-      {/* Spacer */}
-      <div style={{ flex: 1 }} />
-
-      {/* Price */}
-      <span
-        style={{
-          fontSize: token.fontSize,
-          fontWeight: fontWeights.bold,
-          color: token.colorText,
-        }}
-      >
-        ${price.toLocaleString('en-US', { maximumFractionDigits: 2 })}
-      </span>
-      
-      {/* Price Change Badge */}
-      <div
-        style={{
-          display: 'flex',
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${baseAsset}&background=667eea&color=fff&size=72`;
+          }}
+        />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <span style={{ 
+            fontWeight: fontWeights.bold, 
+            color: isDark ? token.colorText : '#ffffff', 
+            fontSize: token.fontSizeLG 
+          }}>
+            {pair}
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: token.marginXS }}>
+            <span style={{ 
+              fontSize: token.fontSize, 
+              color: isDark ? token.colorTextTertiary : 'rgba(255, 255, 255, 0.9)', 
+              fontWeight: fontWeights.medium,
+            }}>
+              ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: price < 1 ? 4 : 2 })}
+            </span>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                padding: '2px 6px',
+                borderRadius: 4,
+                backgroundColor: isPositive 
+                  ? (isDark ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255, 255, 255, 0.2)')
+                  : (isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.2)'),
+                color: isPositive ? (isDark ? '#22C55E' : '#22C55E') : (isDark ? '#EF4444' : '#EF4444'),
+                fontSize: token.fontSizeSM,
+                fontWeight: fontWeights.bold,
+              }}
+            >
+              {isPositive ? <CaretUpOutlined style={{ fontSize: 8 }} /> : <CaretDownOutlined style={{ fontSize: 8 }} />}
+              {Math.abs(priceChange).toFixed(2)}%
+            </div>
+          </div>
+        </div>
+        <div style={{ 
+          display: 'flex', 
           alignItems: 'center',
-          gap: 2,
-          padding: '2px 6px',
-          borderRadius: 4,
-          backgroundColor: isPositive ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-          color: isPositive ? '#22C55E' : '#EF4444',
-          fontSize: 12,
-          fontWeight: fontWeights.bold,
-        }}
-      >
-        {isPositive ? <CaretUpOutlined style={{ fontSize: 8 }} /> : <CaretDownOutlined style={{ fontSize: 8 }} />}
-        {Math.abs(priceChange).toFixed(2)}%
-      </div>
+          gap: 6,
+        }}>
+          <span style={{ 
+            fontSize: token.fontSize, 
+            color: isDark ? '#8B5CF6' : '#ffffff',
+            fontWeight: fontWeights.bold,
+          }}>
+            Change
+          </span>
+          <DownOutlined style={{ 
+            color: isDark ? '#8B5CF6' : '#ffffff', 
+            fontSize: 18,
+          }} />
+        </div>
+      </motion.div>
     </div>
   );
 };

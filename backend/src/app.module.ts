@@ -19,6 +19,7 @@ import { LearnerModule } from './modules/learner/learner.module';
 import { CollegeCoinsModule } from './modules/college-coins/college-coins.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
+import { P2PModule } from './modules/p2p/p2p.module';
 
 @Module({
   imports: [
@@ -58,6 +59,8 @@ import { UploadsModule } from './modules/uploads/uploads.module';
     AdminModule,
     // Public file serving for uploads
     UploadsModule,
+    // P2P OTC marketplace module
+    P2PModule,
   ],
   controllers: [AppController, TestController],
   providers: [AppService, PrismaService, EmailService],

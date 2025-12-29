@@ -1,0 +1,15 @@
+# Target modern browsers that support Baseline features
+# This prevents unnecessary transpilation of widely-supported JavaScript features
+# Baseline features are supported in browsers with >95% global market share
+
+# Modern browsers (last 2 versions of major browsers)
+last 2 Chrome versions
+last 2 Firefox versions
+last 2 Safari versions
+last 2 Edge versions
+last 2 iOS versions
+
+# Exclude very old browsers
+not dead
+not IE 11
+

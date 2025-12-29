@@ -6,6 +6,7 @@ import {
   LogoutOutlined,
   HomeOutlined,
   FolderOutlined,
+  TeamOutlined,
 } from '@ant-design/icons';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
@@ -64,6 +65,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       key: 'users',
       icon: <UserOutlined />,
       label: <Link href="/admin/users">Users</Link>,
+    },
+    {
+      key: 'p2p-disputes',
+      icon: <TeamOutlined />,
+      label: <Link href="/admin/p2p/disputes">P2P Disputes</Link>,
     },
     {
       key: 'college-coins',
@@ -162,6 +168,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               {title || (
                 <>
                   {selectedKey === 'users' && 'User Management'}
+                  {selectedKey === 'p2p-disputes' && 'P2P Disputes'}
                   {selectedKey === 'college-coins' && 'Demo College Coins (Learner Mode)'}
                   {selectedKey === 'media' && 'Media Manager'}
                 </>

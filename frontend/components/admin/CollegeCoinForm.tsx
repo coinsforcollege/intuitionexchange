@@ -27,7 +27,6 @@ import {
   ArrowLeftOutlined,
   LinkOutlined,
   FolderOpenOutlined,
-  FileImageOutlined,
   SearchOutlined,
 } from '@ant-design/icons';
 import { useRouter } from 'next/router';

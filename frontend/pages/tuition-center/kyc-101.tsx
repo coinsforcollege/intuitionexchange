@@ -73,9 +73,6 @@ const YEARS = Array.from({ length: 90 }, (_, i) => ({
   label: String(currentYear - 10 - i),
 }));
 
-// All text is white with shadows on colorful background
-const getTextColor = (_isDark: boolean, primary = true) => 
-  primary ? '#ffffff' : 'rgba(255,255,255,0.85)';
 
 export default function KYC101Page() {
   const router = useRouter();
@@ -90,7 +87,6 @@ export default function KYC101Page() {
   const [addressForm] = Form.useForm();
   
   // Camera states
-  const [cameraActive, setCameraActive] = useState(false);
   const [cameraUnavailable, setCameraUnavailable] = useState(false);
   const [capturedImages, setCapturedImages] = useState<{
     docFront: string | null;
@@ -146,7 +142,6 @@ export default function KYC101Page() {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
-      setCameraActive(false);
     }
   }, []);
 
@@ -170,7 +165,6 @@ export default function KYC101Page() {
       });
       
       streamRef.current = newStream;
-      setCameraActive(true);
       setCameraUnavailable(false);
       
       if (videoRef.current) {

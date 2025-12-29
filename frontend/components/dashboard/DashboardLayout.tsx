@@ -15,10 +15,8 @@ import {
   MenuOutlined,
   CloseOutlined,
   PoweroffOutlined,
-  UserOutlined,
   SunOutlined,
   MoonOutlined,
-  DollarOutlined,
   HistoryOutlined,
   LineChartOutlined,
   LeftOutlined,
@@ -393,7 +391,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     };
   };
 
-  const navIconContainerStyle = (item: NavItem, isActive: boolean): React.CSSProperties => ({
+  const navIconContainerStyle = (): React.CSSProperties => ({
     width: 20,
     height: 20,
     display: 'flex',
@@ -744,7 +742,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           }
         }}
       >
-        <div style={navIconContainerStyle(item, isActive)}>
+        <div style={navIconContainerStyle()}>
           {item.icon}
         </div>
         <span style={navLabelStyle}>{item.label}</span>
@@ -842,7 +840,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   }
                 }}
               >
-                <div style={navIconContainerStyle({ gradient: '' } as NavItem, isSettingsActive)}>
+                <div style={navIconContainerStyle()}>
                   <SettingOutlined />
                 </div>
                 {!(sidebarCollapsed && !isMobile) && <span style={navLabelStyle}>Settings</span>}

@@ -1,18 +1,18 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Button, Space, Drawer, Menu, Switch, Divider, theme } from "antd";
+import { Button, Drawer, Switch, theme } from "antd";
 import {
   MenuOutlined,
   SwapOutlined,
   WalletOutlined,
   LineChartOutlined,
-  UserOutlined,
   LoginOutlined,
   SunOutlined,
   MoonOutlined,
   TeamOutlined,
   DollarOutlined,
+  UserOutlined,
   AppstoreOutlined,
 } from "@ant-design/icons";
 import { fontWeights } from "@/theme/themeConfig";

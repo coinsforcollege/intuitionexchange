@@ -32,8 +32,8 @@ interface PairSelectorProps {
 
 // Investor mode shows all currencies
 const INVESTOR_CURRENCIES = ['USD', 'USDT', 'ETH', 'TUIT'];
-// Learner mode shows Colleges first, then Popular (USD pairs)
-const LEARNER_CURRENCIES = ['Colleges', 'Popular'];
+// Learner mode shows Popular first, then Colleges
+const LEARNER_CURRENCIES = ['Popular', 'Colleges'];
 
 export const mockPairs: TradingPair[] = [
   { symbol: 'BTC-USD', name: 'Bitcoin', price: 90366.33, change: -2.05, volume: '5.4B', quote: 'USD' },
@@ -71,10 +71,10 @@ const PairSelector: React.FC<PairSelectorProps> = ({
   const isDark = mode === 'dark';
   const [search, setSearch] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
-  // Default to 'Colleges' in learner mode, 'USD' in investor mode
+  // Default to 'Popular' in learner mode, 'USD' in investor mode
   const isLearnerMode = user?.appMode === 'LEARNER';
   const router = useRouter();
-  const [activeQuote, setActiveQuote] = useState(isLearnerMode ? 'Colleges' : 'USD');
+  const [activeQuote, setActiveQuote] = useState(isLearnerMode ? 'Popular' : 'USD');
   const [hoveredPair, setHoveredPair] = useState<string | null>(null);
   const selectedItemRef = useRef<HTMLDivElement>(null);
   
@@ -151,38 +151,52 @@ const PairSelector: React.FC<PairSelectorProps> = ({
     
     // Only scroll if there's a URL pair and we haven't scrolled yet
     if (urlPair && !hasScrolledRef.current && selectedItemRef.current) {
-      // Small delay to ensure the DOM has updated after tab switch
-      const timer = setTimeout(() => {
-        if (selectedItemRef.current) {
-          // Find the scrollable parent container (the one with overflowY: auto)
-          const findScrollableParent = (element: HTMLElement | null): HTMLElement | null => {
-            while (element && element !== document.body) {
-              const style = window.getComputedStyle(element);
-              if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
-                return element;
+      let rafId: number | null = null;
+      let timer: NodeJS.Timeout | null = null;
+      
+      // Use requestAnimationFrame to batch layout reads and avoid forced reflows
+      rafId = requestAnimationFrame(() => {
+        // Small delay to ensure the DOM has updated after tab switch
+        timer = setTimeout(() => {
+          if (selectedItemRef.current) {
+            // Find the scrollable parent container (the one with overflowY: auto)
+            const findScrollableParent = (element: HTMLElement | null): HTMLElement | null => {
+              while (element && element !== document.body) {
+                const style = window.getComputedStyle(element);
+                if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
+                  return element;
+                }
+                element = element.parentElement;
               }
-              element = element.parentElement;
-            }
-            return null;
-          };
-          
-          const scrollContainer = findScrollableParent(selectedItemRef.current.parentElement);
-          if (scrollContainer) {
-            // Calculate scroll position to center the item in the container
-            const itemOffsetTop = selectedItemRef.current.offsetTop;
-            const containerHeight = scrollContainer.clientHeight;
-            const itemHeight = selectedItemRef.current.clientHeight;
-            const scrollTarget = itemOffsetTop - (containerHeight / 2) + (itemHeight / 2);
+              return null;
+            };
             
-            scrollContainer.scrollTo({
-              top: Math.max(0, scrollTarget),
-              behavior: 'smooth',
-            });
+            const scrollContainer = findScrollableParent(selectedItemRef.current.parentElement);
+            if (scrollContainer && selectedItemRef.current) {
+              // Batch all layout property reads together to avoid forced reflows
+              // Read all layout properties in one batch before any writes
+              const itemOffsetTop = selectedItemRef.current.offsetTop;
+              const itemHeight = selectedItemRef.current.clientHeight;
+              const containerHeight = scrollContainer.clientHeight;
+              
+              // Calculate scroll position to center the item in the container
+              const scrollTarget = itemOffsetTop - (containerHeight / 2) + (itemHeight / 2);
+              
+              // Write operation (scroll) happens after all reads are complete
+              scrollContainer.scrollTo({
+                top: Math.max(0, scrollTarget),
+                behavior: 'smooth',
+              });
+            }
+            hasScrolledRef.current = true;
           }
-          hasScrolledRef.current = true;
-        }
-      }, 150);
-      return () => clearTimeout(timer);
+        }, 150);
+      });
+      
+      return () => {
+        if (rafId !== null) cancelAnimationFrame(rafId);
+        if (timer !== null) clearTimeout(timer);
+      };
     }
   }, [router.query.pair, filteredPairs]);
 

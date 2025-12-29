@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { Button, theme, Grid, Skeleton, Alert } from 'antd';
-import { CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, ArrowRightOutlined, ReloadOutlined } from '@ant-design/icons';
+import { CloseCircleOutlined, ClockCircleOutlined, ArrowRightOutlined, ReloadOutlined } from '@ant-design/icons';
 import { motion } from 'motion/react';
 import OnboardingLayout from '@/components/onboarding/OnboardingLayout';
 import SuccessAnimation from '@/components/onboarding/animations/SuccessAnimation';

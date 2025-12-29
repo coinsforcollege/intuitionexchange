@@ -415,23 +415,61 @@ const DashboardPage: NextPageWithLayout = () => {
   }, [watchlistAssets, usdPairs]);
 
   // Top gainers & losers - memoized, sorted by volume
+  // In learner mode: show 5 college coins + 5 other coins
   const marketMovers = useMemo(() => {
-    // Separate gainers and losers first
-    const gainers = usdPairs.filter(p => p.change > 0);
-    const losers = usdPairs.filter(p => p.change < 0);
-    
-    // Sort each by volume (descending) - using _usdVolume if available
-    const sortByVolume = (a: typeof usdPairs[0], b: typeof usdPairs[0]) => {
-      const aVol = (a as { _usdVolume?: number })._usdVolume || 0;
-      const bVol = (b as { _usdVolume?: number })._usdVolume || 0;
-      return bVol - aVol;
-    };
-    
-    return {
-      gainers: [...gainers].sort(sortByVolume).slice(0, 10),
-      losers: [...losers].sort(sortByVolume).slice(0, 10),
-    };
-  }, [usdPairs]);
+    if (isLearnerMode) {
+      // Separate college coins and regular coins
+      const collegeCoins = usdPairs.filter(p => p.isCollegeCoin);
+      const regularCoins = usdPairs.filter(p => !p.isCollegeCoin);
+      
+      // Separate gainers and losers for each group
+      const collegeGainers = collegeCoins.filter(p => p.change > 0);
+      const collegeLosers = collegeCoins.filter(p => p.change < 0);
+      const regularGainers = regularCoins.filter(p => p.change > 0);
+      const regularLosers = regularCoins.filter(p => p.change < 0);
+      
+      // Sort college coins by change percentage (descending for gainers, ascending for losers)
+      const sortCollegeByChange = (a: typeof usdPairs[0], b: typeof usdPairs[0], ascending: boolean = false) => {
+        return ascending ? a.change - b.change : b.change - a.change;
+      };
+      
+      // Sort regular coins by volume (descending)
+      const sortByVolume = (a: typeof usdPairs[0], b: typeof usdPairs[0]) => {
+        const aVol = (a as { _usdVolume?: number })._usdVolume || 0;
+        const bVol = (b as { _usdVolume?: number })._usdVolume || 0;
+        return bVol - aVol;
+      };
+      
+      // Get top 5 from each group
+      const topCollegeGainers = [...collegeGainers].sort((a, b) => sortCollegeByChange(a, b, false)).slice(0, 5);
+      // For losers: get worst 5 college coins by change (ascending), even if all are positive
+      const topCollegeLosers = [...collegeCoins].sort((a, b) => a.change - b.change).slice(0, 5);
+      const topRegularGainers = [...regularGainers].sort(sortByVolume).slice(0, 5);
+      const topRegularLosers = [...regularLosers].sort(sortByVolume).slice(0, 5);
+      
+      // Combine: college coins first, then regular coins
+      return {
+        gainers: [...topCollegeGainers, ...topRegularGainers],
+        losers: [...topCollegeLosers, ...topRegularLosers],
+      };
+    } else {
+      // Investor mode: original logic (no college coins)
+      const gainers = usdPairs.filter(p => p.change > 0);
+      const losers = usdPairs.filter(p => p.change < 0);
+      
+      // Sort each by volume (descending) - using _usdVolume if available
+      const sortByVolume = (a: typeof usdPairs[0], b: typeof usdPairs[0]) => {
+        const aVol = (a as { _usdVolume?: number })._usdVolume || 0;
+        const bVol = (b as { _usdVolume?: number })._usdVolume || 0;
+        return bVol - aVol;
+      };
+      
+      return {
+        gainers: [...gainers].sort(sortByVolume).slice(0, 10),
+        losers: [...losers].sort(sortByVolume).slice(0, 10),
+      };
+    }
+  }, [usdPairs, isLearnerMode]);
 
   // Recent orders - memoized
   const recentOrders = useMemo(() => {
@@ -900,7 +938,7 @@ const DashboardPage: NextPageWithLayout = () => {
                 {/* Top Gainers */}
                 <Section title="Top Gainers" isMobile={isMobile}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 0 : token.marginXS }}>
-                    {marketMovers.gainers.slice(0, 3).map((pair) => (
+                    {marketMovers.gainers.slice(0, isLearnerMode ? 10 : 5).map((pair) => (
                       <TokenRow
                         key={pair.baseCurrency}
                         baseCurrency={pair.baseCurrency}
@@ -918,7 +956,7 @@ const DashboardPage: NextPageWithLayout = () => {
                 {/* Top Losers */}
                 <Section title="Top Losers" isMobile={isMobile}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 0 : token.marginXS }}>
-                    {marketMovers.losers.slice(0, 3).map((pair) => (
+                    {marketMovers.losers.slice(0, isLearnerMode ? 10 : 5).map((pair) => (
                       <TokenRow
                         key={pair.baseCurrency}
                         baseCurrency={pair.baseCurrency}

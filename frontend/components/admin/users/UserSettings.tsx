@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Descriptions,
   Tag,
-  Space,
   Typography,
   Empty,
   Table,

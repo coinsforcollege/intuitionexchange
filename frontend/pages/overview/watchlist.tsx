@@ -1,15 +1,15 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { theme, Grid, Skeleton, Input, message, Empty } from 'antd';
-import { StarOutlined, StarFilled, SearchOutlined, ArrowLeftOutlined, AppstoreOutlined, UnorderedListOutlined } from '@ant-design/icons';
+import { theme, Grid, Skeleton, Input, message } from 'antd';
+import { StarOutlined, StarFilled, SearchOutlined, ArrowLeftOutlined, AppstoreOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'motion/react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { fontWeights } from '@/theme/themeConfig';
 import { useAuth } from '@/context/AuthContext';
 import { useExchange } from '@/context/ExchangeContext';
 import { useThemeMode } from '@/context/ThemeContext';
-import { getWatchlist, toggleWatchlist, WatchlistItem } from '@/services/api/watchlist';
+import { getWatchlist, toggleWatchlist } from '@/services/api/watchlist';
 
 const { useToken } = theme;
 const { useBreakpoint } = Grid;

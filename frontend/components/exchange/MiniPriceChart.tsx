@@ -29,8 +29,6 @@ const MiniPriceChart: React.FC<MiniPriceChartProps> = ({
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const { token } = useToken();
-  const { mode } = useThemeMode();
-  const isDark = mode === 'dark';
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   // Color based on positive/negative trend

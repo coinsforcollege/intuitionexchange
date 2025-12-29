@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { theme, Button, Space, Typography } from 'antd';
 import { ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
@@ -13,7 +12,6 @@ const { useToken } = theme;
 const { Title, Text } = Typography;
 
 export default function ModalSandboxPage() {
-  const router = useRouter();
   const { token } = useToken();
   const [mounted, setMounted] = useState(false);
   const [orderStatusModalVisible, setOrderStatusModalVisible] = useState(false);

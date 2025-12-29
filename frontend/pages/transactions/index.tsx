@@ -786,9 +786,7 @@ const TransactionsPage: NextPageWithLayout = () => {
   
   // Data state
   const [orders, setOrders] = useState<InternalOrder[]>([]);
-  const [ordersTotal, setOrdersTotal] = useState(0);
   const [fiatTransactions, setFiatTransactions] = useState<FiatTransaction[]>([]);
-  const [fiatTotal, setFiatTotal] = useState(0);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [loadingFiat, setLoadingFiat] = useState(true);
   
@@ -848,16 +846,13 @@ const TransactionsPage: NextPageWithLayout = () => {
           completedAt: order.completedAt, // Keep as string | null
         }));
         setOrders(convertedOrders);
-        setOrdersTotal(learnerResult.total);
       } else {
         const ordersResult = await getOrders({ limit: 500 });
         setOrders(ordersResult.orders);
-        setOrdersTotal(ordersResult.total);
       }
     } catch (error) {
       console.error('Failed to fetch orders:', error);
       setOrders([]);
-      setOrdersTotal(0);
     } finally {
       setLoadingOrders(false);
     }
@@ -867,16 +862,13 @@ const TransactionsPage: NextPageWithLayout = () => {
       if (isLearnerMode) {
         // In learner mode, there are no real fiat transactions
         setFiatTransactions([]);
-        setFiatTotal(0);
       } else {
         const fiatResult = await getFiatTransactions({ limit: 500 });
         setFiatTransactions(fiatResult.transactions);
-        setFiatTotal(fiatResult.total);
       }
     } catch (error) {
       console.error('Failed to fetch fiat transactions:', error);
       setFiatTransactions([]);
-      setFiatTotal(0);
     } finally {
       setLoadingFiat(false);
     }

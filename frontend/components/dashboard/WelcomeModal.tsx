@@ -10,6 +10,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { fontWeights } from '@/theme/themeConfig';
 import { Balance } from '@/services/api/assets';
+import { throttle } from '@/utils/debounce';
 
 const { useToken } = theme;
 
@@ -43,9 +44,10 @@ export default function WelcomeModal({
 
   useEffect(() => {
     setMounted(true);
-    const checkMobile = () => {
+    // Throttle resize handler to reduce main thread work
+    const checkMobile = throttle(() => {
       setIsMobile(window.innerWidth < 768);
-    };
+    }, 150);
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
