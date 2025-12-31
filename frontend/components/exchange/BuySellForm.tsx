@@ -883,7 +883,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
           {/* Sticky button container */}
           <div style={{
             position: 'fixed',
-            bottom: 94, // Above navbar (72px nav + 16px margin + 16px padding - 10px)
+            bottom: 72, // Above navbar (72px nav + 16px margin + 16px padding - 10px)
             left: '50%',
             transform: 'translateX(-50%)',
             width: '100%',
@@ -901,7 +901,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
               disabled={isButtonDisabled}
               onClick={() => setShowConfirm(true)}
               style={{
-                height: 56,
+                height: 48,
                 borderRadius: token.borderRadius,
                 fontWeight: fontWeights.bold,
                 textTransform: 'uppercase',

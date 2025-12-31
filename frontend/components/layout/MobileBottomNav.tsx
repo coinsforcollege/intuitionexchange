@@ -157,8 +157,8 @@ const MobileBottomNav: React.FC = () => {
     return null;
   }
 
-  const NAV_HEIGHT = 72;
-  const NAV_MARGIN = 16;
+  const NAV_HEIGHT = 64;
+  const NAV_MARGIN = 8;
   const BUBBLE_SIZE = 50;
 
   // Colors change based on app mode - Learner mode uses amber palette, Investor uses indigo
