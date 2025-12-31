@@ -203,7 +203,7 @@ const MobileTradePage: React.FC<MobileTradePageProps> = ({
       <div
         style={{
           position: 'fixed',
-          bottom: 104, // Above bottom nav (72px height + 16px margin + 16px spacing)
+          bottom: 90, // Above bottom nav (72px height + 16px margin + 16px spacing)
           left: token.paddingMD,
           right: token.paddingMD,
           display: 'flex',

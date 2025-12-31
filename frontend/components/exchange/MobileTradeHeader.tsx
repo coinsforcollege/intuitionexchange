@@ -55,7 +55,7 @@ const MobileTradeHeader: React.FC<MobileTradeHeaderProps> = ({
           display: 'flex',
           alignItems: 'center',
           gap: token.marginSM,
-          padding: `${token.paddingMD}px ${token.paddingLG}px`,
+          padding: `${token.paddingSM}px ${token.paddingSM}px`,
           cursor: 'pointer',
           borderRadius: token.borderRadius,
           // Light mode: rich purple gradient background with white text
