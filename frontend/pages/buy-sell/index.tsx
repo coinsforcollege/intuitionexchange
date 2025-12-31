@@ -121,8 +121,8 @@ const BuySellPage: NextPageWithLayout = () => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'flex-start',
-            padding: isMobile ? token.paddingSM : token.paddingMD,
-            paddingTop: isMobile ? token.paddingMD : token.paddingSM,
+            padding: isMobile ? 0 : token.paddingMD,
+            marginTop: isMobile ? -(token.paddingMD - 10) : 0,
             position: 'relative',
             zIndex: 1,
           }}

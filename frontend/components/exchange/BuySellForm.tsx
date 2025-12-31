@@ -27,9 +27,10 @@ type OrderSide = 'BUY' | 'SELL';
 interface PercentageChipsProps {
   onPercentageClick: (percent: number) => void;
   token: any;
+  isDark: boolean;
 }
 
-const PercentageChips: React.FC<PercentageChipsProps> = ({ onPercentageClick, token }) => (
+const PercentageChips: React.FC<PercentageChipsProps> = ({ onPercentageClick, token, isDark }) => (
   <div style={{
     display: 'flex',
     gap: token.marginXS,
@@ -45,13 +46,14 @@ const PercentageChips: React.FC<PercentageChipsProps> = ({ onPercentageClick, to
           padding: `6px 0`,
           fontSize: 12,
           fontWeight: fontWeights.semibold,
-          color: token.colorPrimary,
-          background: token.colorPrimaryBg,
-          border: `1px solid ${token.colorPrimaryBorder}`,
+          color: isDark ? token.colorPrimary : '#799EFF',
+          background: isDark ? token.colorPrimaryBg : '#ffffff',
+          border: `1px solid ${isDark ? token.colorPrimaryBorder : 'rgba(121, 158, 255, 0.5)'}`,
           borderRadius: token.borderRadius,
           cursor: 'pointer',
           transition: 'all 0.15s ease',
           textAlign: 'center',
+          boxShadow: isDark ? 'none' : '0 1px 2px rgba(0, 0, 0, 0.05)',
         }}
       >
         {percent === 100 ? 'MAX' : `${percent}%`}
@@ -447,7 +449,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
           display: 'flex',
           alignItems: 'center',
           gap: token.marginSM,
-          padding: `${token.paddingMD}px ${token.paddingLG}px`,
+          padding: isMobile ? `${token.paddingSM}px ${token.paddingLG}px` : `${token.paddingMD}px ${token.paddingLG}px`,
           marginBottom: token.marginMD,
           cursor: 'pointer',
           borderRadius: token.borderRadius,
@@ -628,10 +630,15 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            background: isMobile ? token.colorBgContainer : token.colorBgLayout,
-            borderRadius: token.borderRadiusLG,
-            padding: `${token.paddingMD}px`,
-            border: isMobile ? `1px solid ${token.colorBorderSecondary}` : 'none',
+            background: isMobile 
+              ? token.colorBgContainer 
+              : (isDark ? token.colorBgLayout : '#ffffff'),
+            borderRadius: token.borderRadius,
+            padding: isMobile ? `${token.paddingSM}px` : `${token.paddingMD}px`,
+            border: isMobile 
+              ? `1px solid ${token.colorBorderSecondary}` 
+              : (isDark ? 'none' : '1px solid rgba(0, 0, 0, 0.2)'),
+            boxShadow: isDark ? 'none' : '0 1px 3px rgba(0, 0, 0, 0.1)',
           }}>
             <input
               type="number"
@@ -642,7 +649,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
                 flex: 1,
                 border: 'none',
                 outline: 'none',
-                fontSize: 24,
+                fontSize: isMobile ? 20 : 24,
                 fontWeight: fontWeights.bold,
                 color: token.colorText,
                 backgroundColor: 'transparent',
@@ -659,7 +666,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
           </div>
           
           {/* Percentage chips */}
-          <PercentageChips onPercentageClick={handlePercentage} token={token} />
+          <PercentageChips onPercentageClick={handlePercentage} token={token} isDark={isDark} />
         </div>
         
         {/* Arrow divider */}
@@ -667,7 +674,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
-          margin: `${token.marginSM}px 0`,
+          margin: isMobile ? 0 : `${token.marginSM}px 0`,
         }}>
           <SwapOutlined 
             rotate={90}
@@ -696,10 +703,15 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            background: isMobile ? token.colorBgContainer : token.colorBgLayout,
-            borderRadius: token.borderRadiusLG,
-            padding: `${token.paddingMD}px`,
-            border: isMobile ? `1px solid ${token.colorBorderSecondary}` : 'none',
+            background: isMobile 
+              ? token.colorBgContainer 
+              : (isDark ? token.colorBgLayout : '#ffffff'),
+            borderRadius: token.borderRadius,
+            padding: isMobile ? `${token.paddingSM}px` : `${token.paddingMD}px`,
+            border: isMobile 
+              ? `1px solid ${token.colorBorderSecondary}` 
+              : (isDark ? 'none' : '1px solid rgba(0, 0, 0, 0.2)'),
+            boxShadow: isDark ? 'none' : '0 1px 3px rgba(0, 0, 0, 0.1)',
           }}>
             <input
               type="number"
@@ -730,7 +742,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
                 flex: 1,
                 border: 'none',
                 outline: 'none',
-                fontSize: 24,
+                fontSize: isMobile ? 20 : 24,
                 fontWeight: fontWeights.bold,
                 color: isBuy ? token.colorSuccess : token.colorText,
                 backgroundColor: 'transparent',
@@ -871,7 +883,7 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
           {/* Sticky button container */}
           <div style={{
             position: 'fixed',
-            bottom: 104, // Above navbar (72px nav + 16px margin + 16px padding)
+            bottom: 94, // Above navbar (72px nav + 16px margin + 16px padding - 10px)
             left: '50%',
             transform: 'translateX(-50%)',
             width: '100%',

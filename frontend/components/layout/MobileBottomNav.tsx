@@ -358,7 +358,7 @@ const MobileBottomNav: React.FC = () => {
                           color: isActive ? activeIconColor : inactiveColor,
                           fontWeight: isActive ? 600 : 500,
                           transition: 'color 0.2s ease',
-                          marginTop: 26,
+                          marginTop: 4,
                         }}
                       >
                         {item.label}

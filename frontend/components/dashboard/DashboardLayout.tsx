@@ -1110,7 +1110,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       {/* Main */}
       <main style={mainStyle}>
         {/* KYC Banner - Show when user needs to complete or retry verification (not when submitted/pending) */}
-        {mounted && user && (user.kycStatus === 'PENDING' || user.kycStatus === 'REJECTED') && !kycBannerDismissed && (
+        {/* On mobile, only show on overview page */}
+        {mounted && user && (user.kycStatus === 'PENDING' || user.kycStatus === 'REJECTED') && !kycBannerDismissed && (!isMobile || router.pathname.startsWith('/overview')) && (
           <div
             style={{
               background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
