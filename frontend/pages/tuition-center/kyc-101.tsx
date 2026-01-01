@@ -34,7 +34,7 @@ const stepCaptions: Record<Step, string> = {
   'doc-back': "ID back 🔄",
   selfie: "Say cheese! 📸",
   review: "Almost done! 👀",
-  success: "You did it! 🎉",
+  success: "You did it!",
 };
 
 // Colors for KYC module (green theme)
@@ -1048,29 +1048,59 @@ export default function KYC101Page() {
         fontSize: isMobile ? 28 : 36,
         fontWeight: fontWeights.bold,
         color: '#ffffff',
-        marginBottom: token.marginXL,
+        marginBottom: token.marginMD,
         textShadow: '0 2px 4px rgba(0,0,0,0.4)',
       }}>
-        KYC Pro! 🎉
+        Congratulations!
       </h2>
 
-      <Button
-        type="primary"
-        size="large"
-        onClick={() => {
-          // Save completion to localStorage
-          const completed = JSON.parse(localStorage.getItem('completedModules') || '[]');
-          if (!completed.includes('kyc-101')) {
-            completed.push('kyc-101');
-            localStorage.setItem('completedModules', JSON.stringify(completed));
-          }
-          router.push('/tuition-center');
-        }}
-        style={getButtonStyle()}
-        block
-      >
-        Done <HomeOutlined />
-      </Button>
+      <p style={{
+        fontSize: token.fontSizeLG,
+        color: 'rgba(255,255,255,0.9)',
+        marginBottom: token.marginXL,
+        textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+        lineHeight: 1.6,
+      }}>
+        You&apos;ve successfully completed the KYC practice! You now know how the verification process works.
+      </p>
+
+      <div style={{ display: 'flex', gap: token.marginMD, marginTop: token.marginXL }}>
+        <Button
+          size="large"
+          onClick={() => {
+            // Reset to welcome step
+            setCurrentStep('welcome');
+            personalForm.resetFields();
+            addressForm.resetFields();
+            setCapturedImages({ docFront: null, docBack: null, selfie: null });
+            setFormData({});
+            setSelectedCountry('');
+            setSelectedRegion('');
+            setBirthMonth('');
+            setBirthDay('');
+            setBirthYear('');
+          }}
+          style={{ ...getButtonStyle(false), flex: 1 }}
+        >
+          <ReloadOutlined /> Restart
+        </Button>
+        <Button
+          type="primary"
+          size="large"
+          onClick={() => {
+            // Save completion to localStorage
+            const completed = JSON.parse(localStorage.getItem('completedModules') || '[]');
+            if (!completed.includes('kyc-101')) {
+              completed.push('kyc-101');
+              localStorage.setItem('completedModules', JSON.stringify(completed));
+            }
+            router.push('/tuition-center');
+          }}
+          style={{ ...getButtonStyle(), flex: 1 }}
+        >
+          Return to Home <HomeOutlined />
+        </Button>
+      </div>
     </motion.div>
   );
 
@@ -1115,13 +1145,20 @@ export default function KYC101Page() {
       }}>
         {/* Header */}
         <div style={{
-          padding: `${token.paddingMD}px ${token.paddingLG}px`,
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          padding: `${token.paddingXS}px ${token.padding}px`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           borderBottom: `1px solid rgba(255,255,255,0.15)`,
           width: '100%',
           maxWidth: 480,
+          background: isDark
+            ? `linear-gradient(160deg, #041f15 0%, #052e1c 50%, #041f15 100%)`
+            : `linear-gradient(160deg, ${moduleColors.primary} 0%, ${moduleColors.dark} 50%, #023020 100%)`,
+          backdropFilter: 'blur(10px)',
         }}>
           <Button
             type="text"

@@ -244,7 +244,7 @@ export default function WelcomeModal({
                       fontWeight: fontWeights.bold,
                     }}
                   >
-                    Welcome to InTuition! 🎉
+                    Welcome to InTuition Exchange! 🎉
                   </motion.h2>
                   <motion.p
                     initial={{ opacity: 0 }}
