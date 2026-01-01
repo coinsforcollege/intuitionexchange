@@ -499,29 +499,35 @@ const BuySellForm: React.FC<BuySellFormProps> = ({
               }}
             />
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <span style={{ 
-                fontWeight: fontWeights.bold, 
-                color: isDark ? token.colorText : '#ffffff', 
-                fontSize: token.fontSizeLG 
-              }}>
-                {selectedPair.baseCurrency}
-              </span>
               <div style={{ display: 'flex', alignItems: 'center', gap: token.marginXS }}>
                 <span style={{ 
-                  color: isDark ? token.colorTextTertiary : 'rgba(255, 255, 255, 0.95)', 
-                  fontSize: token.fontSize,
-                  fontWeight: fontWeights.medium,
+                  fontSize: token.fontSizeLG, 
+                  color: isDark ? token.colorTextSecondary : 'rgba(255, 255, 255, 0.8)', 
+                  fontWeight: fontWeights.semibold,
                 }}>
-                  {selectedPair.name}
+                  {selectedPair.baseCurrency}
                 </span>
                 <span style={{ 
-                  fontSize: token.fontSize, 
-                  color: isDark ? token.colorTextTertiary : 'rgba(255, 255, 255, 0.9)', 
-                  fontWeight: fontWeights.medium,
+                  fontSize: token.fontSizeLG, 
+                  color: isDark ? token.colorTextTertiary : 'rgba(255, 255, 255, 0.6)', 
                 }}>
-                  • ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: price < 1 ? 4 : 2 })}
+                  •
+                </span>
+                <span style={{ 
+                  fontSize: token.fontSizeLG, 
+                  color: isDark ? token.colorText : '#ffffff', 
+                  fontWeight: fontWeights.bold,
+                }}>
+                  ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: price < 1 ? 4 : 2 })}
                 </span>
               </div>
+              <span style={{ 
+                fontSize: token.fontSize, 
+                color: isDark ? token.colorTextTertiary : 'rgba(255, 255, 255, 0.9)', 
+                fontWeight: fontWeights.medium,
+              }}>
+                {selectedPair.name}
+              </span>
             </div>
             <div style={{ 
               display: 'flex', 
